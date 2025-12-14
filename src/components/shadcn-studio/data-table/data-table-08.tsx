@@ -1,519 +1,338 @@
 'use client'
 
+import React, { useId, useState, useEffect } from 'react'
 import type { CSSProperties } from 'react'
-import { useState, useId, useEffect } from 'react'
-
-import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon, LayersIcon, ChevronRightIcon, X } from 'lucide-react'
-
 import {
-  closestCenter,
   DndContext,
+  closestCenter,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
-  type DragEndEvent
+  DragOverlay,
+  defaultDropAnimationSideEffects,
 } from '@dnd-kit/core'
-import { arrayMove, horizontalListSortingStrategy, verticalListSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import type { Cell, ColumnDef, Header, SortingState, GroupingState, ExpandedState } from '@tanstack/react-table'
-import { flexRender, getCoreRowModel, getSortedRowModel, getGroupedRowModel, getExpandedRowModel, useReactTable } from '@tanstack/react-table'
-
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-
+import type { DragEndEvent, DragStartEvent, DragOverEvent, DropAnimation } from '@dnd-kit/core'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+  arrayMove,
+  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
+  SortableContext,
+  useSortable
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 
-import { useAppSelector } from '@/store'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { GripVerticalIcon } from 'lucide-react'
+import { useAppDispatch, useAppSelector } from '@/store'
+import { moveRow, setColumnHeaders } from '@/store/matrixSlice'
 
-type Employee = {
-  employeeId: number
-  firstName: string
-  lastName: string
-  jobTitle: string
-  department: string
-  dob: string
-  hireDate: string
-  salary: number
+// --- Types ---
+type MatrixData = {
+  id: string
+  label: string
   [key: string]: any
 }
 
-const data: Employee[] = [
-  {
-    employeeId: 1,
-    firstName: 'John',
-    lastName: 'Doe',
-    jobTitle: 'Software Engineer',
-    department: 'Engineering',
-    dob: '1990-01-01',
-    hireDate: '2020-01-15',
-    salary: 80000
-  },
-  {
-    employeeId: 2,
-    firstName: 'Jane',
-    lastName: 'Smith',
-    jobTitle: 'Product Manager',
-    department: 'Product',
-    dob: '1985-05-20',
-    hireDate: '2019-03-10',
-    salary: 95000
-  },
-  {
-    employeeId: 3,
-    firstName: 'Alice',
-    lastName: 'Johnson',
-    jobTitle: 'UX Designer',
-    department: 'Design',
-    dob: '1992-07-30',
-    hireDate: '2021-06-01',
-    salary: 70000
-  },
-  {
-    employeeId: 4,
-    firstName: 'Bob',
-    lastName: 'Brown',
-    jobTitle: 'Data Analyst',
-    department: 'Analytics',
-    dob: '1988-11-15',
-    hireDate: '2018-09-20',
-    salary: 75000
-  },
-  {
-    employeeId: 5,
-    firstName: 'Charlie',
-    lastName: 'Davis',
-    jobTitle: 'Software Engineer',
-    department: 'Engineering',
-    dob: '1991-03-12',
-    hireDate: '2021-02-10',
-    salary: 85000
-  },
-  {
-    employeeId: 6,
-    firstName: 'Diana',
-    lastName: 'Evans',
-    jobTitle: 'Product Owner',
-    department: 'Product',
-    dob: '1987-08-25',
-    hireDate: '2019-11-05',
-    salary: 100000
-  }
-]
+// --- Context ---
+const RowDragContext = React.createContext<any>(null)
 
-const initialColumns: ColumnDef<Employee>[] = [
-  {
-    id: 'drag',
-    header: '',
-    accessorKey: 'drag',
-    cell: () => null, // The cell content is handled by DragAlongCell with dragHandleProps
-    size: 5,
-    minSize: 5,
-    maxSize: 5,
-    enableSorting: false,
-    enableResizing: false,
-    enableGrouping: false,
-    meta: {
-    }
-  },
-]
+// --- Component ---
 
-interface DraggableColumnDataTableDemoProps {
-  data?: Employee[]
-}
+export default function MatrixDataTable() {
+  const dispatch = useAppDispatch()
+  const { columnHeaders, rowHeaders } = useAppSelector(state => state.matrix)
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeItem, setActiveItem] = useState<any>(null)
 
-const DraggableColumnDataTableDemo = ({ data: initialData = [] }: DraggableColumnDataTableDemoProps) => {
-  const [tableData, setTableData] = useState<Employee[]>(initialData)
-  const [sorting, setSorting] = useState<SortingState>([])
-  // We need to initialize columnOrder with static columns first, but it will need to be updated when dynamic columns are added.
-  // Ideally, we should derive the full list of columns first, then set order.
-  const dynamicColumnsState = useAppSelector(state => state.sidebar.columns)
+  // Local column order state for real-time reordering
+  const [columnOrder, setColumnOrder] = useState<string[]>([])
 
-  const allColumns = [
-    ...initialColumns,
-    ...dynamicColumnsState.map(col => ({
+  // Sync initial/external column order
+  useEffect(() => {
+    // Determine the full order including static columns
+    // We assume static columns are always present at the start for now
+    // If columnHeaders change, we reset/resync
+    const fullOrder = ['drag-handle', 'row-label', ...columnHeaders.map(c => c.id)]
+    setColumnOrder(fullOrder)
+  }, [columnHeaders])
+
+  // Construct columns
+  const columns: ColumnDef<MatrixData>[] = [
+    {
+      id: 'drag-handle',
+      header: '',
+      cell: () => <RowDragHandle />,
+      size: 40,
+    },
+    {
+      id: 'row-label',
+      header: 'Row Header',
+      cell: ({ row }) => <span className="font-medium">{row.original.label}</span>,
+      size: 150,
+    },
+    ...columnHeaders.map(col => ({
       id: col.id,
-      header: col.header,
+      header: col.label,
       accessorKey: col.id,
-      cell: ({ row }: any) => <div>{row.getValue(col.id)}</div>
+      cell: ({ row }: any) => <div>{row.original.data[col.id]}</div>
     }))
   ]
 
-  const [columnOrder, setColumnOrder] = useState<string[]>(allColumns.map(column => column.id as string))
-  const [grouping, setGrouping] = useState<GroupingState>([])
-  const [expanded, setExpanded] = useState<ExpandedState>({})
-
-  // Sync columnOrder when new columns are added
-  useEffect(() => {
-    setColumnOrder(allColumns.map(column => column.id as string))
-  }, [dynamicColumnsState.length])
-
   const table = useReactTable({
-    data: tableData,
-    columns: allColumns,
-    columnResizeMode: 'onChange',
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getGroupedRowModel: getGroupedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    onSortingChange: setSorting,
-    onGroupingChange: setGrouping,
-    onExpandedChange: setExpanded,
+    data: rowHeaders,
+    columns,
     state: {
-      sorting,
       columnOrder,
-      grouping,
-      expanded,
     },
     onColumnOrderChange: setColumnOrder,
-    enableSortingRemoval: false,
-    enableGrouping: true,
+    getCoreRowModel: getCoreRowModel(),
   })
 
-  function handleDragEnd(event: DragEndEvent) {
+  // Dnd Sensors
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, {})
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event
+    setActiveId(active.id as string)
+
+    const isColumn = columnHeaders.find(col => col.id === active.id)
+    const isRow = rowHeaders.find(row => row.id === active.id)
+
+    if (isColumn) {
+      setActiveItem({ type: 'column', id: active.id })
+    } else if (isRow) {
+      setActiveItem({ type: 'row', id: active.id })
+    }
+  }
+
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event
+    if (!over || active.id === over.id) return
 
-    if (active && over && active.id !== over.id) {
-      // Column Reordering
-      if (columnOrder.includes(active.id as string) && columnOrder.includes(over.id as string)) {
-        setColumnOrder(columnOrder => {
-          const oldIndex = columnOrder.indexOf(active.id as string)
-          const newIndex = columnOrder.indexOf(over.id as string)
-          return arrayMove(columnOrder, oldIndex, newIndex)
-        })
-      }
-      // Row Reordering (Only allowed if not grouped)
-      else if (grouping.length === 0) {
-        setTableData(currentData => {
-          const oldIndex = currentData.findIndex(item => item.employeeId === active.id)
-          const newIndex = currentData.findIndex(item => item.employeeId === over.id)
+    const isColumn = columnHeaders.some(c => c.id === active.id)
+    const overIsColumn = columnHeaders.some(c => c.id === over.id) || over.id === 'row-label' || over.id === 'drag-handle'
 
-          if (oldIndex !== -1 && newIndex !== -1) {
-            return arrayMove(currentData, oldIndex, newIndex)
-          }
-          return currentData
-        })
+    if (isColumn && overIsColumn && columnOrder.includes(active.id as string) && columnOrder.includes(over.id as string)) {
+      setColumnOrder(oldOrder => {
+        const oldIndex = oldOrder.indexOf(active.id as string)
+        const newIndex = oldOrder.indexOf(over.id as string)
+
+        // Pin static columns: drag-handle (0) and row-label (1)
+        if (newIndex < 2) return oldOrder;
+
+        return arrayMove(oldOrder, oldIndex, newIndex)
+      })
+    }
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveId(null)
+    setActiveItem(null)
+
+    if (!over) return
+
+    // If it was a column drag, sync the final local order to Redux
+    const isColumn = columnHeaders.some(c => c.id === active.id)
+    if (isColumn) {
+      // Filter out static columns to get just the data column IDs in order
+      const newDataColumnIds = columnOrder.slice(2)
+
+      // Reorder the original columnHeaders array to match this ID list
+      const newColumnHeaders = newDataColumnIds.map(id => columnHeaders.find(c => c.id === id)).filter(Boolean) as typeof columnHeaders
+
+      dispatch(setColumnHeaders(newColumnHeaders))
+      return
+    }
+
+    if (active.id !== over.id) {
+      const isRow = rowHeaders.some(row => row.id === active.id)
+      if (isRow) {
+        dispatch(moveRow({ activeId: active.id as string, overId: over.id as string }))
       }
     }
   }
 
-  const toggleGrouping = (columnId: string) => {
-    setGrouping(prev => {
-      if (prev.includes(columnId)) {
-        return prev.filter(id => id !== columnId)
-      }
-      return [...prev, columnId]
-    })
+  const dropAnimationConfig: DropAnimation = {
+    sideEffects: defaultDropAnimationSideEffects({
+      styles: {
+        active: {
+          opacity: '0.4',
+        },
+      },
+    }),
   }
 
-  const sensors = useSensors(useSensor(MouseSensor, {}), useSensor(TouchSensor, {}), useSensor(KeyboardSensor, {}))
+  const rowIds = rowHeaders.map(r => r.id)
 
   return (
-    <div className='w-full space-y-4'>
-      <div className="flex items-center gap-2 rounded-md border bg-muted/40 p-2">
-        <LayersIcon className="text-muted-foreground size-4" />
-        <span className="text-muted-foreground text-sm font-medium">Group by:</span>
-        <div className="flex flex-wrap gap-2">
-          {grouping.map(groupId => {
-            const column = table.getColumn(groupId)
-            return (
-              <Badge key={groupId} variant="secondary" className="gap-1">
-                {column?.columnDef.header as string}
-                <button
-                  onClick={() => toggleGrouping(groupId)}
-                  className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            )
-          })}
-
-          <div className="flex gap-1">
-            {table.getAllColumns()
-              .filter(column => column.getCanGroup() && !grouping.includes(column.id) && column.id !== 'drag')
-              .map(column => (
-                <Button
-                  key={column.id}
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-xs"
-                  onClick={() => toggleGrouping(column.id)}
-                >
-                  + {column.columnDef.header as string || column.id}
-                </Button>
-              ))
-            }
-          </div>
-        </div>
-      </div>
-
-      <div className='rounded-md border'>
-        <DndContext
-          id={useId()}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-          sensors={sensors}
-        >
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map(headerGroup => (
-                <TableRow key={headerGroup.id} className='bg-muted/50 [&>th]:border-t-0'>
-                  <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
-                    {headerGroup.headers.map(header => (
-                      <DraggableTableHeader key={header.id} header={header} />
-                    ))}
-                  </SortableContext>
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {/* If grouped, we don't use SortableContext for rows to disable dragging */}
-              {grouping.length > 0 ? (
-                table.getRowModel().rows.map(row => (
-                  <GroupableRow key={row.id} row={row} columnOrder={columnOrder} />
-                ))
-              ) : (
-                <SortableContext items={tableData.map(d => d.employeeId)} strategy={verticalListSortingStrategy}>
-                  {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map(row => (
-                      <DraggableRow key={row.original.employeeId} row={row} columnOrder={columnOrder} />
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={allColumns.length} className='h-24 text-center'>
-                        No results.
-                      </TableCell>
-                    </TableRow>
-                  )}
+    <DndContext
+      id={useId()}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver} // Added
+      onDragEnd={handleDragEnd}
+      sensors={sensors}
+    >
+      <div className="rounded-md border bg-background">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map(headerGroup => (
+              <TableRow key={headerGroup.id}>
+                <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
+                  {headerGroup.headers.map(header => {
+                    // Render static headers as non-draggable
+                    if (header.column.id === 'drag-handle' || header.column.id === 'row-label') {
+                      return (
+                        <TableHead key={header.id} className={header.column.id === 'drag-handle' ? 'w-10' : ''}>
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableHead>
+                      )
+                    }
+                    return (
+                      <DraggableColumnHeader key={header.id} header={header} />
+                    )
+                  })}
                 </SortableContext>
-              )}
-            </TableBody>
-          </Table>
-        </DndContext>
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
+              {table.getRowModel().rows.map(row => (
+                <DraggableRow key={row.id} row={row} />
+              ))}
+            </SortableContext>
+          </TableBody>
+        </Table>
       </div>
-      <p className='text-muted-foreground text-center text-sm'>
-        {grouping.length > 0 ? "Row dragging disabled while grouped" : "Data table with draggable columns and rows"}
-      </p>
-    </div>
+
+      <DragOverlay dropAnimation={dropAnimationConfig}>
+        {activeId ? (
+          activeItem?.type === 'column' ? (
+            <div className="flex flex-col bg-background border rounded shadow-md opacity-90 overflow-hidden min-w-[150px]">
+              <div className="flex h-12 items-center px-4 py-2 border-b bg-muted/50 text-left align-middle font-medium text-muted-foreground">
+                <span className="font-medium text-sm">
+                  {columnHeaders.find(c => c.id === activeId)?.label}
+                </span>
+              </div>
+              <div className="flex flex-col">
+                {table.getRowModel().rows.map(row => {
+                  const cellData = row.original.data[activeId as string];
+                  return (
+                    <div key={row.id} className="flex h-16 items-center px-4 border-b last:border-0 align-middle">
+                      <div className="text-sm">{cellData}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : activeItem?.type === 'row' ? (
+            <div className="bg-background border rounded shadow-md opacity-90">
+              {(() => {
+                const row = table.getRowModel().rows.find(r => r.original.id === activeId)
+                if (!row) return null
+
+                return (
+                  <Table>
+                    <TableBody>
+                      <TableRow className="bg-muted/50 border-none">
+                        {row.getVisibleCells().map(cell => (
+                          <TableCell key={cell.id} style={{ width: cell.column.getSize() }}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                )
+              })()}
+            </div>
+          ) : null
+        ) : null}
+      </DragOverlay>
+
+    </DndContext>
   )
 }
 
-const GroupableRow = ({ row, columnOrder }: { row: any, columnOrder: string[] }) => {
-  if (row.getIsGrouped()) {
-    return (
-      <TableRow>
-        <TableCell colSpan={columnOrder.length} className="bg-muted/50 p-0 font-medium text-foreground">
-          <Button
-            variant="ghost"
-            onClick={row.getToggleExpandedHandler()}
-            className="flex h-10 w-full items-center justify-start rounded-none pl-2 hover:bg-transparent"
-            style={{ paddingLeft: `${row.depth * 2}rem` }}
-          >
-            {row.getIsExpanded() ? (
-              <ChevronDownIcon className="mr-2 size-4" />
-            ) : (
-              <ChevronRightIcon className="mr-2 size-4" />
-            )}
-            <span className="mr-2">
-              {row.groupingValue as React.ReactNode}
-            </span>
-            <span className="text-muted-foreground font-normal">({row.subRows.length})</span>
-          </Button>
-        </TableCell>
-      </TableRow>
-    )
+// --- Sub Components ---
+
+const DraggableColumnHeader = ({ header }: { header: any }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: header.column.id,
+  })
+
+  const style: CSSProperties = {
+    // If we are strictly resorting DOM, we might not need transform?
+    // dnd-kit still provides transform for the active item and the "flight" path.
+    // For other items, `SortableContext` + `strategy` usually handles transforms if we are optimistic.
+    // But since we are physically moving them with `columnOrder`, `dnd-kit`'s default sortable strategy
+    // might double-apply transform if not careful.
+    // Actually, if we update `items` prop of SortableContext, dnd-kit accounts for the new index.
+    // It should be fine.
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.3 : 1,
+    position: 'relative',
+    cursor: isDragging ? 'grabbing' : 'grab',
+    whiteSpace: 'nowrap'
   }
 
   return (
-    <TableRow data-state={row.getIsSelected() && 'selected'}>
-      {row.getVisibleCells().map((cell: any) => {
-        // Check if this cell is in the drag column
-        const isDragColumn = cell.column.id === 'drag';
-
-        return (
-          <TableCell
-            key={cell.id}
-            className={isDragColumn ? 'sticky left-0 z-20 bg-background' : ''}
-          >
-            {cell.getIsGrouped() ? (
-              // If it's a grouped cell, we don't render it again as it's in the header
-              null
-            ) : cell.getIsAggregated() ? (
-              // If aggregated, render aggregation (not implemented here, but good to have placeholder)
-              flexRender(
-                cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
-                cell.getContext()
-              )
-            ) : cell.getIsPlaceholder() ? (
-              null
-            ) : (
-              // Add indentation to the first non-drag column if inside a group
-              <div className="flex items-center">
-                {cell.column.id === 'firstName' && (
-                  <span style={{ paddingLeft: `${row.depth * 2}rem` }} />
-                )}
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </div>
-            )}
-          </TableCell>
-        )
-      })}
-    </TableRow>
+    <TableHead ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <div className="flex items-center space-x-2 select-none">
+        {flexRender(header.column.columnDef.header, header.getContext())}
+      </div>
+    </TableHead>
   )
 }
 
-const DraggableRow = ({ row, columnOrder }: { row: any, columnOrder: string[] }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: row.original.employeeId
+const DraggableRow = ({ row }: { row: any }) => {
+  const { transform, transition, setNodeRef, isDragging, attributes, listeners } = useSortable({
+    id: row.original.id,
   })
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.8 : 1,
+    opacity: isDragging ? 0.3 : 1,
+    position: 'relative',
     zIndex: isDragging ? 1 : 0,
-    position: 'relative',
   }
 
   return (
-    <TableRow
-      ref={setNodeRef}
-      style={style}
-      data-state={row.getIsSelected() && 'selected'}
-      className="group"
-    >
-      {row.getVisibleCells().map((cell: any) => (
-        <SortableContext key={cell.id} items={columnOrder} strategy={horizontalListSortingStrategy}>
-          <DragAlongCell
-            key={cell.id}
-            cell={cell}
-            dragHandleProps={cell.column.id === 'drag' ? { ...attributes, ...listeners } : undefined}
-          />
-        </SortableContext>
-      ))}
-    </TableRow>
+    <RowDragContext.Provider value={{ attributes, listeners }}>
+      <TableRow ref={setNodeRef} style={style} className={isDragging ? "bg-muted/50" : ""}>
+        {row.getVisibleCells().map((cell: any) => (
+          <TableCell key={cell.id}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    </RowDragContext.Provider>
   )
 }
 
-const DraggableTableHeader = ({ header }: { header: Header<Employee, unknown> }) => {
-  const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({
-    id: header.column.id
-  })
-
-  const style: CSSProperties = {
-    opacity: isDragging ? 0.8 : 1,
-    position: 'relative',
-    transform: CSS.Translate.toString(transform),
-    transition,
-    whiteSpace: 'nowrap',
-    width: header.column.getSize(),
-    zIndex: isDragging ? 1 : 0
-  }
+const RowDragHandle = () => {
+  const { attributes, listeners } = React.useContext(RowDragContext) || {}
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <TableHead
-            ref={setNodeRef}
-            className={`before:bg-border relative h-10 border-t before:absolute before:inset-y-0 before:left-0 before:w-px first:before:bg-transparent ${header.column.id === 'drag' ? 'sticky left-0 z-20 bg-background' : ''
-              }`}
-            style={style}
-            aria-sort={
-              header.column.getIsSorted() === 'asc'
-                ? 'ascending'
-                : header.column.getIsSorted() === 'desc'
-                  ? 'descending'
-                  : 'none'
-            }
-          >
-            <div className='flex items-center justify-start gap-0.5'>
-              <Button
-                size='icon'
-                variant='ghost'
-                className='-ml-2 size-7'
-                {...attributes}
-                {...listeners}
-                aria-label='Drag to reorder'
-              >
-                <GripVerticalIcon className='opacity-60' aria-hidden='true' />
-              </Button>
-              <span className='grow truncate'>
-                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-              </span>
-              <Button
-                size='icon'
-                variant='ghost'
-                className='group -mr-1 size-7'
-                onClick={header.column.getToggleSortingHandler()}
-                onKeyDown={e => {
-                  if (header.column.getCanSort() && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault()
-                    header.column.getToggleSortingHandler()?.(e)
-                  }
-                }}
-                aria-label='Toggle sorting'
-              >
-                {{
-                  asc: <ChevronUpIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />,
-                  desc: <ChevronDownIcon className='shrink-0 opacity-60' size={16} aria-hidden='true' />
-                }[header.column.getIsSorted() as string] ?? (
-                    <ChevronUpIcon className='shrink-0 opacity-0 group-hover:opacity-60' size={16} aria-hidden='true' />
-                  )}
-              </Button>
-              <div
-                onMouseDown={header.getResizeHandler()}
-                onTouchStart={header.getResizeHandler()}
-                className={`absolute right-0 top-0 h-full w-1 cursor-col-resize select-none touch-none bg-primary/10 hover:bg-primary/50 group-hover:bg-primary/30 ${header.column.getIsResizing() ? 'bg-primary isResizing' : ''
-                  } ${!header.column.getCanResize() ? 'hidden' : ''}`}
-              />
-            </div>
-          </TableHead>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{(header.column.columnDef.meta as any)?.description || header.column.id}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Button variant="ghost" size="icon" className="cursor-grab hover:bg-muted" {...attributes} {...listeners}>
+      <GripVerticalIcon className="size-4 text-muted-foreground" />
+    </Button>
   )
 }
-
-const DragAlongCell = ({ cell, dragHandleProps }: { cell: Cell<Employee, unknown>, dragHandleProps?: any }) => {
-  const { isDragging, setNodeRef, transform, transition } = useSortable({
-    id: cell.column.id
-  })
-
-  const style: CSSProperties = {
-    opacity: isDragging ? 0.8 : 1,
-    position: 'relative',
-    transform: CSS.Translate.toString(transform),
-    transition,
-    width: cell.column.getSize(),
-    zIndex: isDragging ? 1 : 0
-  }
-
-  return (
-    <TableCell
-      ref={setNodeRef}
-      className={`truncate ${cell.column.id === 'drag' ? 'sticky left-0 z-20 bg-background' : ''}`}
-      style={style}
-    >
-      {dragHandleProps && (
-        <Button variant="ghost" size="icon" className="mr-2 size-6 cursor-grab" {...dragHandleProps}>
-          <GripVerticalIcon className="size-4" />
-        </Button>
-      )}
-      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-    </TableCell>
-  )
-}
-
-export default DraggableColumnDataTableDemo

@@ -1,5 +1,6 @@
 import { configureStore, createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import { type TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
+import matrixSlice from './store/matrixSlice'
 
 // Define the state interface
 interface SidebarState {
@@ -78,6 +79,7 @@ export const { setDoeName, setProject, setBlock, setNetVer, setRevision, setEcoN
 export const store = configureStore({
     reducer: {
         sidebar: sidebarSlice.reducer,
+        matrix: matrixSlice,
     },
 })
 
