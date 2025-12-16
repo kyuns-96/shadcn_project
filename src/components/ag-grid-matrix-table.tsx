@@ -12,6 +12,7 @@ import {
   type RowDragEndEvent,
   type IRowNode,
   type CellClickedEvent,
+  type GridApi,
 } from 'ag-grid-community'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
@@ -42,11 +43,17 @@ export default function AgGridMatrixTable() {
     }))
   }, [rowHeaders])
 
-  // Helper to check if a row is the first of its group
-  const isFirstOfGroup = useCallback(
-    (rowIndex: number, groupName: string): boolean => {
+  // Helper to check if a row is the first of its group using grid API for accurate display order
+  const isFirstOfGroupFromApi = useCallback(
+    (api: GridApi<RowData> | undefined, rowIndex: number, groupName: string): boolean => {
       if (rowIndex === 0) return true
-      const prevGroup = rowData[rowIndex - 1]?.rowGroup
+      if (!api) {
+        // Fallback to rowData if API is not available
+        const prevGroup = rowData[rowIndex - 1]?.rowGroup
+        return prevGroup !== groupName
+      }
+      const prevNode = api.getDisplayedRowAtIndex(rowIndex - 1)
+      const prevGroup = prevNode?.data?.rowGroup
       return prevGroup !== groupName
     },
     [rowData]
@@ -61,18 +68,23 @@ export default function AgGridMatrixTable() {
       const rowIndex = params.node?.rowIndex
       if (rowIndex === undefined || rowIndex === null) return 1
 
-      // Check if this is the first row of a group
+      const api = params.api
+
+      // Check if this is the first row of a group using displayed row order
       if (rowIndex > 0) {
-        const prevRowGroup = rowData[rowIndex - 1]?.rowGroup
+        const prevNode = api?.getDisplayedRowAtIndex(rowIndex - 1)
+        const prevRowGroup = prevNode?.data?.rowGroup
         if (prevRowGroup === currentRowGroup) {
           return 1
         }
       }
 
-      // Count consecutive rows with the same group
+      // Count consecutive rows with the same group using displayed row order
+      const displayedRowCount = api?.getDisplayedRowCount() || rowData.length
       let spanCount = 1
-      for (let i = rowIndex + 1; i < rowData.length; i++) {
-        if (rowData[i]?.rowGroup === currentRowGroup) {
+      for (let i = rowIndex + 1; i < displayedRowCount; i++) {
+        const nextNode = api?.getDisplayedRowAtIndex(i)
+        if (nextNode?.data?.rowGroup === currentRowGroup) {
           spanCount++
         } else {
           break
@@ -89,16 +101,18 @@ export default function AgGridMatrixTable() {
       const classes = ['ag-row-group-cell']
       const currentRowGroup = params.data?.rowGroup
       const rowIndex = params.node?.rowIndex
+      const api = params.api
 
       if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
-        const prevRowGroup = rowData[rowIndex - 1]?.rowGroup
+        const prevNode = api?.getDisplayedRowAtIndex(rowIndex - 1)
+        const prevRowGroup = prevNode?.data?.rowGroup
         if (prevRowGroup === currentRowGroup) {
           classes.push('ag-row-group-hidden')
         }
       }
       return classes
     },
-    [rowData]
+    []
   )
 
   // Select all rows in a group
@@ -235,14 +249,18 @@ export default function AgGridMatrixTable() {
       cellClass: rowGroupCellClass,
       rowDrag: (params) => {
         // Only allow drag from the first row of the group
+        // Use API to get actual displayed row order for accurate check during drag
         const rowIndex = params.node?.rowIndex
         if (rowIndex === undefined || rowIndex === null) return false
-        return isFirstOfGroup(rowIndex, params.data?.rowGroup || '')
+        return isFirstOfGroupFromApi(params.api, rowIndex, params.data?.rowGroup || '')
       },
       cellStyle: (params): CellStyle | null => {
         const rowIndex = params.node?.rowIndex
         if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
-          const prevRowGroup = rowData[rowIndex - 1]?.rowGroup
+          // Use API to get actual displayed row for accurate check during drag
+          const api = params.api
+          const prevNode = api?.getDisplayedRowAtIndex(rowIndex - 1)
+          const prevRowGroup = prevNode?.data?.rowGroup
           if (prevRowGroup === params.data?.rowGroup) {
             return { display: 'none' } as CellStyle
           }
@@ -285,7 +303,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
