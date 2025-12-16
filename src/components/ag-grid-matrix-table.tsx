@@ -7,7 +7,6 @@ import {
   ModuleRegistry,
   type ColDef,
   type RowSpanParams,
-  type CellClassParams,
   type CellStyle,
   type RowDragEndEvent,
   type RowDragEnterEvent,
@@ -46,10 +45,12 @@ export default function AgGridMatrixTable() {
 
   // Helper to check if a row is the first of its group
   const isFirstOfGroup = useCallback(
-    (rowIndex: number, groupName: string): boolean => {
+    (rowIndex: number): boolean => {
       if (rowIndex === 0) return true
+      if (rowIndex >= rowData.length) return false
+      const currentGroup = rowData[rowIndex]?.rowGroup
       const prevGroup = rowData[rowIndex - 1]?.rowGroup
-      return prevGroup !== groupName
+      return prevGroup !== currentGroup
     },
     [rowData]
   )
@@ -63,12 +64,9 @@ export default function AgGridMatrixTable() {
       const rowIndex = params.node?.rowIndex
       if (rowIndex === undefined || rowIndex === null) return 1
 
-      // Check if this is the first row of a group
-      if (rowIndex > 0) {
-        const prevRowGroup = rowData[rowIndex - 1]?.rowGroup
-        if (prevRowGroup === currentRowGroup) {
-          return 1
-        }
+      // Only span from the first row of each group
+      if (!isFirstOfGroup(rowIndex)) {
+        return 1
       }
 
       // Count consecutive rows with the same group
@@ -82,25 +80,7 @@ export default function AgGridMatrixTable() {
       }
       return spanCount
     },
-    [rowData]
-  )
-
-  // Cell class for row group to show/hide based on span
-  const rowGroupCellClass = useCallback(
-    (params: CellClassParams<RowData>): string | string[] => {
-      const classes = ['ag-row-group-cell']
-      const currentRowGroup = params.data?.rowGroup
-      const rowIndex = params.node?.rowIndex
-
-      if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
-        const prevRowGroup = rowData[rowIndex - 1]?.rowGroup
-        if (prevRowGroup === currentRowGroup) {
-          classes.push('ag-row-group-hidden')
-        }
-      }
-      return classes
-    },
-    [rowData]
+    [rowData, isFirstOfGroup]
   )
 
   // Handle drag enter - select appropriate rows based on which column drag started from
@@ -205,8 +185,9 @@ export default function AgGridMatrixTable() {
     (params: ICellRendererParams<RowData>) => {
       const rowIndex = params.node?.rowIndex ?? 0
       const value = params.value as string
-      const isFirst = isFirstOfGroup(rowIndex, value)
+      const isFirst = isFirstOfGroup(rowIndex)
 
+      // For non-first rows, render empty (the cell is covered by row span)
       if (!isFirst) {
         return null
       }
@@ -234,6 +215,24 @@ export default function AgGridMatrixTable() {
     []
   )
 
+  // Cell style for Group column
+  const groupCellStyle = useCallback(
+    (params: { node?: { rowIndex?: number | null } }): CellStyle => {
+      const rowIndex = params.node?.rowIndex
+      const isFirst = rowIndex !== undefined && rowIndex !== null && isFirstOfGroup(rowIndex)
+      
+      return {
+        backgroundColor: 'var(--ag-header-background-color)',
+        borderRight: '1px solid var(--ag-border-color)',
+        display: 'flex',
+        alignItems: 'center',
+        // Hide content for non-first rows (they are covered by the span)
+        visibility: isFirst ? 'visible' : 'hidden',
+      } as CellStyle
+    },
+    [isFirstOfGroup]
+  )
+
   // Column definitions
   const columnDefs: ColDef<RowData>[] = useMemo(() => {
     // Row header group column (with row span)
@@ -245,32 +244,17 @@ export default function AgGridMatrixTable() {
       lockPosition: true,
       suppressMovable: true,
       rowSpan: rowGroupRowSpan,
-      cellClass: rowGroupCellClass,
       cellRenderer: GroupCellRenderer,
+      cellStyle: groupCellStyle,
       rowDrag: (params) => {
         // Only allow drag from the first row of the group
         const rowIndex = params.node?.rowIndex
         if (rowIndex === undefined || rowIndex === null) return false
-        return isFirstOfGroup(rowIndex, params.data?.rowGroup || '')
-      },
-      cellStyle: (params): CellStyle | null => {
-        const rowIndex = params.node?.rowIndex
-        if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
-          const prevRowGroup = rowData[rowIndex - 1]?.rowGroup
-          if (prevRowGroup === params.data?.rowGroup) {
-            return { display: 'none' } as CellStyle
-          }
-        }
-        return {
-          display: 'flex',
-          alignItems: 'center',
-          backgroundColor: 'var(--ag-header-background-color)',
-          borderRight: '1px solid var(--ag-border-color)',
-        } as CellStyle
+        return isFirstOfGroup(rowIndex)
       },
     }
 
-    // Row header column with drag icon
+    // Row header column with drag icon (NO row spanning)
     const rowHeaderCol: ColDef<RowData> = {
       field: 'rowHeader',
       headerName: 'Row Header',
@@ -283,6 +267,8 @@ export default function AgGridMatrixTable() {
       cellStyle: {
         backgroundColor: 'var(--ag-header-background-color)',
         borderRight: '1px solid var(--ag-border-color)',
+        display: 'flex',
+        alignItems: 'center',
       },
     }
 
@@ -295,7 +281,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup, GroupCellRenderer, RowHeaderCellRenderer])
+  }, [columnHeaders, rowGroupRowSpan, isFirstOfGroup, GroupCellRenderer, RowHeaderCellRenderer, groupCellStyle])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
