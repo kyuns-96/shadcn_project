@@ -12,9 +12,11 @@ import {
   type RowDragEndEvent,
   type RowDragEnterEvent,
   type IRowNode,
+  type ICellRendererParams,
 } from 'ag-grid-community'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
+import { GripVertical } from 'lucide-react'
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -111,12 +113,7 @@ export default function AgGridMatrixTable() {
       const data = draggedNode?.data
       if (!data) return
 
-      // Check which column the drag originated from by checking the event
-      // We detect this by checking if the dragged node is from the group column
-      // by looking at the vDirection (if dragging from group, we select all group rows)
-      
-      // Get the column from the event - AG Grid provides this in the overIndex
-      // We'll use a workaround: check the mouse event target
+      // Get the column from the event target
       const mouseEvent = event.event as MouseEvent
       const target = mouseEvent?.target as HTMLElement
       const cell = target?.closest('.ag-cell')
@@ -203,18 +200,53 @@ export default function AgGridMatrixTable() {
     [rowHeaders, dispatch]
   )
 
+  // Cell renderer for Group column with drag icon
+  const GroupCellRenderer = useCallback(
+    (params: ICellRendererParams<RowData>) => {
+      const rowIndex = params.node?.rowIndex ?? 0
+      const value = params.value as string
+      const isFirst = isFirstOfGroup(rowIndex, value)
+
+      if (!isFirst) {
+        return null
+      }
+
+      return (
+        <div className="flex items-center gap-2 w-full h-full">
+          <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 cursor-grab" />
+          <span className="font-semibold">{value}</span>
+        </div>
+      )
+    },
+    [isFirstOfGroup]
+  )
+
+  // Cell renderer for Row Header column with drag icon
+  const RowHeaderCellRenderer = useCallback(
+    (params: ICellRendererParams<RowData>) => {
+      return (
+        <div className="flex items-center gap-2 w-full h-full">
+          <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 cursor-grab" />
+          <span>{params.value}</span>
+        </div>
+      )
+    },
+    []
+  )
+
   // Column definitions
   const columnDefs: ColDef<RowData>[] = useMemo(() => {
     // Row header group column (with row span)
     const rowGroupCol: ColDef<RowData> = {
       field: 'rowGroup',
       headerName: 'Group',
-      width: 120,
+      width: 140,
       pinned: 'left',
       lockPosition: true,
       suppressMovable: true,
       rowSpan: rowGroupRowSpan,
       cellClass: rowGroupCellClass,
+      cellRenderer: GroupCellRenderer,
       rowDrag: (params) => {
         // Only allow drag from the first row of the group
         const rowIndex = params.node?.rowIndex
@@ -232,16 +264,13 @@ export default function AgGridMatrixTable() {
         return {
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
           backgroundColor: 'var(--ag-header-background-color)',
-          fontWeight: '600',
           borderRight: '1px solid var(--ag-border-color)',
-          cursor: 'grab',
         } as CellStyle
       },
     }
 
-    // Row header column
+    // Row header column with drag icon
     const rowHeaderCol: ColDef<RowData> = {
       field: 'rowHeader',
       headerName: 'Row Header',
@@ -250,11 +279,10 @@ export default function AgGridMatrixTable() {
       lockPosition: true,
       suppressMovable: true,
       rowDrag: true,
+      cellRenderer: RowHeaderCellRenderer,
       cellStyle: {
-        fontWeight: 500,
         backgroundColor: 'var(--ag-header-background-color)',
         borderRight: '1px solid var(--ag-border-color)',
-        cursor: 'grab',
       },
     }
 
@@ -267,7 +295,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup, GroupCellRenderer, RowHeaderCellRenderer])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(

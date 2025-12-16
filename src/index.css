@@ -165,40 +165,55 @@
   background-color: var(--accent) !important;
 }
 
-/* Make AG Grid row drag icon invisible but functional */
-.ag-theme-quartz .ag-row-drag {
+/* Position AG Grid drag icon to cover the custom icon area */
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .ag-drag-handle,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] .ag-drag-handle,
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .ag-row-drag,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] .ag-row-drag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 28px;
+  height: 100%;
   opacity: 0;
-  width: 0;
-  min-width: 0;
-  padding: 0;
-  margin: 0;
+  cursor: grab;
+  z-index: 10;
 }
 
-/* Make the drag zone cover the entire cell */
+/* Make cell position relative for absolute positioning */
+.ag-theme-quartz .ag-cell[col-id="rowGroup"],
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] {
+  position: relative;
+}
+
+/* Make the cell wrapper fill the cell */
 .ag-theme-quartz .ag-cell[col-id="rowGroup"] .ag-cell-wrapper,
 .ag-theme-quartz .ag-cell[col-id="rowHeader"] .ag-cell-wrapper {
   width: 100%;
+  height: 100%;
 }
 
 .ag-theme-quartz .ag-cell[col-id="rowGroup"] .ag-cell-value,
 .ag-theme-quartz .ag-cell[col-id="rowHeader"] .ag-cell-value {
   width: 100%;
+  height: 100%;
 }
 
-/* Draggable row header columns */
-.ag-theme-quartz .ag-cell[col-id="rowGroup"],
-.ag-theme-quartz .ag-cell[col-id="rowHeader"] {
+/* Drag icon styling */
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .cursor-grab,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] .cursor-grab {
   cursor: grab;
 }
 
-.ag-theme-quartz .ag-cell[col-id="rowGroup"]:active,
-.ag-theme-quartz .ag-cell[col-id="rowHeader"]:active {
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .cursor-grab:active,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] .cursor-grab:active {
   cursor: grabbing;
 }
 
-.ag-theme-quartz .ag-cell[col-id="rowGroup"]:hover,
-.ag-theme-quartz .ag-cell[col-id="rowHeader"]:hover {
-  background-color: var(--accent) !important;
+/* Hover effect on drag icon */
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .cursor-grab:hover,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] .cursor-grab:hover {
+  color: var(--foreground);
 }
 
 /* Selected row styling */
