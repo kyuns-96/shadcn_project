@@ -184,9 +184,14 @@
   background-color: var(--accent) !important;
 }
 
-/* Selected row styling */
-.ag-theme-quartz .ag-row-selected .ag-cell[col-id="rowGroup"],
+/* Selected row styling - only highlight Row Header, not Group column */
 .ag-theme-quartz .ag-row-selected .ag-cell[col-id="rowHeader"] {
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
+}
+
+/* Group column should keep its original styling even when row is selected */
+.ag-theme-quartz .ag-row-selected .ag-cell[col-id="rowGroup"] {
+  background-color: var(--ag-header-background-color) !important;
+  color: var(--foreground) !important;
 }
