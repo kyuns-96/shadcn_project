@@ -69,10 +69,12 @@ export default function AgGridMatrixTable() {
         return 1
       }
 
-      // Count consecutive rows with the same group
+      // Count consecutive rows with the same group using displayed row order
+      const displayedRowCount = api?.getDisplayedRowCount() || rowData.length
       let spanCount = 1
-      for (let i = rowIndex + 1; i < rowData.length; i++) {
-        if (rowData[i]?.rowGroup === currentRowGroup) {
+      for (let i = rowIndex + 1; i < displayedRowCount; i++) {
+        const nextNode = api?.getDisplayedRowAtIndex(i)
+        if (nextNode?.data?.rowGroup === currentRowGroup) {
           spanCount++
         } else {
           break
@@ -248,6 +250,7 @@ export default function AgGridMatrixTable() {
       cellStyle: groupCellStyle,
       rowDrag: (params) => {
         // Only allow drag from the first row of the group
+        // Use API to get actual displayed row order for accurate check during drag
         const rowIndex = params.node?.rowIndex
         if (rowIndex === undefined || rowIndex === null) return false
         return isFirstOfGroup(rowIndex)
