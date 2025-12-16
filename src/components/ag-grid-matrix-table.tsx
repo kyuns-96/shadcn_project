@@ -185,8 +185,27 @@ export default function AgGridMatrixTable() {
       if (!overData) return
 
       // Get all dragged nodes (selected rows for multi-row drag)
-      const movingNodes = event.nodes || [event.node]
+      let movingNodes = event.nodes || [event.node]
       if (movingNodes.length === 0) return
+
+      // Check if this is a group drag (single row dragged from Group column)
+      // If the dragged row is the first of its group and only one row is being dragged,
+      // we should move the entire group
+      const draggedNode = event.node
+      const draggedData = draggedNode.data
+      const dragColumnId = event.column?.getColId()
+      
+      if (dragColumnId === 'rowGroup' && draggedData && movingNodes.length === 1) {
+        // This is a group drag - collect all rows in this group
+        const groupName = draggedData.rowGroup
+        const groupNodes: IRowNode<RowData>[] = []
+        api.forEachNode((node: IRowNode<RowData>) => {
+          if (node.data?.rowGroup === groupName) {
+            groupNodes.push(node)
+          }
+        })
+        movingNodes = groupNodes
+      }
 
       // Get the IDs of rows being moved
       const movingIds = new Set(movingNodes.map((n) => n.data?.id).filter(Boolean))
@@ -203,7 +222,7 @@ export default function AgGridMatrixTable() {
       const overIndex = currentOrder.findIndex((row) => row.id === overData.id)
       if (overIndex === -1) return
 
-      // Separate moving rows from other rows
+      // Separate moving rows from other rows, preserving their relative order
       const movingRows = currentOrder.filter((row) => movingIds.has(row.id))
       const otherRows = currentOrder.filter((row) => !movingIds.has(row.id))
 
