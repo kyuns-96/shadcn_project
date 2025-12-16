@@ -342,10 +342,12 @@ export default function AgGridMatrixTable() {
         defaultColDef={defaultColDef}
         suppressRowTransform={true}
         animateRows={true}
-        rowDragManaged={true}
+        rowDragManaged={false}
+        rowDragEntireRow={false}
         rowDragMultiRow={true}
         rowSelection="multiple"
         suppressRowClickSelection={true}
+        suppressMoveWhenRowDragging={false}
         getRowId={(params) => params.data.id}
         onRowDragEnd={onRowDragEnd}
         onCellClicked={onCellClicked}
