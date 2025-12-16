@@ -165,9 +165,24 @@
   background-color: var(--accent) !important;
 }
 
-/* Hide default AG Grid row drag icon */
+/* Make AG Grid row drag icon invisible but functional */
 .ag-theme-quartz .ag-row-drag {
-  display: none !important;
+  opacity: 0;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+}
+
+/* Make the drag zone cover the entire cell */
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .ag-cell-wrapper,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] .ag-cell-wrapper {
+  width: 100%;
+}
+
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .ag-cell-value,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] .ag-cell-value {
+  width: 100%;
 }
 
 /* Draggable row header columns */
