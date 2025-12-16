@@ -60,9 +60,28 @@ const matrixSlice = createSlice({
       if (oldIndex !== -1 && newIndex !== -1) {
         state.rowHeaders = arrayMove(state.rowHeaders, oldIndex, newIndex)
       }
+    },
+    moveGroup: (state, action: PayloadAction<{ groupName: string; targetIndex: number }>) => {
+      const { groupName, targetIndex } = action.payload
+      
+      // Find all rows belonging to this group
+      const groupRows = state.rowHeaders.filter(row => row.rowGroup === groupName)
+      const otherRows = state.rowHeaders.filter(row => row.rowGroup !== groupName)
+      
+      if (groupRows.length === 0) return
+      
+      // Insert the group at the target position
+      const result = [...otherRows]
+      const insertAt = Math.min(Math.max(0, targetIndex), result.length)
+      result.splice(insertAt, 0, ...groupRows)
+      
+      state.rowHeaders = result
+    },
+    reorderRows: (state, action: PayloadAction<MatrixState['rowHeaders']>) => {
+      state.rowHeaders = action.payload
     }
   }
 })
 
-export const { setColumnHeaders, setRowHeaders, moveColumn, moveRow } = matrixSlice.actions
+export const { setColumnHeaders, setRowHeaders, moveColumn, moveRow, moveGroup, reorderRows } = matrixSlice.actions
 export default matrixSlice.reducer

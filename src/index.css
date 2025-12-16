@@ -158,3 +158,24 @@
 .ag-theme-quartz .ag-pinned-left-cols-container .ag-cell {
   background-color: var(--muted);
 }
+
+/* Row drag styling */
+.ag-theme-quartz .ag-row-dragging {
+  opacity: 0.5;
+  background-color: var(--accent) !important;
+}
+
+.ag-theme-quartz .ag-row-drag {
+  cursor: grab;
+}
+
+.ag-theme-quartz .ag-row-drag:active {
+  cursor: grabbing;
+}
+
+/* Drag handle hover effect */
+.ag-theme-quartz .ag-cell[col-id="0"] .cursor-grab:hover,
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] .cursor-grab:hover {
+  background-color: var(--accent);
+  border-radius: 4px;
+}
