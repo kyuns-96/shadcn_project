@@ -118,3 +118,43 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* AG Grid Custom Styles */
+.ag-theme-quartz {
+  --ag-background-color: var(--background);
+  --ag-foreground-color: var(--foreground);
+  --ag-header-background-color: var(--muted);
+  --ag-header-foreground-color: var(--foreground);
+  --ag-border-color: var(--border);
+  --ag-row-border-color: var(--border);
+  --ag-odd-row-background-color: var(--background);
+  --ag-row-hover-color: var(--accent);
+  --ag-selected-row-background-color: var(--accent);
+  --ag-cell-horizontal-border: solid var(--border);
+}
+
+.dark .ag-theme-quartz {
+  --ag-background-color: var(--background);
+  --ag-foreground-color: var(--foreground);
+  --ag-header-background-color: var(--muted);
+  --ag-header-foreground-color: var(--foreground);
+  --ag-border-color: var(--border);
+  --ag-row-border-color: var(--border);
+  --ag-odd-row-background-color: var(--background);
+  --ag-row-hover-color: var(--accent);
+  --ag-selected-row-background-color: var(--accent);
+}
+
+/* Row spanning styles for group column */
+.ag-theme-quartz .ag-cell[col-id="rowGroup"] {
+  border-right: 1px solid var(--ag-border-color) !important;
+}
+
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] {
+  border-right: 1px solid var(--ag-border-color) !important;
+}
+
+/* Ensure pinned columns have proper styling */
+.ag-theme-quartz .ag-pinned-left-cols-container .ag-cell {
+  background-color: var(--muted);
+}

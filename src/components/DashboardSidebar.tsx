@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/sidebar'
 import { ModeToggle } from './mode-toggle'
 
-import DraggableColumnDataTableDemo from '@/components/shadcn-studio/data-table/data-table-08'
+import AgGridMatrixTable from '@/components/ag-grid-matrix-table'
 import ComboboxDemo from '@/components/shadcn-studio/combobox/combobox-01'
 import InputDemo from './shadcn-studio/input/doeInput'
 import ButtonCopyStateDemo from './shadcn-studio/button/button-28'
@@ -195,7 +195,7 @@ const DashboardSidebar = () => {
                             <ButtonDemo />
                             <ButtonCopyStateDemo />
                         </div>
-                        <DraggableColumnDataTableDemo />
+                        <AgGridMatrixTable />
                     </main>
                     <footer className='bg-card h-10 border-t px-4 sm:px-6'>
                         <div className='border-card-foreground/10 h-full bg-[repeating-linear-gradient(45deg,color-mix(in_oklab,var(--card-foreground)10%,transparent),color-mix(in_oklab,var(--card-foreground)10%,transparent)_1px,var(--card)_2px,var(--card)_15px)]' />

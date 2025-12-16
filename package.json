@@ -23,6 +23,8 @@
     "@reduxjs/toolkit": "^2.11.0",
     "@tailwindcss/vite": "^4.1.17",
     "@tanstack/react-table": "^8.21.3",
+    "ag-grid-community": "^35.0.0",
+    "ag-grid-react": "^35.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
