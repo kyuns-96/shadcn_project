@@ -48,15 +48,14 @@ export default function AgGridMatrixTable() {
     (api: GridApi<RowData> | undefined, rowIndex: number, groupName: string): boolean => {
       if (rowIndex === 0) return true
       if (!api) {
-        // Fallback to rowData if API is not available
-        const prevGroup = rowData[rowIndex - 1]?.rowGroup
-        return prevGroup !== groupName
+        // Fallback: assume it's the first if API is not available
+        return true
       }
       const prevNode = api.getDisplayedRowAtIndex(rowIndex - 1)
       const prevGroup = prevNode?.data?.rowGroup
       return prevGroup !== groupName
     },
-    [rowData]
+    []
   )
 
   // Calculate row span for row group column
@@ -69,10 +68,11 @@ export default function AgGridMatrixTable() {
       if (rowIndex === undefined || rowIndex === null) return 1
 
       const api = params.api
+      if (!api) return 1
 
       // Check if this is the first row of a group using displayed row order
       if (rowIndex > 0) {
-        const prevNode = api?.getDisplayedRowAtIndex(rowIndex - 1)
+        const prevNode = api.getDisplayedRowAtIndex(rowIndex - 1)
         const prevRowGroup = prevNode?.data?.rowGroup
         if (prevRowGroup === currentRowGroup) {
           return 1
@@ -80,10 +80,10 @@ export default function AgGridMatrixTable() {
       }
 
       // Count consecutive rows with the same group using displayed row order
-      const displayedRowCount = api?.getDisplayedRowCount() || rowData.length
+      const displayedRowCount = api.getDisplayedRowCount()
       let spanCount = 1
       for (let i = rowIndex + 1; i < displayedRowCount; i++) {
-        const nextNode = api?.getDisplayedRowAtIndex(i)
+        const nextNode = api.getDisplayedRowAtIndex(i)
         if (nextNode?.data?.rowGroup === currentRowGroup) {
           spanCount++
         } else {
@@ -92,7 +92,7 @@ export default function AgGridMatrixTable() {
       }
       return spanCount
     },
-    [rowData]
+    []
   )
 
   // Cell class for row group to show/hide based on span
