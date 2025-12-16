@@ -10,6 +10,9 @@ import {
   type CellClassParams,
   type CellStyle,
   type RowDragEndEvent,
+  type GridApi,
+  type IRowNode,
+  type RowDragCallbackParams,
 } from 'ag-grid-community'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
@@ -24,41 +27,6 @@ interface RowData {
   rowGroup: string
   rowHeader: string
   [key: string]: string
-}
-
-// Shared ref to track if group drag was initiated
-const dragModeRef = { current: 'row' as 'row' | 'group' }
-
-// Custom drag handle component for individual rows
-const RowDragHandleRenderer = () => {
-  return (
-    <div
-      className="flex items-center justify-center h-full cursor-grab"
-      onMouseDown={() => {
-        dragModeRef.current = 'row'
-      }}
-    >
-      <GripVertical className="w-4 h-4 text-muted-foreground" />
-    </div>
-  )
-}
-
-// Custom group drag handle component
-const GroupDragHandleRenderer = (props: { value: string; isFirstOfGroup: boolean }) => {
-  if (!props.isFirstOfGroup) {
-    return null
-  }
-  return (
-    <div
-      className="flex items-center justify-center h-full gap-1 cursor-grab font-semibold"
-      onMouseDown={() => {
-        dragModeRef.current = 'group'
-      }}
-    >
-      <GripVertical className="w-4 h-4 text-muted-foreground" />
-      <span>{props.value}</span>
-    </div>
-  )
 }
 
 export default function AgGridMatrixTable() {
@@ -82,14 +50,6 @@ export default function AgGridMatrixTable() {
       if (rowIndex === 0) return true
       const prevGroup = rowData[rowIndex - 1]?.rowGroup
       return prevGroup !== groupName
-    },
-    [rowData]
-  )
-
-  // Get all rows in a group
-  const getGroupRows = useCallback(
-    (groupName: string): RowData[] => {
-      return rowData.filter((row) => row.rowGroup === groupName)
     },
     [rowData]
   )
@@ -143,77 +103,123 @@ export default function AgGridMatrixTable() {
     [rowData]
   )
 
-  // Handle row drag end for individual rows
+  // Select all rows in a group when clicking on the group cell
+  const selectGroupRows = useCallback(
+    (groupName: string) => {
+      const api = gridRef.current?.api
+      if (!api) return
+
+      // Clear current selection
+      api.deselectAll()
+
+      // Select all rows in this group
+      api.forEachNode((node: IRowNode<RowData>) => {
+        if (node.data?.rowGroup === groupName) {
+          node.setSelected(true)
+        }
+      })
+    },
+    []
+  )
+
+  // Handle row drag end - process multi-row drag
   const onRowDragEnd = useCallback(
     (event: RowDragEndEvent<RowData>) => {
-      const movingNode = event.node
+      const api = gridRef.current?.api
+      if (!api) return
+
       const overNode = event.overNode
+      if (!overNode) return
 
-      if (!movingNode || !overNode || movingNode === overNode) return
-
-      const movingData = movingNode.data
       const overData = overNode.data
+      if (!overData) return
 
-      if (!movingData || !overData) return
+      // Get all dragged nodes (selected rows for multi-row drag)
+      const movingNodes = event.nodes || [event.node]
+      if (movingNodes.length === 0) return
 
-      // Check if we're dragging a group (from group column)
-      if (dragModeRef.current === 'group') {
-        // Moving entire group
-        const groupName = movingData.rowGroup
-        const groupRows = getGroupRows(groupName)
+      // Get the IDs of rows being moved
+      const movingIds = new Set(movingNodes.map((n) => n.data?.id).filter(Boolean))
 
-        // Find target position
-        const targetGroup = overData.rowGroup
-        let newRowData: RowData[]
-
-        if (targetGroup === groupName) {
-          // Dropped on same group, no change
-          dragModeRef.current = 'row'
-          return
+      // Get current order from grid
+      const currentOrder: RowData[] = []
+      api.forEachNodeAfterFilterAndSort((node: IRowNode<RowData>) => {
+        if (node.data) {
+          currentOrder.push(node.data)
         }
+      })
 
-        // Remove group rows from current position and insert at new position
-        const otherRows = rowData.filter((row) => row.rowGroup !== groupName)
-        const overIndex = otherRows.findIndex((row) => row.id === overData.id)
+      // Find the target index (where we're dropping)
+      const overIndex = currentOrder.findIndex((row) => row.id === overData.id)
+      if (overIndex === -1) return
 
-        if (overIndex === -1) {
-          newRowData = [...otherRows, ...groupRows]
-        } else {
-          newRowData = [
-            ...otherRows.slice(0, overIndex),
-            ...groupRows,
-            ...otherRows.slice(overIndex),
-          ]
+      // Separate moving rows from other rows
+      const movingRows = currentOrder.filter((row) => movingIds.has(row.id))
+      const otherRows = currentOrder.filter((row) => !movingIds.has(row.id))
+
+      // Calculate new insert position in the filtered array
+      let insertIndex = 0
+      for (let i = 0; i < overIndex; i++) {
+        if (!movingIds.has(currentOrder[i].id)) {
+          insertIndex++
         }
-
-        // Dispatch to Redux
-        const newRowHeaders = newRowData.map((row) => {
-          const original = rowHeaders.find((r) => r.id === row.id)
-          return original!
-        })
-        dispatch(reorderRows(newRowHeaders))
-        dragModeRef.current = 'row'
-      } else {
-        // Moving individual row
-        const fromIndex = rowData.findIndex((row) => row.id === movingData.id)
-        const toIndex = rowData.findIndex((row) => row.id === overData.id)
-
-        if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return
-
-        // Create new order
-        const newRowData = [...rowData]
-        const [removed] = newRowData.splice(fromIndex, 1)
-        newRowData.splice(toIndex, 0, removed)
-
-        // Dispatch to Redux
-        const newRowHeaders = newRowData.map((row) => {
-          const original = rowHeaders.find((r) => r.id === row.id)
-          return original!
-        })
-        dispatch(reorderRows(newRowHeaders))
       }
+
+      // Build new order
+      const newOrder = [
+        ...otherRows.slice(0, insertIndex),
+        ...movingRows,
+        ...otherRows.slice(insertIndex),
+      ]
+
+      // Dispatch to Redux
+      const newRowHeaders = newOrder.map((row) => {
+        const original = rowHeaders.find((r) => r.id === row.id)
+        return original!
+      })
+      dispatch(reorderRows(newRowHeaders))
+
+      // Clear selection after drag
+      api.deselectAll()
     },
-    [rowData, rowHeaders, dispatch, getGroupRows]
+    [rowHeaders, dispatch]
+  )
+
+  // Custom cell renderer for row drag handle
+  const RowDragCellRenderer = useCallback(() => {
+    return (
+      <div className="flex items-center justify-center h-full cursor-grab">
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
+      </div>
+    )
+  }, [])
+
+  // Custom cell renderer for group column with drag handle
+  const GroupCellRenderer = useCallback(
+    (params: { value: string; node: IRowNode<RowData>; api: GridApi<RowData> }) => {
+      const rowIndex = params.node?.rowIndex ?? 0
+      const isFirst = isFirstOfGroup(rowIndex, params.value)
+
+      if (!isFirst) {
+        return null
+      }
+
+      const handleMouseDown = () => {
+        // Select all rows in this group before drag starts
+        selectGroupRows(params.value)
+      }
+
+      return (
+        <div
+          className="flex items-center justify-center h-full gap-1 cursor-grab font-semibold"
+          onMouseDown={handleMouseDown}
+        >
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
+          <span>{params.value}</span>
+        </div>
+      )
+    },
+    [isFirstOfGroup, selectGroupRows]
   )
 
   // Column definitions
@@ -226,7 +232,7 @@ export default function AgGridMatrixTable() {
       lockPosition: true,
       suppressMovable: true,
       rowDrag: true,
-      cellRenderer: RowDragHandleRenderer,
+      cellRenderer: RowDragCellRenderer,
       cellStyle: {
         padding: 0,
         display: 'flex',
@@ -245,17 +251,13 @@ export default function AgGridMatrixTable() {
       suppressMovable: true,
       rowSpan: rowGroupRowSpan,
       cellClass: rowGroupCellClass,
-      rowDrag: (params) => {
+      rowDrag: (params: RowDragCallbackParams<RowData>) => {
         // Only allow drag from the first row of the group
         const rowIndex = params.node?.rowIndex
         if (rowIndex === undefined || rowIndex === null) return false
         return isFirstOfGroup(rowIndex, params.data?.rowGroup || '')
       },
-      cellRenderer: (params: { value: string; node: { rowIndex: number } }) => {
-        const rowIndex = params.node?.rowIndex ?? 0
-        const isFirst = isFirstOfGroup(rowIndex, params.value)
-        return <GroupDragHandleRenderer value={params.value} isFirstOfGroup={isFirst} />
-      },
+      cellRenderer: GroupCellRenderer,
       cellStyle: (params): CellStyle | null => {
         const rowIndex = params.node?.rowIndex
         if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
@@ -300,7 +302,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowDragCol, rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup, RowDragCellRenderer, GroupCellRenderer])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
@@ -321,8 +323,9 @@ export default function AgGridMatrixTable() {
         suppressRowTransform={true}
         animateRows={true}
         rowDragManaged={true}
-        rowDragEntireRow={false}
-        rowDragMultiRow={false}
+        rowDragMultiRow={true}
+        rowSelection="multiple"
+        suppressRowClickSelection={true}
         getRowId={(params) => params.data.id}
         onRowDragEnd={onRowDragEnd}
       />
