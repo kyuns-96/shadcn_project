@@ -10,8 +10,8 @@ import {
   type CellClassParams,
   type CellStyle,
   type RowDragEndEvent,
+  type RowDragEnterEvent,
   type IRowNode,
-  type CellClickedEvent,
 } from 'ag-grid-community'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
@@ -101,61 +101,43 @@ export default function AgGridMatrixTable() {
     [rowData]
   )
 
-  // Select all rows in a group
-  const selectGroupRows = useCallback(
-    (groupName: string) => {
+  // Handle drag enter - select appropriate rows based on which column drag started from
+  const onRowDragEnter = useCallback(
+    (event: RowDragEnterEvent<RowData>) => {
       const api = gridRef.current?.api
       if (!api) return
 
-      // Clear current selection
-      api.deselectAll()
-
-      // Select all rows in this group
-      api.forEachNode((node: IRowNode<RowData>) => {
-        if (node.data?.rowGroup === groupName) {
-          node.setSelected(true)
-        }
-      })
-    },
-    []
-  )
-
-  // Select single row
-  const selectSingleRow = useCallback(
-    (rowId: string) => {
-      const api = gridRef.current?.api
-      if (!api) return
-
-      // Clear current selection
-      api.deselectAll()
-
-      // Select only this row
-      api.forEachNode((node: IRowNode<RowData>) => {
-        if (node.data?.id === rowId) {
-          node.setSelected(true)
-        }
-      })
-    },
-    []
-  )
-
-  // Handle cell click for selection
-  const onCellClicked = useCallback(
-    (event: CellClickedEvent<RowData>) => {
-      const colId = event.column.getColId()
-      const data = event.data
-
+      const draggedNode = event.node
+      const data = draggedNode?.data
       if (!data) return
 
+      // Check which column the drag originated from by checking the event
+      // We detect this by checking if the dragged node is from the group column
+      // by looking at the vDirection (if dragging from group, we select all group rows)
+      
+      // Get the column from the event - AG Grid provides this in the overIndex
+      // We'll use a workaround: check the mouse event target
+      const mouseEvent = event.event as MouseEvent
+      const target = mouseEvent?.target as HTMLElement
+      const cell = target?.closest('.ag-cell')
+      const colId = cell?.getAttribute('col-id')
+
+      // Clear current selection first
+      api.deselectAll()
+
       if (colId === 'rowGroup') {
-        // Click on Group column - select entire group
-        selectGroupRows(data.rowGroup)
+        // Drag started from Group column - select all rows in the group
+        api.forEachNode((node: IRowNode<RowData>) => {
+          if (node.data?.rowGroup === data.rowGroup) {
+            node.setSelected(true)
+          }
+        })
       } else if (colId === 'rowHeader') {
-        // Click on Row Header column - select single row
-        selectSingleRow(data.id)
+        // Drag started from Row Header column - select only this row
+        draggedNode.setSelected(true)
       }
     },
-    [selectGroupRows, selectSingleRow]
+    []
   )
 
   // Handle row drag end - process multi-row drag
@@ -310,8 +292,8 @@ export default function AgGridMatrixTable() {
         rowSelection="multiple"
         suppressRowClickSelection={true}
         getRowId={(params) => params.data.id}
+        onRowDragEnter={onRowDragEnter}
         onRowDragEnd={onRowDragEnd}
-        onCellClicked={onCellClicked}
       />
     </div>
   )

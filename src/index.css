@@ -165,18 +165,20 @@
   background-color: var(--accent) !important;
 }
 
+/* Hide default AG Grid row drag icon */
 .ag-theme-quartz .ag-row-drag {
-  cursor: grab;
+  display: none !important;
 }
 
-.ag-theme-quartz .ag-row-drag:active {
-  cursor: grabbing;
-}
-
-/* Clickable row header columns */
+/* Draggable row header columns */
 .ag-theme-quartz .ag-cell[col-id="rowGroup"],
 .ag-theme-quartz .ag-cell[col-id="rowHeader"] {
   cursor: grab;
+}
+
+.ag-theme-quartz .ag-cell[col-id="rowGroup"]:active,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"]:active {
+  cursor: grabbing;
 }
 
 .ag-theme-quartz .ag-cell[col-id="rowGroup"]:hover,
