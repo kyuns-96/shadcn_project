@@ -69,12 +69,10 @@ export default function AgGridMatrixTable() {
         return 1
       }
 
-      // Count consecutive rows with the same group using displayed row order
-      const displayedRowCount = api?.getDisplayedRowCount() || rowData.length
+      // Count consecutive rows with the same group
       let spanCount = 1
-      for (let i = rowIndex + 1; i < displayedRowCount; i++) {
-        const nextNode = api?.getDisplayedRowAtIndex(i)
-        if (nextNode?.data?.rowGroup === currentRowGroup) {
+      for (let i = rowIndex + 1; i < rowData.length; i++) {
+        if (rowData[i]?.rowGroup === currentRowGroup) {
           spanCount++
         } else {
           break
