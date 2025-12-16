@@ -348,6 +348,7 @@ export default function AgGridMatrixTable() {
     () => ({
       resizable: true,
       sortable: false,
+      headerClass: 'ag-header-cell-center',
     }),
     []
   )
