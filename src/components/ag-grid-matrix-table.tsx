@@ -328,6 +328,16 @@ export default function AgGridMatrixTable() {
       headerName: col.label,
       width: 150,
       editable: true,
+      cellStyle: { textAlign: 'right' },
+      valueFormatter: (params) => {
+        const value = params.value
+        if (value === null || value === undefined || value === '') return ''
+        const num = parseFloat(value)
+        if (!isNaN(num) && value.toString().includes('.')) {
+          return num.toFixed(2)
+        }
+        return value
+      },
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
