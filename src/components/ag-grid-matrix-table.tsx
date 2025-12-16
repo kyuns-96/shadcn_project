@@ -10,13 +10,11 @@ import {
   type CellClassParams,
   type CellStyle,
   type RowDragEndEvent,
-  type GridApi,
   type IRowNode,
-  type RowDragCallbackParams,
+  type CellClickedEvent,
 } from 'ag-grid-community'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
-import { GripVertical } from 'lucide-react'
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -103,7 +101,7 @@ export default function AgGridMatrixTable() {
     [rowData]
   )
 
-  // Select all rows in a group when clicking on the group cell
+  // Select all rows in a group
   const selectGroupRows = useCallback(
     (groupName: string) => {
       const api = gridRef.current?.api
@@ -120,6 +118,44 @@ export default function AgGridMatrixTable() {
       })
     },
     []
+  )
+
+  // Select single row
+  const selectSingleRow = useCallback(
+    (rowId: string) => {
+      const api = gridRef.current?.api
+      if (!api) return
+
+      // Clear current selection
+      api.deselectAll()
+
+      // Select only this row
+      api.forEachNode((node: IRowNode<RowData>) => {
+        if (node.data?.id === rowId) {
+          node.setSelected(true)
+        }
+      })
+    },
+    []
+  )
+
+  // Handle cell click for selection
+  const onCellClicked = useCallback(
+    (event: CellClickedEvent<RowData>) => {
+      const colId = event.column.getColId()
+      const data = event.data
+
+      if (!data) return
+
+      if (colId === 'rowGroup') {
+        // Click on Group column - select entire group
+        selectGroupRows(data.rowGroup)
+      } else if (colId === 'rowHeader') {
+        // Click on Row Header column - select single row
+        selectSingleRow(data.id)
+      }
+    },
+    [selectGroupRows, selectSingleRow]
   )
 
   // Handle row drag end - process multi-row drag
@@ -185,79 +221,24 @@ export default function AgGridMatrixTable() {
     [rowHeaders, dispatch]
   )
 
-  // Custom cell renderer for row drag handle
-  const RowDragCellRenderer = useCallback(() => {
-    return (
-      <div className="flex items-center justify-center h-full cursor-grab">
-        <GripVertical className="w-4 h-4 text-muted-foreground" />
-      </div>
-    )
-  }, [])
-
-  // Custom cell renderer for group column with drag handle
-  const GroupCellRenderer = useCallback(
-    (params: { value: string; node: IRowNode<RowData>; api: GridApi<RowData> }) => {
-      const rowIndex = params.node?.rowIndex ?? 0
-      const isFirst = isFirstOfGroup(rowIndex, params.value)
-
-      if (!isFirst) {
-        return null
-      }
-
-      const handleMouseDown = () => {
-        // Select all rows in this group before drag starts
-        selectGroupRows(params.value)
-      }
-
-      return (
-        <div
-          className="flex items-center justify-center h-full gap-1 cursor-grab font-semibold"
-          onMouseDown={handleMouseDown}
-        >
-          <GripVertical className="w-4 h-4 text-muted-foreground" />
-          <span>{params.value}</span>
-        </div>
-      )
-    },
-    [isFirstOfGroup, selectGroupRows]
-  )
-
   // Column definitions
   const columnDefs: ColDef<RowData>[] = useMemo(() => {
-    // Row drag handle column for individual rows
-    const rowDragCol: ColDef<RowData> = {
-      headerName: '',
-      width: 50,
-      pinned: 'left',
-      lockPosition: true,
-      suppressMovable: true,
-      rowDrag: true,
-      cellRenderer: RowDragCellRenderer,
-      cellStyle: {
-        padding: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-    }
-
-    // Row header group column (with row span and group drag)
+    // Row header group column (with row span)
     const rowGroupCol: ColDef<RowData> = {
       field: 'rowGroup',
       headerName: 'Group',
-      width: 140,
+      width: 120,
       pinned: 'left',
       lockPosition: true,
       suppressMovable: true,
       rowSpan: rowGroupRowSpan,
       cellClass: rowGroupCellClass,
-      rowDrag: (params: RowDragCallbackParams<RowData>) => {
+      rowDrag: (params) => {
         // Only allow drag from the first row of the group
         const rowIndex = params.node?.rowIndex
         if (rowIndex === undefined || rowIndex === null) return false
         return isFirstOfGroup(rowIndex, params.data?.rowGroup || '')
       },
-      cellRenderer: GroupCellRenderer,
       cellStyle: (params): CellStyle | null => {
         const rowIndex = params.node?.rowIndex
         if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
@@ -273,7 +254,7 @@ export default function AgGridMatrixTable() {
           backgroundColor: 'var(--ag-header-background-color)',
           fontWeight: '600',
           borderRight: '1px solid var(--ag-border-color)',
-          padding: 0,
+          cursor: 'grab',
         } as CellStyle
       },
     }
@@ -286,10 +267,12 @@ export default function AgGridMatrixTable() {
       pinned: 'left',
       lockPosition: true,
       suppressMovable: true,
+      rowDrag: true,
       cellStyle: {
         fontWeight: 500,
         backgroundColor: 'var(--ag-header-background-color)',
         borderRight: '1px solid var(--ag-border-color)',
+        cursor: 'grab',
       },
     }
 
@@ -301,8 +284,8 @@ export default function AgGridMatrixTable() {
       editable: true,
     }))
 
-    return [rowDragCol, rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup, RowDragCellRenderer, GroupCellRenderer])
+    return [rowGroupCol, rowHeaderCol, ...dataColumns]
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, rowData, isFirstOfGroup])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
@@ -328,6 +311,7 @@ export default function AgGridMatrixTable() {
         suppressRowClickSelection={true}
         getRowId={(params) => params.data.id}
         onRowDragEnd={onRowDragEnd}
+        onCellClicked={onCellClicked}
       />
     </div>
   )

@@ -173,9 +173,20 @@
   cursor: grabbing;
 }
 
-/* Drag handle hover effect */
-.ag-theme-quartz .ag-cell[col-id="0"] .cursor-grab:hover,
-.ag-theme-quartz .ag-cell[col-id="rowGroup"] .cursor-grab:hover {
-  background-color: var(--accent);
-  border-radius: 4px;
+/* Clickable row header columns */
+.ag-theme-quartz .ag-cell[col-id="rowGroup"],
+.ag-theme-quartz .ag-cell[col-id="rowHeader"] {
+  cursor: grab;
+}
+
+.ag-theme-quartz .ag-cell[col-id="rowGroup"]:hover,
+.ag-theme-quartz .ag-cell[col-id="rowHeader"]:hover {
+  background-color: var(--accent) !important;
+}
+
+/* Selected row styling */
+.ag-theme-quartz .ag-row-selected .ag-cell[col-id="rowGroup"],
+.ag-theme-quartz .ag-row-selected .ag-cell[col-id="rowHeader"] {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
 }
