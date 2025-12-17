@@ -235,19 +235,14 @@ export default function AgGridMatrixTable() {
     [selectGroupRows, selectSingleRow]
   )
 
-  // Force recalculate row spans by resetting the grid data
-  const forceRecalculateRowSpans = useCallback((api: GridApi<RowData>, newRowData: RowData[]) => {
-    // Set the new row data - this triggers row animation
-    api.setGridOption('rowData', newRowData)
-    
-    // Wait for animation to complete (default AG Grid animation is ~400ms)
-    // Then force refresh the rowGroup column to recalculate row spans
-    setTimeout(() => {
-      api.refreshCells({
-        columns: ['rowGroup'],
-        force: true,
-      })
-    }, 450)
+  // Force recalculate row spans after row reorder
+  const forceRecalculateRowSpans = useCallback((api: GridApi<RowData>) => {
+    // Force refresh the rowGroup column to recalculate row spans
+    // This triggers the rowSpan callback to be re-evaluated for all cells
+    api.refreshCells({
+      columns: ['rowGroup'],
+      force: true,
+    })
   }, [])
 
   // Handle row drag end - process multi-row drag
@@ -326,8 +321,13 @@ export default function AgGridMatrixTable() {
       // Get the IDs of rows being moved
       const movingIds = new Set(movingNodes.map((n) => n.data?.id).filter(Boolean))
 
-      // Get current order from Redux state (source of truth)
-      const currentOrder: RowData[] = rowData.map(row => ({ ...row }))
+      // Get current order from grid (AG Grid has already reordered visually with rowDragManaged)
+      const currentOrder: RowData[] = []
+      api.forEachNodeAfterFilterAndSort((node: IRowNode<RowData>) => {
+        if (node.data) {
+          currentOrder.push(node.data)
+        }
+      })
 
       // Find the target index (where we're dropping)
       const overIndex = currentOrder.findIndex((row) => row.id === overData.id)
@@ -352,10 +352,7 @@ export default function AgGridMatrixTable() {
         ...otherRows.slice(insertIndex),
       ]
 
-      // Build the new row data array in the correct order
-      const newRowData: RowData[] = newOrder.map((row) => ({ ...row }))
-
-      // Dispatch to Redux
+      // Dispatch to Redux to sync state
       const newRowHeaders = newOrder.map((row) => {
         const original = rowHeaders.find((r) => r.id === row.id)
         return original!
@@ -365,8 +362,8 @@ export default function AgGridMatrixTable() {
       // Clear selection after drag
       api.deselectAll()
 
-      // Force AG Grid to recalculate row spans by completely resetting the grid data
-      forceRecalculateRowSpans(api, newRowData)
+      // Force recalculate row spans after the drag animation completes
+      forceRecalculateRowSpans(api)
     },
     [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi, forceRecalculateRowSpans]
   )
@@ -485,7 +482,7 @@ export default function AgGridMatrixTable() {
           defaultColDef={defaultColDef}
           suppressRowTransform={true}
           animateRows={true}
-          rowDragManaged={false}
+          rowDragManaged={true}
           rowDragMultiRow={true}
           rowSelection="multiple"
           suppressRowClickSelection={true}
