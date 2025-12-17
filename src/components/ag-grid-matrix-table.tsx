@@ -235,6 +235,17 @@ export default function AgGridMatrixTable() {
     [selectGroupRows, selectSingleRow]
   )
 
+  // Force recalculate row spans by resetting the grid data
+  const forceRecalculateRowSpans = useCallback((api: GridApi<RowData>, newRowData: RowData[]) => {
+    // Clear the row data first to force AG Grid to completely re-render
+    api.setGridOption('rowData', [])
+    
+    // Use requestAnimationFrame to ensure the clear is processed before setting new data
+    requestAnimationFrame(() => {
+      api.setGridOption('rowData', newRowData)
+    })
+  }, [])
+
   // Handle row drag end - process multi-row drag
   const onRowDragEnd = useCallback(
     (event: RowDragEndEvent<RowData>) => {
@@ -311,13 +322,8 @@ export default function AgGridMatrixTable() {
       // Get the IDs of rows being moved
       const movingIds = new Set(movingNodes.map((n) => n.data?.id).filter(Boolean))
 
-      // Get current order from grid
-      const currentOrder: RowData[] = []
-      api.forEachNodeAfterFilterAndSort((node: IRowNode<RowData>) => {
-        if (node.data) {
-          currentOrder.push(node.data)
-        }
-      })
+      // Get current order from Redux state (source of truth)
+      const currentOrder: RowData[] = rowData.map(row => ({ ...row }))
 
       // Find the target index (where we're dropping)
       const overIndex = currentOrder.findIndex((row) => row.id === overData.id)
@@ -355,24 +361,10 @@ export default function AgGridMatrixTable() {
       // Clear selection after drag
       api.deselectAll()
 
-      // Force AG Grid to apply the new row order and recalculate row spans
-      // Use setTimeout to ensure this happens after React's render cycle
-      setTimeout(() => {
-        // Update row data to trigger re-render
-        api.setGridOption('rowData', newRowData)
-        
-        // Force recalculation of row spans by refreshing the rowGroup column cells
-        // This ensures the rowSpan callback is re-evaluated for all cells
-        api.refreshCells({
-          columns: ['rowGroup'],
-          force: true,
-        })
-        
-        // Also redraw all rows to ensure visual consistency
-        api.redrawRows()
-      }, 0)
+      // Force AG Grid to recalculate row spans by completely resetting the grid data
+      forceRecalculateRowSpans(api, newRowData)
     },
-    [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi]
+    [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi, forceRecalculateRowSpans]
   )
 
   // Column definitions
@@ -488,8 +480,8 @@ export default function AgGridMatrixTable() {
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           suppressRowTransform={true}
-          animateRows={true}
-          rowDragManaged={true}
+          animateRows={false}
+          rowDragManaged={false}
           rowDragMultiRow={true}
           rowSelection="multiple"
           suppressRowClickSelection={true}
