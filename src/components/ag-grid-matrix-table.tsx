@@ -251,24 +251,61 @@ export default function AgGridMatrixTable() {
       let movingNodes = event.nodes || [event.node]
       if (movingNodes.length === 0) return
 
-      // Check if this is a group drag (single row dragged from Group column)
-      // If the dragged row is the first of its group and only one row is being dragged,
-      // we should move the entire group
+      // Check if this is a group drag
+      // A group drag occurs when:
+      // 1. Only one row is being dragged
+      // 2. That row is the first of its group (the only one with a visible Group cell)
+      // 3. The drag originated from the rowGroup column
       const draggedNode = event.node
       const draggedData = draggedNode.data
-      // Access column from event (may not exist in type definitions but exists at runtime)
-      const dragColumnId = (event as unknown as { column?: { getColId: () => string } }).column?.getColId()
+      const draggedRowIndex = draggedNode.rowIndex
       
-      if (dragColumnId === 'rowGroup' && draggedData && movingNodes.length === 1) {
-        // This is a group drag - collect all rows in this group
-        const groupName = draggedData.rowGroup
-        const groupNodes: IRowNode<RowData>[] = []
-        api.forEachNode((node: IRowNode<RowData>) => {
-          if (node.data?.rowGroup === groupName) {
-            groupNodes.push(node)
+      // Access column from event (may not exist in type definitions but exists at runtime)
+      const dragColumn = (event as unknown as { column?: { getColId: () => string } }).column
+      const dragColumnId = dragColumn?.getColId?.()
+      
+      if (draggedData && movingNodes.length === 1 && draggedRowIndex !== undefined && draggedRowIndex !== null) {
+        // Check if the dragged row is the first of its group
+        const isFirstOfGroup = isFirstOfGroupFromApi(api, draggedRowIndex, draggedData.rowGroup)
+        
+        // Determine if this is a group drag:
+        // - If we can detect the column, use that
+        // - If column is 'rowGroup', it's a group drag
+        // - If column is 'rowHeader', it's a single row drag
+        // - If column detection fails but the row is first of group and all group rows are selected, it's a group drag
+        let isGroupDrag = false
+        
+        if (dragColumnId === 'rowGroup') {
+          isGroupDrag = true
+        } else if (dragColumnId === 'rowHeader') {
+          isGroupDrag = false
+        } else if (isFirstOfGroup) {
+          // Column detection failed - check if all group rows are selected
+          // If all group rows are selected, treat as group drag
+          const selectedNodes = api.getSelectedNodes()
+          const groupRowCount = rowData.filter(r => r.rowGroup === draggedData.rowGroup).length
+          const selectedGroupRowCount = selectedNodes.filter(n => n.data?.rowGroup === draggedData.rowGroup).length
+          
+          if (selectedGroupRowCount === groupRowCount && groupRowCount > 0) {
+            isGroupDrag = true
+          } else if (selectedNodes.length === 0) {
+            // No selection - fallback: if first row of group is dragged with no selection,
+            // assume it's a group drag (user likely dragged from the visible Group cell)
+            isGroupDrag = true
           }
-        })
-        movingNodes = groupNodes
+        }
+        
+        if (isGroupDrag) {
+          // Collect all rows in this group
+          const groupName = draggedData.rowGroup
+          const groupNodes: IRowNode<RowData>[] = []
+          api.forEachNode((node: IRowNode<RowData>) => {
+            if (node.data?.rowGroup === groupName) {
+              groupNodes.push(node)
+            }
+          })
+          movingNodes = groupNodes
+        }
       }
 
       // Get the IDs of rows being moved
@@ -321,12 +358,21 @@ export default function AgGridMatrixTable() {
       // Force AG Grid to apply the new row order and recalculate row spans
       // Use setTimeout to ensure this happens after React's render cycle
       setTimeout(() => {
+        // Update row data to trigger re-render
         api.setGridOption('rowData', newRowData)
-        // Force complete redraw to recalculate row spans
+        
+        // Force recalculation of row spans by refreshing the rowGroup column cells
+        // This ensures the rowSpan callback is re-evaluated for all cells
+        api.refreshCells({
+          columns: ['rowGroup'],
+          force: true,
+        })
+        
+        // Also redraw all rows to ensure visual consistency
         api.redrawRows()
       }, 0)
     },
-    [rowHeaders, dispatch]
+    [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi]
   )
 
   // Column definitions
