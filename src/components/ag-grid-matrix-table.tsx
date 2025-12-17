@@ -13,6 +13,7 @@ import {
   type IRowNode,
   type CellClickedEvent,
   type GridApi,
+  type RowClassParams,
 } from 'ag-grid-community'
 import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
@@ -261,6 +262,44 @@ export default function AgGridMatrixTable() {
       }
     },
     [selectGroupRows, selectSingleRow]
+  )
+
+  // Get row class for group borders
+  const getRowClass = useCallback(
+    (params: RowClassParams<RowData>): string | string[] => {
+      const classes: string[] = []
+      const currentRowGroup = params.data?.rowGroup
+      const rowIndex = params.node?.rowIndex
+      const api = params.api
+
+      if (rowIndex === undefined || rowIndex === null || !api) return classes
+
+      // Check if this is the first row of a group
+      if (rowIndex === 0) {
+        classes.push('ag-row-group-first')
+      } else {
+        const prevNode = api.getDisplayedRowAtIndex(rowIndex - 1)
+        const prevRowGroup = prevNode?.data?.rowGroup
+        if (prevRowGroup !== currentRowGroup) {
+          classes.push('ag-row-group-first')
+        }
+      }
+
+      // Check if this is the last row of a group
+      const displayedRowCount = api.getDisplayedRowCount()
+      if (rowIndex === displayedRowCount - 1) {
+        classes.push('ag-row-group-last')
+      } else {
+        const nextNode = api.getDisplayedRowAtIndex(rowIndex + 1)
+        const nextRowGroup = nextNode?.data?.rowGroup
+        if (nextRowGroup !== currentRowGroup) {
+          classes.push('ag-row-group-last')
+        }
+      }
+
+      return classes
+    },
+    []
   )
 
   // Handle row drag end - process multi-row drag
@@ -572,6 +611,7 @@ export default function AgGridMatrixTable() {
           rowSelection="multiple"
           suppressRowClickSelection={true}
           getRowId={(params) => params.data.id}
+          getRowClass={getRowClass}
           onRowDragEnd={onRowDragEnd}
           onCellClicked={onCellClicked}
         />

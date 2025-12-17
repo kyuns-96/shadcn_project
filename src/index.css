@@ -200,3 +200,12 @@
 .ag-theme-quartz .ag-header-cell-center .ag-header-cell-label {
   justify-content: center;
 }
+
+/* Group border styles - visual separation between groups */
+.ag-theme-quartz .ag-row-group-first {
+  border-top: 2px solid var(--ag-border-color) !important;
+}
+
+.ag-theme-quartz .ag-row-group-last {
+  border-bottom: 2px solid var(--ag-border-color) !important;
+}
