@@ -427,9 +427,12 @@ export default function AgGridMatrixTable() {
       },
       cellClass: rowGroupCellClass,
       rowDrag: (params) => {
-        // For empty group, show drag icon (single row drag)
-        // For non-empty group, hide drag icon (use Row Header column to drag)
-        return !params.data?.rowGroup
+        // For empty group, always show drag icon
+        if (!params.data?.rowGroup) return true
+        // For non-empty group, show drag icon only on first row of group (where cell is visible)
+        const rowIndex = params.node?.rowIndex
+        if (rowIndex === undefined || rowIndex === null) return false
+        return isFirstOfGroupFromApi(params.api, rowIndex, params.data.rowGroup)
       },
       valueGetter: (params) => {
         // Show rowHeader value when group is empty (for colspan display)
@@ -527,7 +530,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, groupColumnWidth, rowHeaderColumnWidth])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi, groupColumnWidth, rowHeaderColumnWidth])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
