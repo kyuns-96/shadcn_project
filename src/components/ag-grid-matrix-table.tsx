@@ -19,6 +19,7 @@ import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import ColumnHeaderWithPopup, { type ColumnMetadata } from '@/components/ColumnHeaderWithPopup'
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -432,13 +433,19 @@ export default function AgGridMatrixTable() {
       },
     }
 
-    // Data columns
+    // Data columns with custom header component for metadata popup
     const dataColumns: ColDef<RowData>[] = columnHeaders.map((col) => ({
       field: col.id,
       headerName: col.label,
       width: 150,
       editable: true,
       cellStyle: { textAlign: 'right' },
+      headerComponent: ColumnHeaderWithPopup,
+      headerComponentParams: {
+        columnMetadata: col as ColumnMetadata,
+        // Optional: Provide a custom renderer for metadata content
+        // renderMetadataContent: (metadata: ColumnMetadata) => <YourCustomContent metadata={metadata} />
+      },
       valueFormatter: (params) => {
         const value = params.value
         if (value === null || value === undefined || value === '') return ''
