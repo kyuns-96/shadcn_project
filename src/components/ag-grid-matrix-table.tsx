@@ -40,22 +40,54 @@ export default function AgGridMatrixTable() {
   // Copy table data to clipboard in TSV format (for Excel/Confluence)
   const handleCopyToClipboard = useCallback(async () => {
     try {
-      // Build header row: Group, Row Header, then column headers
-      const headers = ['Group', 'Row Header', ...columnHeaders.map((col) => col.label)]
-      
-      // Build data rows
-      const dataRows = rowHeaders.map((row) => {
+      const api = gridRef.current?.api
+      if (!api) return
+
+      // Get current column order from the grid (preserves column swap/reorder)
+      const allColumns = api.getAllDisplayedColumns()
+      const dataColumnOrder = allColumns
+        .map((col) => col.getColId())
+        .filter((colId) => colId !== 'rowGroup' && colId !== 'rowHeader')
+
+      // Build header row: Group, Row Header, then data columns in current display order
+      const headers = [
+        'Group',
+        'Row Header',
+        ...dataColumnOrder.map((colId) => {
+          const colHeader = columnHeaders.find((c) => c.id === colId)
+          return colHeader?.label ?? colId
+        }),
+      ]
+
+      // Get rows in current display order from the grid
+      const displayedRows: RowData[] = []
+      api.forEachNodeAfterFilterAndSort((node) => {
+        if (node.data) {
+          displayedRows.push(node.data)
+        }
+      })
+
+      // Build data rows with merged cell support for row groups
+      let prevGroup = ''
+      const dataRows = displayedRows.map((row) => {
+        const originalRow = rowHeaders.find((r) => r.id === row.id)
+        if (!originalRow) return ''
+
+        // For merged cells: only show group name in first row of each group
+        const groupValue = originalRow.rowGroup !== prevGroup ? originalRow.rowGroup : ''
+        prevGroup = originalRow.rowGroup
+
         const rowValues = [
-          row.rowGroup,
-          row.label,
-          ...columnHeaders.map((col) => row.data[col.id] ?? ''),
+          groupValue,
+          originalRow.label,
+          ...dataColumnOrder.map((colId) => originalRow.data[colId] ?? ''),
         ]
         return rowValues.join('\t')
       })
-      
+
       // Combine headers and rows with newlines
       const tsvContent = [headers.join('\t'), ...dataRows].join('\n')
-      
+
       await navigator.clipboard.writeText(tsvContent)
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
