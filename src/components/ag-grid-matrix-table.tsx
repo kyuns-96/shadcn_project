@@ -237,13 +237,17 @@ export default function AgGridMatrixTable() {
 
   // Force recalculate row spans by resetting the grid data
   const forceRecalculateRowSpans = useCallback((api: GridApi<RowData>, newRowData: RowData[]) => {
-    // Clear the row data first to force AG Grid to completely re-render
-    api.setGridOption('rowData', [])
+    // Set the new row data - this triggers row animation
+    api.setGridOption('rowData', newRowData)
     
-    // Use requestAnimationFrame to ensure the clear is processed before setting new data
-    requestAnimationFrame(() => {
-      api.setGridOption('rowData', newRowData)
-    })
+    // Wait for animation to complete (default AG Grid animation is ~400ms)
+    // Then force refresh the rowGroup column to recalculate row spans
+    setTimeout(() => {
+      api.refreshCells({
+        columns: ['rowGroup'],
+        force: true,
+      })
+    }, 450)
   }, [])
 
   // Handle row drag end - process multi-row drag
@@ -480,7 +484,7 @@ export default function AgGridMatrixTable() {
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
           suppressRowTransform={true}
-          animateRows={false}
+          animateRows={true}
           rowDragManaged={false}
           rowDragMultiRow={true}
           rowSelection="multiple"
