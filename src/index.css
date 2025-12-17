@@ -202,10 +202,18 @@
 }
 
 /* Group border styles - visual separation between groups */
-.ag-theme-quartz .ag-row-group-first {
-  border-top: 2px solid var(--ag-border-color) !important;
+.ag-theme-quartz .ag-row-group-first .ag-cell {
+  border-top: 2px solid oklch(0.5 0 0) !important;
 }
 
-.ag-theme-quartz .ag-row-group-last {
-  border-bottom: 2px solid var(--ag-border-color) !important;
+.ag-theme-quartz .ag-row-group-last .ag-cell {
+  border-bottom: 2px solid oklch(0.5 0 0) !important;
+}
+
+.dark .ag-theme-quartz .ag-row-group-first .ag-cell {
+  border-top: 2px solid oklch(0.7 0 0) !important;
+}
+
+.dark .ag-theme-quartz .ag-row-group-last .ag-cell {
+  border-bottom: 2px solid oklch(0.7 0 0) !important;
 }
