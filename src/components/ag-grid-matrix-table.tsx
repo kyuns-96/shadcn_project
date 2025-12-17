@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useCallback, useRef } from 'react'
+import { useMemo, useCallback, useRef, useState } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import {
   AllCommunityModule,
@@ -14,8 +14,11 @@ import {
   type CellClickedEvent,
   type GridApi,
 } from 'ag-grid-community'
+import { CheckIcon, CopyIcon } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -32,6 +35,34 @@ export default function AgGridMatrixTable() {
   const dispatch = useAppDispatch()
   const gridRef = useRef<AgGridReact<RowData>>(null)
   const { columnHeaders, rowHeaders } = useAppSelector((state) => state.matrix)
+  const [copied, setCopied] = useState<boolean>(false)
+
+  // Copy table data to clipboard in TSV format (for Excel/Confluence)
+  const handleCopyToClipboard = useCallback(async () => {
+    try {
+      // Build header row: Group, Row Header, then column headers
+      const headers = ['Group', 'Row Header', ...columnHeaders.map((col) => col.label)]
+      
+      // Build data rows
+      const dataRows = rowHeaders.map((row) => {
+        const rowValues = [
+          row.rowGroup,
+          row.label,
+          ...columnHeaders.map((col) => row.data[col.id] ?? ''),
+        ]
+        return rowValues.join('\t')
+      })
+      
+      // Combine headers and rows with newlines
+      const tsvContent = [headers.join('\t'), ...dataRows].join('\n')
+      
+      await navigator.clipboard.writeText(tsvContent)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    } catch (err) {
+      console.error('Failed to copy table data: ', err)
+    }
+  }, [columnHeaders, rowHeaders])
 
   // Transform data for AG Grid with flattened structure
   const rowData: RowData[] = useMemo(() => {
@@ -193,7 +224,8 @@ export default function AgGridMatrixTable() {
       // we should move the entire group
       const draggedNode = event.node
       const draggedData = draggedNode.data
-      const dragColumnId = event.column?.getColId()
+      // Access column from event (may not exist in type definitions but exists at runtime)
+      const dragColumnId = (event as unknown as { column?: { getColId: () => string } }).column?.getColId()
       
       if (dragColumnId === 'rowGroup' && draggedData && movingNodes.length === 1) {
         // This is a group drag - collect all rows in this group
@@ -354,22 +386,40 @@ export default function AgGridMatrixTable() {
   )
 
   return (
-    <div className="ag-theme-quartz" style={{ height: '500px', width: '100%' }}>
-      <AgGridReact<RowData>
-        ref={gridRef}
-        rowData={rowData}
-        columnDefs={columnDefs}
-        defaultColDef={defaultColDef}
-        suppressRowTransform={true}
-        animateRows={true}
-        rowDragManaged={true}
-        rowDragMultiRow={true}
-        rowSelection="multiple"
-        suppressRowClickSelection={true}
-        getRowId={(params) => params.data.id}
-        onRowDragEnd={onRowDragEnd}
-        onCellClicked={onCellClicked}
-      />
+    <div className="flex flex-col gap-2">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          className="relative disabled:opacity-100"
+          onClick={handleCopyToClipboard}
+          disabled={copied}
+        >
+          <span className={cn('transition-all', copied ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}>
+            <CheckIcon className="stroke-green-600 dark:stroke-green-400" />
+          </span>
+          <span className={cn('absolute left-4 transition-all', copied ? 'scale-0 opacity-0' : 'scale-100 opacity-100')}>
+            <CopyIcon />
+          </span>
+          {copied ? 'Copied!' : 'Copy Table'}
+        </Button>
+      </div>
+      <div className="ag-theme-quartz" style={{ height: '500px', width: '100%' }}>
+        <AgGridReact<RowData>
+          ref={gridRef}
+          rowData={rowData}
+          columnDefs={columnDefs}
+          defaultColDef={defaultColDef}
+          suppressRowTransform={true}
+          animateRows={true}
+          rowDragManaged={true}
+          rowDragMultiRow={true}
+          rowSelection="multiple"
+          suppressRowClickSelection={true}
+          getRowId={(params) => params.data.id}
+          onRowDragEnd={onRowDragEnd}
+          onCellClicked={onCellClicked}
+        />
+      </div>
     </div>
   )
 }
