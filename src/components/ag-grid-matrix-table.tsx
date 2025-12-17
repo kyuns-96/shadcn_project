@@ -14,12 +14,22 @@ import {
   type CellClickedEvent,
   type GridApi,
 } from 'ag-grid-community'
-import { CheckIcon, CopyIcon } from 'lucide-react'
+import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows } from '@/store/matrixSlice'
 import { Button } from '@/components/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import ColumnHeaderWithPopup, { type ColumnMetadata } from '@/components/ColumnHeaderWithPopup'
+
+// Row height options
+type RowHeightOption = 'compact' | 'normal' | 'comfortable'
+
+const ROW_HEIGHT_CONFIG: Record<RowHeightOption, { label: string; height: number }> = {
+  compact: { label: 'Compact', height: 28 },
+  normal: { label: 'Normal', height: 36 },
+  comfortable: { label: 'Comfortable', height: 48 },
+}
 
 // Register AG Grid modules
 ModuleRegistry.registerModules([AllCommunityModule])
@@ -37,6 +47,23 @@ export default function AgGridMatrixTable() {
   const gridRef = useRef<AgGridReact<RowData>>(null)
   const { columnHeaders, rowHeaders } = useAppSelector((state) => state.matrix)
   const [copied, setCopied] = useState<boolean>(false)
+  const [rowHeightOption, setRowHeightOption] = useState<RowHeightOption>('normal')
+  const [rowHeightPopoverOpen, setRowHeightPopoverOpen] = useState(false)
+
+  // Get current row height value
+  const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height
+
+  // Handle row height change
+  const handleRowHeightChange = useCallback((option: RowHeightOption) => {
+    setRowHeightOption(option)
+    setRowHeightPopoverOpen(false)
+    
+    // Update AG Grid row height dynamically
+    const api = gridRef.current?.api
+    if (api) {
+      api.resetRowHeights()
+    }
+  }, [])
 
   // Copy table data to clipboard in TSV format (for Excel/Confluence)
   const handleCopyToClipboard = useCallback(async () => {
@@ -472,7 +499,48 @@ export default function AgGridMatrixTable() {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        {/* Row Height Control - Top Left */}
+        <Popover open={rowHeightPopoverOpen} onOpenChange={setRowHeightPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Rows3Icon className="size-4" />
+              <span className="text-xs">{ROW_HEIGHT_CONFIG[rowHeightOption].label}</span>
+              <ChevronDownIcon className="size-3" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-40 p-1" align="start">
+            <div className="flex flex-col">
+              {(Object.keys(ROW_HEIGHT_CONFIG) as RowHeightOption[]).map((option) => (
+                <button
+                  key={option}
+                  onClick={() => handleRowHeightChange(option)}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left',
+                    rowHeightOption === option
+                      ? 'bg-primary text-primary-foreground'
+                      : 'hover:bg-muted'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'flex flex-col gap-0.5',
+                      option === 'compact' && 'scale-75',
+                      option === 'comfortable' && 'scale-110'
+                    )}
+                  >
+                    <div className="w-4 h-0.5 bg-current rounded" />
+                    <div className="w-4 h-0.5 bg-current rounded" />
+                    <div className="w-4 h-0.5 bg-current rounded" />
+                  </div>
+                  <span>{ROW_HEIGHT_CONFIG[option].label}</span>
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* Copy Button - Top Right */}
         <Button
           variant="outline"
           className="relative disabled:opacity-100"
@@ -494,6 +562,7 @@ export default function AgGridMatrixTable() {
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
+          rowHeight={currentRowHeight}
           suppressRowTransform={true}
           animateRows={true}
           rowDragManaged={true}
