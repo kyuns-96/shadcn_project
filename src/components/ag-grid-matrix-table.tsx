@@ -556,7 +556,7 @@ export default function AgGridMatrixTable() {
           {copied ? 'Copied!' : 'Copy Table'}
         </Button>
       </div>
-      <div className="ag-theme-quartz" style={{ height: '500px', width: '100%' }}>
+      <div className="ag-theme-quartz" style={{ height: 'calc(90vh - 180px)', width: '100%' }}>
         <AgGridReact<RowData>
           ref={gridRef}
           rowData={rowData}
