@@ -444,7 +444,7 @@ export default function AgGridMatrixTable() {
 
   // Column definitions
   const columnDefs: ColDef<RowData>[] = useMemo(() => {
-    // Row header group column (with row span)
+    // Row header group column (with row span and col span when group is empty)
     const rowGroupCol: ColDef<RowData> = {
       field: 'rowGroup',
       headerName: 'Group',
@@ -453,6 +453,11 @@ export default function AgGridMatrixTable() {
       lockPosition: true,
       suppressMovable: true,
       rowSpan: rowGroupRowSpan,
+      colSpan: (params) => {
+        // Span 2 columns (Group + Row Header) when group is empty
+        if (!params.data?.rowGroup) return 2
+        return 1
+      },
       cellClass: rowGroupCellClass,
       rowDrag: (params) => {
         // Hide drag icon if group is empty string
@@ -462,8 +467,29 @@ export default function AgGridMatrixTable() {
         if (rowIndex === undefined || rowIndex === null) return false
         return isFirstOfGroupFromApi(params.api, rowIndex, params.data.rowGroup)
       },
+      valueGetter: (params) => {
+        // Show rowHeader value when group is empty (for colspan display)
+        if (!params.data?.rowGroup) return params.data?.rowHeader || ''
+        return params.data.rowGroup
+      },
       cellStyle: (params): CellStyle | null => {
         const rowIndex = params.node?.rowIndex
+        const hasGroup = !!params.data?.rowGroup
+        
+        // When group is empty, show the cell with rowHeader styling
+        if (!hasGroup) {
+          return {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            paddingLeft: '12px',
+            backgroundColor: 'var(--ag-header-background-color)',
+            fontWeight: '500',
+            borderRight: '1px solid var(--ag-border-color)',
+            cursor: 'grab',
+          } as CellStyle
+        }
+        
         if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
           const api = params.api
           const prevNode = api?.getDisplayedRowAtIndex(rowIndex - 1)
@@ -475,7 +501,8 @@ export default function AgGridMatrixTable() {
         return {
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
+          paddingLeft: '12px',
           backgroundColor: 'var(--ag-header-background-color)',
           fontWeight: '600',
           borderRight: '1px solid var(--ag-border-color)',
@@ -492,12 +519,22 @@ export default function AgGridMatrixTable() {
       pinned: 'left',
       lockPosition: true,
       suppressMovable: true,
-      rowDrag: true,
-      cellStyle: {
-        fontWeight: 500,
-        backgroundColor: 'var(--ag-header-background-color)',
-        borderRight: '1px solid var(--ag-border-color)',
-        cursor: 'grab',
+      rowDrag: (params) => {
+        // Hide drag icon if group is empty (colspan covers this cell)
+        if (!params.data?.rowGroup) return false
+        return true
+      },
+      cellStyle: (params): CellStyle | null => {
+        // Hide this cell when group is empty (colspan from rowGroup covers it)
+        if (!params.data?.rowGroup) {
+          return { display: 'none' } as CellStyle
+        }
+        return {
+          fontWeight: 500,
+          backgroundColor: 'var(--ag-header-background-color)',
+          borderRight: '1px solid var(--ag-border-color)',
+          cursor: 'grab',
+        } as CellStyle
       },
     }
 
