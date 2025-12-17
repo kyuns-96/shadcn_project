@@ -254,8 +254,13 @@ export default function AgGridMatrixTable() {
       if (!data) return
 
       if (colId === 'rowGroup') {
-        // Click on Group column - select entire group
-        selectGroupRows(data.rowGroup)
+        // If group is empty, only select this single row
+        if (!data.rowGroup) {
+          selectSingleRow(data.id)
+        } else {
+          // Click on Group column - select entire group
+          selectGroupRows(data.rowGroup)
+        }
       } else if (colId === 'rowHeader') {
         // Click on Row Header column - select single row
         selectSingleRow(data.id)
@@ -442,13 +447,32 @@ export default function AgGridMatrixTable() {
     [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi]
   )
 
+  // Calculate dynamic column widths based on content
+  const groupColumnWidth = useMemo(() => {
+    const maxGroupLength = Math.max(
+      'Group'.length,
+      ...rowHeaders.map(r => r.rowGroup.length)
+    )
+    // ~8px per character + 50px for padding and drag icon
+    return Math.max(80, maxGroupLength * 8 + 50)
+  }, [rowHeaders])
+
+  const rowHeaderColumnWidth = useMemo(() => {
+    const maxHeaderLength = Math.max(
+      'Row Header'.length,
+      ...rowHeaders.map(r => r.label.length)
+    )
+    // ~8px per character + 50px for padding and drag icon
+    return Math.max(100, maxHeaderLength * 8 + 50)
+  }, [rowHeaders])
+
   // Column definitions
   const columnDefs: ColDef<RowData>[] = useMemo(() => {
     // Row header group column (with row span and col span when group is empty)
     const rowGroupCol: ColDef<RowData> = {
       field: 'rowGroup',
       headerName: 'Group',
-      width: 120,
+      width: groupColumnWidth,
       pinned: 'left',
       lockPosition: true,
       suppressMovable: true,
@@ -460,9 +484,9 @@ export default function AgGridMatrixTable() {
       },
       cellClass: rowGroupCellClass,
       rowDrag: (params) => {
-        // Hide drag icon if group is empty string
-        if (!params.data?.rowGroup) return false
-        // Only allow drag from the first row of the group
+        // For empty group, always show drag icon (single row drag)
+        if (!params.data?.rowGroup) return true
+        // For non-empty group, only allow drag from the first row of the group
         const rowIndex = params.node?.rowIndex
         if (rowIndex === undefined || rowIndex === null) return false
         return isFirstOfGroupFromApi(params.api, rowIndex, params.data.rowGroup)
@@ -515,7 +539,7 @@ export default function AgGridMatrixTable() {
     const rowHeaderCol: ColDef<RowData> = {
       field: 'rowHeader',
       headerName: 'Row Header',
-      width: 150,
+      width: rowHeaderColumnWidth,
       pinned: 'left',
       lockPosition: true,
       suppressMovable: true,
@@ -563,7 +587,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi, groupColumnWidth, rowHeaderColumnWidth])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
