@@ -235,16 +235,6 @@ export default function AgGridMatrixTable() {
     [selectGroupRows, selectSingleRow]
   )
 
-  // Force recalculate row spans after row reorder
-  const forceRecalculateRowSpans = useCallback((api: GridApi<RowData>) => {
-    // Force refresh the rowGroup column to recalculate row spans
-    // This triggers the rowSpan callback to be re-evaluated for all cells
-    api.refreshCells({
-      columns: ['rowGroup'],
-      force: true,
-    })
-  }, [])
-
   // Handle row drag end - process multi-row drag
   const onRowDragEnd = useCallback(
     (event: RowDragEndEvent<RowData>) => {
@@ -274,8 +264,6 @@ export default function AgGridMatrixTable() {
       const dragColumn = (event as unknown as { column?: { getColId: () => string } }).column
       const dragColumnId = dragColumn?.getColId?.()
       
-      let isGroupDrag = false
-      
       if (draggedData && movingNodes.length === 1 && draggedRowIndex !== undefined && draggedRowIndex !== null) {
         // Check if the dragged row is the first of its group
         const isFirstOfGroup = isFirstOfGroupFromApi(api, draggedRowIndex, draggedData.rowGroup)
@@ -285,6 +273,7 @@ export default function AgGridMatrixTable() {
         // - If column is 'rowGroup', it's a group drag
         // - If column is 'rowHeader', it's a single row drag
         // - If column detection fails but the row is first of group and all group rows are selected, it's a group drag
+        let isGroupDrag = false
         
         if (dragColumnId === 'rowGroup') {
           isGroupDrag = true
@@ -319,30 +308,10 @@ export default function AgGridMatrixTable() {
         }
       }
 
-      // For non-group drags, restrict movement to within the same group
-      if (!isGroupDrag && draggedData) {
-        const draggedGroup = draggedData.rowGroup
-        const targetGroup = overData.rowGroup
-        
-        // If trying to drop outside the same group, cancel the operation
-        if (draggedGroup !== targetGroup) {
-          // Reset to original order by refreshing from Redux state
-          const originalRowData: RowData[] = rowHeaders.map((row) => ({
-            id: row.id,
-            rowGroup: row.rowGroup,
-            rowHeader: row.label,
-            ...row.data,
-          }))
-          api.setGridOption('rowData', originalRowData)
-          forceRecalculateRowSpans(api)
-          return
-        }
-      }
-
       // Get the IDs of rows being moved
       const movingIds = new Set(movingNodes.map((n) => n.data?.id).filter(Boolean))
 
-      // Get current order from grid (AG Grid has already reordered visually with rowDragManaged)
+      // Get current order from grid
       const currentOrder: RowData[] = []
       api.forEachNodeAfterFilterAndSort((node: IRowNode<RowData>) => {
         if (node.data) {
@@ -373,7 +342,10 @@ export default function AgGridMatrixTable() {
         ...otherRows.slice(insertIndex),
       ]
 
-      // Dispatch to Redux to sync state
+      // Build the new row data array in the correct order
+      const newRowData: RowData[] = newOrder.map((row) => ({ ...row }))
+
+      // Dispatch to Redux
       const newRowHeaders = newOrder.map((row) => {
         const original = rowHeaders.find((r) => r.id === row.id)
         return original!
@@ -383,10 +355,24 @@ export default function AgGridMatrixTable() {
       // Clear selection after drag
       api.deselectAll()
 
-      // Force recalculate row spans after the drag animation completes
-      forceRecalculateRowSpans(api)
+      // Force AG Grid to apply the new row order and recalculate row spans
+      // Use setTimeout to ensure this happens after React's render cycle
+      setTimeout(() => {
+        // Update row data to trigger re-render
+        api.setGridOption('rowData', newRowData)
+        
+        // Force recalculation of row spans by refreshing the rowGroup column cells
+        // This ensures the rowSpan callback is re-evaluated for all cells
+        api.refreshCells({
+          columns: ['rowGroup'],
+          force: true,
+        })
+        
+        // Also redraw all rows to ensure visual consistency
+        api.redrawRows()
+      }, 0)
     },
-    [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi, forceRecalculateRowSpans]
+    [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi]
   )
 
   // Column definitions
