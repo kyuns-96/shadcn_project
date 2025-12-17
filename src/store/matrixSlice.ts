@@ -79,9 +79,65 @@ const matrixSlice = createSlice({
     },
     reorderRows: (state, action: PayloadAction<MatrixState['rowHeaders']>) => {
       state.rowHeaders = action.payload
+    },
+    addRow: (state, action: PayloadAction<{
+      id?: string
+      label: string
+      rowGroup: string
+      data?: Record<string, any>
+    }>) => {
+      const { label, rowGroup, data } = action.payload
+      const id = action.payload.id || `row-${Date.now()}`
+      
+      // Initialize data with empty values for all existing columns if not provided
+      const rowData = data || state.columnHeaders.reduce((acc, col) => {
+        acc[col.id] = ''
+        return acc
+      }, {} as Record<string, any>)
+      
+      state.rowHeaders.push({
+        id,
+        label,
+        rowGroup,
+        data: rowData
+      })
+    },
+    addColumn: (state, action: PayloadAction<{
+      id?: string
+      label: string
+      accessorKey?: string
+      defaultValue?: any
+    }>) => {
+      const { label, defaultValue = '' } = action.payload
+      const id = action.payload.id || `col-${Date.now()}`
+      const accessorKey = action.payload.accessorKey || id
+      
+      // Add the new column header
+      state.columnHeaders.push({
+        id,
+        label,
+        accessorKey
+      })
+      
+      // Add default value for this column to all existing rows
+      state.rowHeaders.forEach(row => {
+        row.data[id] = defaultValue
+      })
+    },
+    updateCell: (state, action: PayloadAction<{
+      rowId: string
+      columnId: string
+      value: any
+    }>) => {
+      const { rowId, columnId, value } = action.payload
+      const row = state.rowHeaders.find(r => r.id === rowId)
+      
+      if (row) {
+        row.data[columnId] = value
+      }
     }
   }
 })
 
-export const { setColumnHeaders, setRowHeaders, moveColumn, moveRow, moveGroup, reorderRows } = matrixSlice.actions
+export const { setColumnHeaders, setRowHeaders, moveColumn, moveRow, moveGroup, reorderRows, addRow, addColumn, updateCell } = matrixSlice.actions
 export default matrixSlice.reducer
