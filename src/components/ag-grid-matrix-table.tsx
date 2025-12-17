@@ -307,7 +307,7 @@ export default function AgGridMatrixTable() {
     []
   )
 
-  // Handle row drag end - process multi-row drag
+  // Handle row drag end - process row drag
   const onRowDragEnd = useCallback(
     (event: RowDragEndEvent<RowData>) => {
       const api = gridRef.current?.api
@@ -319,66 +319,9 @@ export default function AgGridMatrixTable() {
       const overData = overNode.data
       if (!overData) return
 
-      // Get all dragged nodes (selected rows for multi-row drag)
-      let movingNodes = event.nodes || [event.node]
+      // Get all dragged nodes (selected rows for multi-row drag, or single row)
+      const movingNodes = event.nodes || [event.node]
       if (movingNodes.length === 0) return
-
-      // Check if this is a group drag
-      // A group drag occurs when:
-      // 1. Only one row is being dragged
-      // 2. That row is the first of its group (the only one with a visible Group cell)
-      // 3. The drag originated from the rowGroup column
-      const draggedNode = event.node
-      const draggedData = draggedNode.data
-      const draggedRowIndex = draggedNode.rowIndex
-      
-      // Access column from event (may not exist in type definitions but exists at runtime)
-      const dragColumn = (event as unknown as { column?: { getColId: () => string } }).column
-      const dragColumnId = dragColumn?.getColId?.()
-      
-      if (draggedData && movingNodes.length === 1 && draggedRowIndex !== undefined && draggedRowIndex !== null) {
-        // Check if the dragged row is the first of its group
-        const isFirstOfGroup = isFirstOfGroupFromApi(api, draggedRowIndex, draggedData.rowGroup)
-        
-        // Determine if this is a group drag:
-        // - If we can detect the column, use that
-        // - If column is 'rowGroup', it's a group drag
-        // - If column is 'rowHeader', it's a single row drag
-        // - If column detection fails but the row is first of group and all group rows are selected, it's a group drag
-        let isGroupDrag = false
-        
-        if (dragColumnId === 'rowGroup') {
-          isGroupDrag = true
-        } else if (dragColumnId === 'rowHeader') {
-          isGroupDrag = false
-        } else if (isFirstOfGroup) {
-          // Column detection failed - check if all group rows are selected
-          // If all group rows are selected, treat as group drag
-          const selectedNodes = api.getSelectedNodes()
-          const groupRowCount = rowData.filter(r => r.rowGroup === draggedData.rowGroup).length
-          const selectedGroupRowCount = selectedNodes.filter(n => n.data?.rowGroup === draggedData.rowGroup).length
-          
-          if (selectedGroupRowCount === groupRowCount && groupRowCount > 0) {
-            isGroupDrag = true
-          } else if (selectedNodes.length === 0) {
-            // No selection - fallback: if first row of group is dragged with no selection,
-            // assume it's a group drag (user likely dragged from the visible Group cell)
-            isGroupDrag = true
-          }
-        }
-        
-        if (isGroupDrag) {
-          // Collect all rows in this group
-          const groupName = draggedData.rowGroup
-          const groupNodes: IRowNode<RowData>[] = []
-          api.forEachNode((node: IRowNode<RowData>) => {
-            if (node.data?.rowGroup === groupName) {
-              groupNodes.push(node)
-            }
-          })
-          movingNodes = groupNodes
-        }
-      }
 
       // Get the IDs of rows being moved
       const movingIds = new Set(movingNodes.map((n) => n.data?.id).filter(Boolean))
@@ -444,7 +387,7 @@ export default function AgGridMatrixTable() {
         api.redrawRows()
       }, 0)
     },
-    [rowHeaders, rowData, dispatch, isFirstOfGroupFromApi]
+    [rowHeaders, dispatch]
   )
 
   // Calculate dynamic column widths based on content
@@ -484,12 +427,9 @@ export default function AgGridMatrixTable() {
       },
       cellClass: rowGroupCellClass,
       rowDrag: (params) => {
-        // For empty group, always show drag icon (single row drag)
-        if (!params.data?.rowGroup) return true
-        // For non-empty group, only allow drag from the first row of the group
-        const rowIndex = params.node?.rowIndex
-        if (rowIndex === undefined || rowIndex === null) return false
-        return isFirstOfGroupFromApi(params.api, rowIndex, params.data.rowGroup)
+        // For empty group, show drag icon (single row drag)
+        // For non-empty group, hide drag icon (use Row Header column to drag)
+        return !params.data?.rowGroup
       },
       valueGetter: (params) => {
         // Show rowHeader value when group is empty (for colspan display)
@@ -587,7 +527,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi, groupColumnWidth, rowHeaderColumnWidth])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, groupColumnWidth, rowHeaderColumnWidth])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
