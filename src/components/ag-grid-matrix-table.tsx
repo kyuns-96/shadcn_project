@@ -274,6 +274,8 @@ export default function AgGridMatrixTable() {
       const dragColumn = (event as unknown as { column?: { getColId: () => string } }).column
       const dragColumnId = dragColumn?.getColId?.()
       
+      let isGroupDrag = false
+      
       if (draggedData && movingNodes.length === 1 && draggedRowIndex !== undefined && draggedRowIndex !== null) {
         // Check if the dragged row is the first of its group
         const isFirstOfGroup = isFirstOfGroupFromApi(api, draggedRowIndex, draggedData.rowGroup)
@@ -283,7 +285,6 @@ export default function AgGridMatrixTable() {
         // - If column is 'rowGroup', it's a group drag
         // - If column is 'rowHeader', it's a single row drag
         // - If column detection fails but the row is first of group and all group rows are selected, it's a group drag
-        let isGroupDrag = false
         
         if (dragColumnId === 'rowGroup') {
           isGroupDrag = true
@@ -315,6 +316,26 @@ export default function AgGridMatrixTable() {
             }
           })
           movingNodes = groupNodes
+        }
+      }
+
+      // For non-group drags, restrict movement to within the same group
+      if (!isGroupDrag && draggedData) {
+        const draggedGroup = draggedData.rowGroup
+        const targetGroup = overData.rowGroup
+        
+        // If trying to drop outside the same group, cancel the operation
+        if (draggedGroup !== targetGroup) {
+          // Reset to original order by refreshing from Redux state
+          const originalRowData: RowData[] = rowHeaders.map((row) => ({
+            id: row.id,
+            rowGroup: row.rowGroup,
+            rowHeader: row.label,
+            ...row.data,
+          }))
+          api.setGridOption('rowData', originalRowData)
+          forceRecalculateRowSpans(api)
+          return
         }
       }
 
