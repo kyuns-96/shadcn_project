@@ -416,10 +416,12 @@ export default function AgGridMatrixTable() {
       rowSpan: rowGroupRowSpan,
       cellClass: rowGroupCellClass,
       rowDrag: (params) => {
+        // Hide drag icon if group is empty string
+        if (!params.data?.rowGroup) return false
         // Only allow drag from the first row of the group
         const rowIndex = params.node?.rowIndex
         if (rowIndex === undefined || rowIndex === null) return false
-        return isFirstOfGroupFromApi(params.api, rowIndex, params.data?.rowGroup || '')
+        return isFirstOfGroupFromApi(params.api, rowIndex, params.data.rowGroup)
       },
       cellStyle: (params): CellStyle | null => {
         const rowIndex = params.node?.rowIndex
