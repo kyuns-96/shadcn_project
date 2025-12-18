@@ -30,12 +30,12 @@ import {
 import { ModeToggle } from './mode-toggle'
 
 import AgGridMatrixTable from '@/components/ag-grid-matrix-table'
-import ComboboxDemo from '@/components/shadcn-studio/combobox/combobox-01'
-import InputDemo from './shadcn-studio/input/doeInput'
-import ButtonCopyStateDemo from './shadcn-studio/button/button-28'
-import ButtonDemo from './shadcn-studio/button/button-01'
+import AddButton from './shadcn-studio/button/button-01'
+import useDropdownConfigs from '@/variables/dropdownConfig'
+import Combobox from '@/components/shadcn-studio/combobox/combobox-01'
 
 const DashboardSidebar = () => {
+    const dropdownConfigs = useDropdownConfigs()
     return (
         <div className='flex min-h-dvh w-full'>
             <SidebarProvider>
@@ -186,14 +186,10 @@ const DashboardSidebar = () => {
                     </header>
                     <main className='size-full flex-1 px-4 py-6 sm:px-6'>
                         <div className="flex flex-wrap gap-2 mb-4">
-                            <ComboboxDemo name="PROJECT" />
-                            <ComboboxDemo name="BLOCK" />
-                            <ComboboxDemo name="NET_VER" />
-                            <ComboboxDemo name="REVISION" />
-                            <ComboboxDemo name="ECO_NUM" />
-                            <InputDemo />
-                            <ButtonDemo />
-                            <ButtonCopyStateDemo />
+                            {dropdownConfigs.map((config, index) => (
+                                <Combobox key={index} dropdownConfigs={[config]} />
+                            ))}
+                            <AddButton />
                         </div>
                         <AgGridMatrixTable />
                     </main>

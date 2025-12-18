@@ -813,7 +813,7 @@ export default function AgGridMatrixTable() {
       <div 
         ref={gridContainerRef}
         className="ag-theme-quartz"
-        style={{ height: 'calc(90vh - 180px)', width: '100%' }}
+        style={{ height: 'calc(90vh - 100px)', width: '100%' }}
       >
         <AgGridReact<RowData>
           ref={gridRef}
