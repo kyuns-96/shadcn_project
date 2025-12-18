@@ -1,54 +1,50 @@
-# React + TypeScript + Vite
+# shadcn_project 🚀
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Minimal React + TypeScript + Vite starter** using shadcn UI components, Tailwind, Radix primitives, ag-grid, and dnd-kit.
 
-Currently, two official plugins are available:
+## Features ✨
+- React 19 + TypeScript
+- Vite dev server with HMR
+- Tailwind CSS
+- shadcn-style components (see `src/components/shadcn-studio`)
+- ag-grid tables and DnD support
+- ESLint for basic linting
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quickstart ⚡
+**Prerequisites:** Node.js 18+ and npm
 
-## Expanding the ESLint configuration
+Install and run:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm install
+npm run dev        # start dev server
+npm run build      # build production assets
+npm run preview    # preview production build
+npm run lint       # run eslint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Project structure 🔧
+- `src/` — application source
+  - `components/` — UI components (includes `shadcn-studio/`)
+  - `store/` — Redux slices and store setup
+  - `hooks/` — custom hooks
+  - `lib/` — utilities
+  - `assets/`, `main.tsx`, `App.tsx`
+- `public/` — static files
+- `package.json` — scripts & dependencies
+- `vite.config.ts`, `tsconfig.*.json`, `eslint.config.js`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts (from `package.json`) 🧭
+- `dev` — Start Vite dev server
+- `build` — Build for production
+- `preview` — Preview built app
+- `lint` — Run ESLint
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## Notes & tips 💡
+- Tailwind is configured; adjust styles in `index.css`/`App.css`.
+- Component templates for the shadcn UI are in `src/components/shadcn-studio/`.
+- Add a `LICENSE` if you plan to open-source the project.
+
+## Contributing 🤝
+Contributions welcome — open an issue or submit a PR with a clear description and test steps.
+

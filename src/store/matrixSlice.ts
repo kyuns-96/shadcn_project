@@ -103,12 +103,19 @@ const matrixSlice = createSlice({
       })
     },
     addColumn: (state, action: PayloadAction<{
-      id?: string
-      label: string
-      accessorKey?: string
-      defaultValue?: any
+      id?: string;
+      label: string;
+      accessorKey?: string;
+      defaultValue?: any;
+      meta?:{
+        PROJECT_NAME?: string
+        BLOCK?: string
+        NET_VER?: string
+        REVISION?: string
+        ECO_NUM?: string
+      }
     }>) => {
-      const { label, defaultValue = '' } = action.payload
+      const { label, defaultValue = '', meta } = action.payload
       const id = action.payload.id || `col-${Date.now()}`
       const accessorKey = action.payload.accessorKey || id
       
@@ -116,7 +123,8 @@ const matrixSlice = createSlice({
       state.columnHeaders.push({
         id,
         label,
-        accessorKey
+        accessorKey,
+        ...(meta || {}),
       })
       
       // Add default value for this column to all existing rows

@@ -155,7 +155,11 @@ export default function AgGridMatrixTable() {
         if (!originalRow) return ''
 
         // For merged cells: only show group name in first row of each group
-        const groupValue = originalRow.rowGroup !== prevGroup ? originalRow.rowGroup : ''
+        let groupValue = originalRow.rowGroup !== prevGroup ? originalRow.rowGroup : ''
+        // Replace newline characters in group names with a single whitespace to avoid multiline cells in TSV copy
+        if (groupValue) {
+          groupValue = groupValue.replace(/\r?\n+/g, ' ').replace(/\s+/g, ' ').trim()
+        }
         prevGroup = originalRow.rowGroup
 
         const rowValues = [
