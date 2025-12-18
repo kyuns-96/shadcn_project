@@ -28,8 +28,8 @@ import ColumnHeaderWithPopup, { type ColumnMetadata } from '@/components/ColumnH
 type RowHeightOption = 'compact' | 'normal' | 'comfortable'
 
 const ROW_HEIGHT_CONFIG: Record<RowHeightOption, { label: string; height: number }> = {
-  compact: { label: 'Compact', height: 28 },
-  normal: { label: 'Normal', height: 36 },
+  compact: { label: 'Compact', height: 20 },
+  normal: { label: 'Normal', height: 28 },
   comfortable: { label: 'Comfortable', height: 48 },
 }
 
