@@ -648,8 +648,7 @@ export default function AgGridMatrixTable() {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
           {/* Row Height Control */}
           <Popover open={rowHeightPopoverOpen} onOpenChange={setRowHeightPopoverOpen}>
             <PopoverTrigger asChild>
@@ -725,23 +724,23 @@ export default function AgGridMatrixTable() {
               </div>
             </PopoverContent>
           </Popover>
-        </div>
 
-        {/* Copy Button - Top Right */}
-        <Button
-          variant="outline"
-          className="relative disabled:opacity-100"
-          onClick={handleCopyToClipboard}
-          disabled={copied}
-        >
-          <span className={cn('transition-all', copied ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}>
-            <CheckIcon className="stroke-green-600 dark:stroke-green-400" />
-          </span>
-          <span className={cn('absolute left-4 transition-all', copied ? 'scale-0 opacity-0' : 'scale-100 opacity-100')}>
-            <CopyIcon />
-          </span>
-          {copied ? 'Copied!' : 'Copy Table'}
-        </Button>
+          {/* Copy Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="relative gap-2 disabled:opacity-100"
+            onClick={handleCopyToClipboard}
+            disabled={copied}
+          >
+            <span className={cn('transition-all', copied ? 'scale-100 opacity-100' : 'scale-0 opacity-0')}>
+              <CheckIcon className="size-4 stroke-green-600 dark:stroke-green-400" />
+            </span>
+            <span className={cn('absolute left-3 transition-all', copied ? 'scale-0 opacity-0' : 'scale-100 opacity-100')}>
+              <CopyIcon className="size-4" />
+            </span>
+            <span className="text-xs">{copied ? 'Copied!' : 'Copy'}</span>
+          </Button>
       </div>
       <div 
         ref={gridContainerRef}
