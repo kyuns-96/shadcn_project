@@ -30,7 +30,7 @@ type RowHeightOption = 'compact' | 'normal' | 'comfortable'
 const ROW_HEIGHT_CONFIG: Record<RowHeightOption, { label: string; height: number }> = {
   compact: { label: 'Compact', height: 20 },
   normal: { label: 'Normal', height: 28 },
-  comfortable: { label: 'Comfortable', height: 48 },
+  comfortable: { label: 'Comfortable', height: 36 },
 }
 
 // Register AG Grid modules
@@ -68,7 +68,10 @@ export default function AgGridMatrixTable() {
     // Update AG Grid row height dynamically
     const api = gridRef.current?.api
     if (api) {
+      const newHeight = ROW_HEIGHT_CONFIG[option].height
+      api.setGridOption('rowHeight', newHeight)
       api.resetRowHeights()
+      api.redrawRows()
     }
   }, [])
 
