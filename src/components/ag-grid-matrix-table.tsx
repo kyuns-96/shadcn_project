@@ -516,9 +516,14 @@ export default function AgGridMatrixTable() {
 
   // Calculate dynamic column widths based on content
   const groupColumnWidth = useMemo(() => {
+    // For multi-line group names, find the longest line
+    const getMaxLineLength = (text: string) => {
+      const lines = text.split('\n')
+      return Math.max(...lines.map(line => line.length))
+    }
     const maxGroupLength = Math.max(
       'Group'.length,
-      ...rowHeaders.map(r => r.rowGroup.length)
+      ...rowHeaders.map(r => getMaxLineLength(r.rowGroup))
     )
     // ~8px per character + 50px for padding and drag icon
     return Math.max(80, maxGroupLength * 8 + 50)
@@ -578,6 +583,7 @@ export default function AgGridMatrixTable() {
             fontWeight: '500',
             borderRight: '1px solid var(--ag-border-color)',
             cursor: 'grab',
+            whiteSpace: 'pre-line',
           } as CellStyle
         }
         
@@ -598,6 +604,7 @@ export default function AgGridMatrixTable() {
           fontWeight: '600',
           borderRight: '1px solid var(--ag-border-color)',
           cursor: 'grab',
+          whiteSpace: 'pre-line',
         } as CellStyle
       },
     }
