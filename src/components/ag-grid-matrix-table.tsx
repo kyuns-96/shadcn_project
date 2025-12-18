@@ -52,7 +52,6 @@ export default function AgGridMatrixTable() {
   const [copied, setCopied] = useState<boolean>(false)
   const [rowHeightOption, setRowHeightOption] = useState<RowHeightOption>('normal')
   const [rowHeightPopoverOpen, setRowHeightPopoverOpen] = useState(false)
-  const [isDraggingOutside, setIsDraggingOutside] = useState<boolean>(false)
   
   // Refs to track dragging state for global mouseup handler
   const draggingRowIdsRef = useRef<string[]>([])
@@ -326,16 +325,6 @@ export default function AgGridMatrixTable() {
     }
   }, [])
 
-  // Handle row drag leave - track when dragging outside the grid
-  const onRowDragLeave = useCallback(() => {
-    setIsDraggingOutside(true)
-  }, [])
-
-  // Handle row drag enter - track when dragging back inside the grid
-  const onRowDragEnter = useCallback(() => {
-    setIsDraggingOutside(false)
-  }, [])
-
   // Global mouseup handler to delete rows when released outside
   useEffect(() => {
     const handleGlobalMouseUp = (event: MouseEvent) => {
@@ -358,17 +347,25 @@ export default function AgGridMatrixTable() {
         // Delete the rows
         dispatch(deleteRows(draggingRowIdsRef.current))
         
-        // Clear selection
+        // Clear selection and refresh grid
         const api = gridRef.current?.api
         if (api) {
           api.deselectAll()
+          
+          // Force re-render of Group column for row span recalculation
+          setTimeout(() => {
+            api.refreshCells({
+              columns: ['rowGroup'],
+              force: true,
+            })
+            api.redrawRows()
+          }, 0)
         }
       }
 
       // Reset dragging state
       isDraggingRef.current = false
       draggingRowIdsRef.current = []
-      setIsDraggingOutside(false)
     }
 
     document.addEventListener('mouseup', handleGlobalMouseUp)
@@ -396,7 +393,6 @@ export default function AgGridMatrixTable() {
       // Reset dragging state
       isDraggingRef.current = false
       draggingRowIdsRef.current = []
-      setIsDraggingOutside(false)
 
       // If dropped outside the grid (no overNode), rows were already deleted by global mouseup
       if (!overNode) {
@@ -685,19 +681,9 @@ export default function AgGridMatrixTable() {
       </div>
       <div 
         ref={gridContainerRef}
-        className={cn(
-          "ag-theme-quartz relative",
-          isDraggingOutside && "ring-2 ring-red-500 ring-offset-2"
-        )} 
+        className="ag-theme-quartz"
         style={{ height: 'calc(90vh - 180px)', width: '100%' }}
       >
-        {isDraggingOutside && (
-          <div className="absolute inset-0 bg-red-500/10 pointer-events-none z-10 flex items-center justify-center">
-            <div className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg font-medium">
-              Release to delete row
-            </div>
-          </div>
-        )}
         <AgGridReact<RowData>
           ref={gridRef}
           rowData={rowData}
@@ -714,8 +700,6 @@ export default function AgGridMatrixTable() {
           getRowClass={getRowClass}
           onRowDragMove={onRowDragMove}
           onRowDragEnd={onRowDragEnd}
-          onRowDragLeave={onRowDragLeave}
-          onRowDragEnter={onRowDragEnter}
           onCellClicked={onCellClicked}
         />
       </div>
