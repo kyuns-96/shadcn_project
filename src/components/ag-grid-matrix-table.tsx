@@ -659,7 +659,8 @@ export default function AgGridMatrixTable() {
         if (params.value === "___LOADING___") {
           return <Spinner className="mx-auto" />;
         }  
-        return params.value;
+        // Use valueFormatted if available (from valueFormatter), otherwise use raw value
+        return params.valueFormatted ?? params.value;
       },
     }))
 
