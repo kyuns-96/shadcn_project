@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useCallback, useRef, useState } from 'react'
+import { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import { AgGridReact } from 'ag-grid-react'
 import {
   AllCommunityModule,
@@ -10,6 +10,7 @@ import {
   type CellClassParams,
   type CellStyle,
   type RowDragEndEvent,
+  type RowDragMoveEvent,
   type IRowNode,
   type CellClickedEvent,
   type GridApi,
@@ -46,11 +47,16 @@ interface RowData {
 export default function AgGridMatrixTable() {
   const dispatch = useAppDispatch()
   const gridRef = useRef<AgGridReact<RowData>>(null)
+  const gridContainerRef = useRef<HTMLDivElement>(null)
   const { columnHeaders, rowHeaders } = useAppSelector((state) => state.matrix)
   const [copied, setCopied] = useState<boolean>(false)
   const [rowHeightOption, setRowHeightOption] = useState<RowHeightOption>('normal')
   const [rowHeightPopoverOpen, setRowHeightPopoverOpen] = useState(false)
   const [isDraggingOutside, setIsDraggingOutside] = useState<boolean>(false)
+  
+  // Refs to track dragging state for global mouseup handler
+  const draggingRowIdsRef = useRef<string[]>([])
+  const isDraggingRef = useRef<boolean>(false)
 
   // Get current row height value
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height
@@ -308,6 +314,18 @@ export default function AgGridMatrixTable() {
     []
   )
 
+  // Handle row drag move - track dragging state and row IDs
+  const onRowDragMove = useCallback((event: RowDragMoveEvent<RowData>) => {
+    if (!isDraggingRef.current) {
+      isDraggingRef.current = true
+      // Store the IDs of rows being dragged
+      const movingNodes = event.nodes || [event.node]
+      draggingRowIdsRef.current = movingNodes
+        .map((n) => n.data?.id)
+        .filter(Boolean) as string[]
+    }
+  }, [])
+
   // Handle row drag leave - track when dragging outside the grid
   const onRowDragLeave = useCallback(() => {
     setIsDraggingOutside(true)
@@ -317,6 +335,47 @@ export default function AgGridMatrixTable() {
   const onRowDragEnter = useCallback(() => {
     setIsDraggingOutside(false)
   }, [])
+
+  // Global mouseup handler to delete rows when released outside
+  useEffect(() => {
+    const handleGlobalMouseUp = (event: MouseEvent) => {
+      if (!isDraggingRef.current || draggingRowIdsRef.current.length === 0) {
+        return
+      }
+
+      const gridContainer = gridContainerRef.current
+      if (!gridContainer) return
+
+      // Check if mouse is outside the grid container
+      const rect = gridContainer.getBoundingClientRect()
+      const isOutside =
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+
+      if (isOutside) {
+        // Delete the rows
+        dispatch(deleteRows(draggingRowIdsRef.current))
+        
+        // Clear selection
+        const api = gridRef.current?.api
+        if (api) {
+          api.deselectAll()
+        }
+      }
+
+      // Reset dragging state
+      isDraggingRef.current = false
+      draggingRowIdsRef.current = []
+      setIsDraggingOutside(false)
+    }
+
+    document.addEventListener('mouseup', handleGlobalMouseUp)
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp)
+    }
+  }, [dispatch])
 
   // Handle row drag end - process row drag or delete if dropped outside
   const onRowDragEnd = useCallback(
@@ -334,13 +393,13 @@ export default function AgGridMatrixTable() {
 
       const overNode = event.overNode
 
-      // Reset dragging outside state
+      // Reset dragging state
+      isDraggingRef.current = false
+      draggingRowIdsRef.current = []
       setIsDraggingOutside(false)
 
-      // If dropped outside the grid (no overNode), delete the rows
+      // If dropped outside the grid (no overNode), rows were already deleted by global mouseup
       if (!overNode) {
-        dispatch(deleteRows(movingIds))
-        api.deselectAll()
         return
       }
 
@@ -625,6 +684,7 @@ export default function AgGridMatrixTable() {
         </Button>
       </div>
       <div 
+        ref={gridContainerRef}
         className={cn(
           "ag-theme-quartz relative",
           isDraggingOutside && "ring-2 ring-red-500 ring-offset-2"
@@ -652,6 +712,7 @@ export default function AgGridMatrixTable() {
           suppressRowClickSelection={true}
           getRowId={(params) => params.data.id}
           getRowClass={getRowClass}
+          onRowDragMove={onRowDragMove}
           onRowDragEnd={onRowDragEnd}
           onRowDragLeave={onRowDragLeave}
           onRowDragEnter={onRowDragEnter}
