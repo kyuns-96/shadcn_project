@@ -135,9 +135,13 @@ const matrixSlice = createSlice({
       if (row) {
         row.data[columnId] = value
       }
+    },
+    deleteRows: (state, action: PayloadAction<string[]>) => {
+      const idsToDelete = new Set(action.payload)
+      state.rowHeaders = state.rowHeaders.filter(row => !idsToDelete.has(row.id))
     }
   }
 })
 
-export const { setColumnHeaders, setRowHeaders, moveColumn, moveRow, moveGroup, reorderRows, addRow, addColumn, updateCell } = matrixSlice.actions
+export const { setColumnHeaders, setRowHeaders, moveColumn, moveRow, moveGroup, reorderRows, addRow, addColumn, updateCell, deleteRows } = matrixSlice.actions
 export default matrixSlice.reducer

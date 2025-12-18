@@ -17,7 +17,7 @@ import {
 } from 'ag-grid-community'
 import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { reorderRows } from '@/store/matrixSlice'
+import { reorderRows, deleteRows } from '@/store/matrixSlice'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
@@ -50,6 +50,7 @@ export default function AgGridMatrixTable() {
   const [copied, setCopied] = useState<boolean>(false)
   const [rowHeightOption, setRowHeightOption] = useState<RowHeightOption>('normal')
   const [rowHeightPopoverOpen, setRowHeightPopoverOpen] = useState(false)
+  const [isDraggingOutside, setIsDraggingOutside] = useState<boolean>(false)
 
   // Get current row height value
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height
@@ -307,24 +308,46 @@ export default function AgGridMatrixTable() {
     []
   )
 
-  // Handle row drag end - process row drag
+  // Handle row drag leave - track when dragging outside the grid
+  const onRowDragLeave = useCallback(() => {
+    setIsDraggingOutside(true)
+  }, [])
+
+  // Handle row drag enter - track when dragging back inside the grid
+  const onRowDragEnter = useCallback(() => {
+    setIsDraggingOutside(false)
+  }, [])
+
+  // Handle row drag end - process row drag or delete if dropped outside
   const onRowDragEnd = useCallback(
     (event: RowDragEndEvent<RowData>) => {
       const api = gridRef.current?.api
       if (!api) return
-
-      const overNode = event.overNode
-      if (!overNode) return
-
-      const overData = overNode.data
-      if (!overData) return
 
       // Get all dragged nodes (selected rows for multi-row drag, or single row)
       const movingNodes = event.nodes || [event.node]
       if (movingNodes.length === 0) return
 
       // Get the IDs of rows being moved
-      const movingIds = new Set(movingNodes.map((n) => n.data?.id).filter(Boolean))
+      const movingIds = movingNodes.map((n) => n.data?.id).filter(Boolean) as string[]
+      if (movingIds.length === 0) return
+
+      const overNode = event.overNode
+
+      // Reset dragging outside state
+      setIsDraggingOutside(false)
+
+      // If dropped outside the grid (no overNode), delete the rows
+      if (!overNode) {
+        dispatch(deleteRows(movingIds))
+        api.deselectAll()
+        return
+      }
+
+      const overData = overNode.data
+      if (!overData) return
+
+      const movingIdSet = new Set(movingIds)
 
       // Get current order from grid
       const currentOrder: RowData[] = []
@@ -339,13 +362,13 @@ export default function AgGridMatrixTable() {
       if (overIndex === -1) return
 
       // Separate moving rows from other rows, preserving their relative order
-      const movingRows = currentOrder.filter((row) => movingIds.has(row.id))
-      const otherRows = currentOrder.filter((row) => !movingIds.has(row.id))
+      const movingRows = currentOrder.filter((row) => movingIdSet.has(row.id))
+      const otherRows = currentOrder.filter((row) => !movingIdSet.has(row.id))
 
       // Calculate new insert position in the filtered array
       let insertIndex = 0
       for (let i = 0; i < overIndex; i++) {
-        if (!movingIds.has(currentOrder[i].id)) {
+        if (!movingIdSet.has(currentOrder[i].id)) {
           insertIndex++
         }
       }
@@ -601,7 +624,20 @@ export default function AgGridMatrixTable() {
           {copied ? 'Copied!' : 'Copy Table'}
         </Button>
       </div>
-      <div className="ag-theme-quartz" style={{ height: 'calc(90vh - 180px)', width: '100%' }}>
+      <div 
+        className={cn(
+          "ag-theme-quartz relative",
+          isDraggingOutside && "ring-2 ring-red-500 ring-offset-2"
+        )} 
+        style={{ height: 'calc(90vh - 180px)', width: '100%' }}
+      >
+        {isDraggingOutside && (
+          <div className="absolute inset-0 bg-red-500/10 pointer-events-none z-10 flex items-center justify-center">
+            <div className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg font-medium">
+              Release to delete row
+            </div>
+          </div>
+        )}
         <AgGridReact<RowData>
           ref={gridRef}
           rowData={rowData}
@@ -617,6 +653,8 @@ export default function AgGridMatrixTable() {
           getRowId={(params) => params.data.id}
           getRowClass={getRowClass}
           onRowDragEnd={onRowDragEnd}
+          onRowDragLeave={onRowDragLeave}
+          onRowDragEnter={onRowDragEnter}
           onCellClicked={onCellClicked}
         />
       </div>
