@@ -15,6 +15,7 @@ import {
   type CellClickedEvent,
   type GridApi,
   type RowClassParams,
+  type ICellRendererParams,
 } from 'ag-grid-community'
 import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
@@ -23,7 +24,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import ColumnHeaderWithPopup, { type ColumnMetadata } from '@/components/ColumnHeaderWithPopup'
-
+import {Spinner} from "@/components/ui/spinner";
 // Row height options
 type RowHeightOption = 'compact' | 'normal' | 'comfortable'
 
@@ -630,6 +631,12 @@ export default function AgGridMatrixTable() {
           return num.toFixed(2)
         }
         return value
+      },
+      cellRenderer: (params: ICellRendererParams<RowData>) => {
+        if (params.value === "___LOADING___") {
+          return <Spinner className="mx-auto" />;
+        }  
+        return params.value;
       },
     }))
 
