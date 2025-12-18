@@ -645,9 +645,13 @@ export default function AgGridMatrixTable() {
       valueFormatter: (params) => {
         const value = params.value
         if (value === null || value === undefined || value === '') return ''
-        const num = parseFloat(value)
-        if (!isNaN(num)) {
-          return num.toFixed(decimalPlaces)
+        const valueStr = value.toString()
+        // Only apply decimal formatting if the value contains a decimal point
+        if (valueStr.includes('.')) {
+          const num = parseFloat(value)
+          if (!isNaN(num)) {
+            return num.toFixed(decimalPlaces)
+          }
         }
         return value
       },
