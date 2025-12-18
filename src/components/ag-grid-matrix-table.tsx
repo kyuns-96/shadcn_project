@@ -16,7 +16,7 @@ import {
   type GridApi,
   type RowClassParams,
 } from 'ag-grid-community'
-import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon } from 'lucide-react'
+import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows, deleteRows } from '@/store/matrixSlice'
 import { Button } from '@/components/ui/button'
@@ -31,6 +31,15 @@ const ROW_HEIGHT_CONFIG: Record<RowHeightOption, { label: string; height: number
   compact: { label: 'Compact', height: 20 },
   normal: { label: 'Normal', height: 28 },
   comfortable: { label: 'Comfortable', height: 36 },
+}
+
+// Text alignment options
+type TextAlignOption = 'left' | 'center' | 'right'
+
+const TEXT_ALIGN_CONFIG: Record<TextAlignOption, { label: string; icon: typeof AlignLeftIcon }> = {
+  left: { label: 'Left', icon: AlignLeftIcon },
+  center: { label: 'Center', icon: AlignCenterIcon },
+  right: { label: 'Right', icon: AlignRightIcon },
 }
 
 // Register AG Grid modules
@@ -52,6 +61,8 @@ export default function AgGridMatrixTable() {
   const [copied, setCopied] = useState<boolean>(false)
   const [rowHeightOption, setRowHeightOption] = useState<RowHeightOption>('normal')
   const [rowHeightPopoverOpen, setRowHeightPopoverOpen] = useState(false)
+  const [textAlignOption, setTextAlignOption] = useState<TextAlignOption>('right')
+  const [textAlignPopoverOpen, setTextAlignPopoverOpen] = useState(false)
   
   // Refs to track dragging state for global mouseup handler
   const draggingRowIdsRef = useRef<string[]>([])
@@ -72,6 +83,18 @@ export default function AgGridMatrixTable() {
       api.setGridOption('rowHeight', newHeight)
       api.resetRowHeights()
       api.redrawRows()
+    }
+  }, [])
+
+  // Handle text alignment change
+  const handleTextAlignChange = useCallback((option: TextAlignOption) => {
+    setTextAlignOption(option)
+    setTextAlignPopoverOpen(false)
+    
+    // Refresh cells to apply new alignment
+    const api = gridRef.current?.api
+    if (api) {
+      api.refreshCells({ force: true })
     }
   }, [])
 
@@ -592,7 +615,7 @@ export default function AgGridMatrixTable() {
       headerName: col.label,
       width: 150,
       editable: true,
-      cellStyle: { textAlign: 'right' },
+      cellStyle: { textAlign: textAlignOption },
       headerComponent: ColumnHeaderWithPopup,
       headerComponentParams: {
         columnMetadata: col as ColumnMetadata,
@@ -611,7 +634,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi, groupColumnWidth, rowHeaderColumnWidth])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi, groupColumnWidth, rowHeaderColumnWidth, textAlignOption])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
@@ -626,45 +649,83 @@ export default function AgGridMatrixTable() {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex justify-between items-center">
-        {/* Row Height Control - Top Left */}
-        <Popover open={rowHeightPopoverOpen} onOpenChange={setRowHeightPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Rows3Icon className="size-4" />
-              <span className="text-xs">{ROW_HEIGHT_CONFIG[rowHeightOption].label}</span>
-              <ChevronDownIcon className="size-3" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-40 p-1" align="start">
-            <div className="flex flex-col">
-              {(Object.keys(ROW_HEIGHT_CONFIG) as RowHeightOption[]).map((option) => (
-                <button
-                  key={option}
-                  onClick={() => handleRowHeightChange(option)}
-                  className={cn(
-                    'flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left',
-                    rowHeightOption === option
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  )}
-                >
-                  <div
+        <div className="flex items-center gap-2">
+          {/* Row Height Control */}
+          <Popover open={rowHeightPopoverOpen} onOpenChange={setRowHeightPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Rows3Icon className="size-4" />
+                <span className="text-xs">{ROW_HEIGHT_CONFIG[rowHeightOption].label}</span>
+                <ChevronDownIcon className="size-3" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-1" align="start">
+              <div className="flex flex-col">
+                {(Object.keys(ROW_HEIGHT_CONFIG) as RowHeightOption[]).map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => handleRowHeightChange(option)}
                     className={cn(
-                      'flex flex-col gap-0.5',
-                      option === 'compact' && 'scale-75',
-                      option === 'comfortable' && 'scale-110'
+                      'flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left',
+                      rowHeightOption === option
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-muted'
                     )}
                   >
-                    <div className="w-4 h-0.5 bg-current rounded" />
-                    <div className="w-4 h-0.5 bg-current rounded" />
-                    <div className="w-4 h-0.5 bg-current rounded" />
-                  </div>
-                  <span>{ROW_HEIGHT_CONFIG[option].label}</span>
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
+                    <div
+                      className={cn(
+                        'flex flex-col gap-0.5',
+                        option === 'compact' && 'scale-75',
+                        option === 'comfortable' && 'scale-110'
+                      )}
+                    >
+                      <div className="w-4 h-0.5 bg-current rounded" />
+                      <div className="w-4 h-0.5 bg-current rounded" />
+                      <div className="w-4 h-0.5 bg-current rounded" />
+                    </div>
+                    <span>{ROW_HEIGHT_CONFIG[option].label}</span>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Text Alignment Control */}
+          <Popover open={textAlignPopoverOpen} onOpenChange={setTextAlignPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                {(() => {
+                  const IconComponent = TEXT_ALIGN_CONFIG[textAlignOption].icon
+                  return <IconComponent className="size-4" />
+                })()}
+                <span className="text-xs">{TEXT_ALIGN_CONFIG[textAlignOption].label}</span>
+                <ChevronDownIcon className="size-3" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-1" align="start">
+              <div className="flex flex-col">
+                {(Object.keys(TEXT_ALIGN_CONFIG) as TextAlignOption[]).map((option) => {
+                  const IconComponent = TEXT_ALIGN_CONFIG[option].icon
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => handleTextAlignChange(option)}
+                      className={cn(
+                        'flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-left',
+                        textAlignOption === option
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-muted'
+                      )}
+                    >
+                      <IconComponent className="size-4" />
+                      <span>{TEXT_ALIGN_CONFIG[option].label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         {/* Copy Button - Top Right */}
         <Button
