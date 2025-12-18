@@ -17,7 +17,7 @@ import {
   type RowClassParams,
   type ICellRendererParams,
 } from 'ag-grid-community'
-import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from 'lucide-react'
+import { CheckIcon, CopyIcon, ChevronDownIcon, Rows3Icon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, PlusIcon, MinusIcon } from 'lucide-react'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { reorderRows, deleteRows } from '@/store/matrixSlice'
 import { Button } from '@/components/ui/button'
@@ -64,6 +64,7 @@ export default function AgGridMatrixTable() {
   const [rowHeightPopoverOpen, setRowHeightPopoverOpen] = useState(false)
   const [textAlignOption, setTextAlignOption] = useState<TextAlignOption>('right')
   const [textAlignPopoverOpen, setTextAlignPopoverOpen] = useState(false)
+  const [decimalPlaces, setDecimalPlaces] = useState<number>(2)
   
   // Refs to track dragging state for global mouseup handler
   const draggingRowIdsRef = useRef<string[]>([])
@@ -93,6 +94,24 @@ export default function AgGridMatrixTable() {
     setTextAlignPopoverOpen(false)
     
     // Refresh cells to apply new alignment
+    const api = gridRef.current?.api
+    if (api) {
+      api.refreshCells({ force: true })
+    }
+  }, [])
+
+  // Handle decimal places increase
+  const handleDecimalIncrease = useCallback(() => {
+    setDecimalPlaces((prev) => Math.min(prev + 1, 10))
+    const api = gridRef.current?.api
+    if (api) {
+      api.refreshCells({ force: true })
+    }
+  }, [])
+
+  // Handle decimal places decrease
+  const handleDecimalDecrease = useCallback(() => {
+    setDecimalPlaces((prev) => Math.max(prev - 1, 0))
     const api = gridRef.current?.api
     if (api) {
       api.refreshCells({ force: true })
@@ -627,8 +646,8 @@ export default function AgGridMatrixTable() {
         const value = params.value
         if (value === null || value === undefined || value === '') return ''
         const num = parseFloat(value)
-        if (!isNaN(num) && value.toString().includes('.')) {
-          return num.toFixed(2)
+        if (!isNaN(num)) {
+          return num.toFixed(decimalPlaces)
         }
         return value
       },
@@ -641,7 +660,7 @@ export default function AgGridMatrixTable() {
     }))
 
     return [rowGroupCol, rowHeaderCol, ...dataColumns]
-  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi, groupColumnWidth, rowHeaderColumnWidth, textAlignOption])
+  }, [columnHeaders, rowGroupRowSpan, rowGroupCellClass, isFirstOfGroupFromApi, groupColumnWidth, rowHeaderColumnWidth, textAlignOption, decimalPlaces])
 
   // Default column definition
   const defaultColDef: ColDef<RowData> = useMemo(
@@ -731,6 +750,32 @@ export default function AgGridMatrixTable() {
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Decimal Places Control */}
+          <div className="flex items-center gap-1 border rounded-md px-2 py-1">
+            <span className="text-xs text-muted-foreground mr-1">Decimal</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={handleDecimalDecrease}
+              disabled={decimalPlaces <= 0}
+              title="Decrease decimal places"
+            >
+              <MinusIcon className="size-3" />
+            </Button>
+            <span className="text-xs w-4 text-center font-medium">{decimalPlaces}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={handleDecimalIncrease}
+              disabled={decimalPlaces >= 10}
+              title="Increase decimal places"
+            >
+              <PlusIcon className="size-3" />
+            </Button>
+          </div>
 
           {/* Copy Button */}
           <Button
