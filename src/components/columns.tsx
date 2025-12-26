@@ -10,7 +10,7 @@ export type Payment = {
     status: "pending" | "processing" | "success" | "failed"
     email: string
 }
-
+ 
 export const columns: ColumnDef<Payment>[] = [
     {
         accessorKey: "status",
