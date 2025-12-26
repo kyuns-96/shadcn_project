@@ -34,7 +34,9 @@ import AddButton from "@/components/shadcn-studio/button/button-01";
 import useDropdownConfigs from "@/variables/dropdownConfig";
 import Combobox from "@/components/shadcn-studio/combobox/combobox-01";
 import DoeNameInput from "@/components/shadcn-studio/input/doeInput";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useAppDispatch } from "@/store";
+import { addTemplate00Rows } from "@/variables/Template00";
 const DashboardSidebar = () => {
   const dropdownConfigs = useDropdownConfigs();
   const dispatch = useAppDispatch();
