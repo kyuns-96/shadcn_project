@@ -28,7 +28,7 @@ export const fetchDataset = createAsyncThunk<
     const funcList = Object.entries(
       funcListRaw as Record<string, { method: string; path: string }[]>
     )
-      .filter(([key]) => !excludedKeys.includes(key))
+      .filter(([key]) => key !== "Info" && key !== "Version Info")
       .flatMap(([, arr]) =>
         arr.filter((item) => item.method === "GET").map((item) => item.path)
       );
