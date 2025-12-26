@@ -10,8 +10,8 @@ export async function getNetver(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        project_name: projectName,
-        block_name: blockName,
+        project: projectName,
+        block: blockName,
       }),
     });
     if (!response.ok) {

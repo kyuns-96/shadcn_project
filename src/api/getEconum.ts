@@ -12,10 +12,10 @@ export async function getEconum(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        project_name: projectName,
-        block_name: blockName,
-        netver_name: netverName,
-        revision_name: revisionName,
+        project: projectName,
+        block: blockName,
+        netver: netverName,
+        revision: revisionName,
       }),
     });
     if (!response.ok) {
