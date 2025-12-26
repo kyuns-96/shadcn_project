@@ -1,15 +1,14 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getDataset, type DatasetParams } from "@/api/getDataset";
-import type { Root } from "react-dom/client";
+import { getDataset } from "@/api/getDataset";
 import type { RootState } from "@/store";
 import { getFunction } from "@/api/getFunction";
 
 type Dataset = Record<string, any>;
 
 export const fetchDataset = createAsyncThunk<
-  Dataset,
-  DatasetParams | void,
-  { rejectValue: string; state: any }
+  Record<string, any>,
+  void,
+  { state: RootState; rejectValue: string }
 >("dataset/fetch", async (_, { rejectWithValue, getState }) => {
   try {
     // Extract selection parameters from the redux store
@@ -35,14 +34,14 @@ export const fetchDataset = createAsyncThunk<
 
     const result: Record<string, any> = {};
     for (const fn of funcList) {
-      const data = await getDataset({
-        project: selectedProject,
-        block: selectedBlock,
-        netver: selectedNetver,
-        revision: selectedRevision,
-        econum: selectedEconum,
-        func: fn,
-      });
+      const data = await getDataset(
+        selectedProject || "ASDF",
+        selectedBlock || "GGGGG",
+        selectedNetver || "ZXCV",
+        selectedRevision || "LLLL",
+        selectedEconum || "KKKKK",
+        fn
+      );
       const strippedFn = fn.replace(/\/api\//, "");
       result[strippedFn] = data;
     }

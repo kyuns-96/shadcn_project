@@ -1,38 +1,36 @@
-export interface DatasetParams {
-  project: string;
-  block: string;
-  netver: string;
-  revision: string;
-  econum: string;
-  func: string;
-}
-
 export async function getDataset(
-  params: DatasetParams
-): Promise<Record<string, any>> {
+  project: string = "ASDF",
+  block: string = "GGGGG",
+  netver: string = "ZXCV",
+  revision: string = "LLLL",
+  econum: string = "KKKKK",
+  func: string = "/api/example"
+): Promise<any> {
   try {
-    console.log(`${params.func}`);
-    const response = await fetch(`${params.func}`, {
+    console.log(`${func}`);
+    const response = await fetch(`${func}`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        project: params.project,
-        block: params.block,
-        netver: params.netver,
-        revision: params.revision,
-        econum: params.econum,
+        project,
+        block,
+        netver,
+        revision,
+        econum,
       }),
     });
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Error fetching dataset: ${response.statusText}`);
     }
-    const data = (await response.json()) as Record<string, any>;
+
+    const data = await response.json();
     return data;
   } catch (error) {
-    console.error("Error fetching dataset:", error);
+    console.error("getDataset error:", error);
     throw error;
   }
 }
