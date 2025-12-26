@@ -1,14 +1,15 @@
 import { useId } from "react";
-import { useDispatch } from "react-redux";
+import { useAppDispatch } from "@/store";
+import { setDoeName } from "@/store/reducers/selectedReducer";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const DoeNameInput = () => {
   const id = useId();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch({ type: "doeName/set", playload: e.target.value });
+    dispatch(setDoeName(e.target.value));
   };
 
   return (
