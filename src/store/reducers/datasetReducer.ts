@@ -21,8 +21,8 @@ export const fetchDataset = createAsyncThunk<
         PROJECT_NAME: selected.selectedProject || "",
         BLOCK: selected.selectedBlock || "",
         NET_VER: selected.selectedNetver || "",
-        REVISION: selected.selectedRevision || "",
-        ECO_NUM: selected.selectedEconum || "",
+        revision: selected.selectedRevision || "",
+        econum: selected.selectedEconum || "",
       };
     }
 
@@ -31,8 +31,8 @@ export const fetchDataset = createAsyncThunk<
       !datasetParams.PROJECT_NAME ||
       !datasetParams.BLOCK ||
       !datasetParams.NET_VER ||
-      !datasetParams.REVISION ||
-      !datasetParams.ECO_NUM
+      !datasetParams.revision ||
+      !datasetParams.econum
     ) {
       return {};
     }

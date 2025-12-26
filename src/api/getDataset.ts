@@ -1,9 +1,9 @@
 export interface DatasetParams {
-  PROJECT_NAME: string;
-  BLOCK: string;
-  NET_VER: string;
-  REVISION: string;
-  ECO_NUM: string;
+  project: string;
+  block: string;
+  netver: string;
+  revision: string;
+  econum: string;
 }
 
 export async function getDataset(
