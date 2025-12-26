@@ -5,7 +5,7 @@ export async function getBlock(projectName: string): Promise<string[]> {
 
     // Prepare payload
     const payload = {
-      project_name: projectName,
+      project: projectName,
     };
     console.log('[DEBUG] Request payload:', JSON.stringify(payload));
 
