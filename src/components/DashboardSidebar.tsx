@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ModeToggle } from "./mode-toggle";
 
-import AgGridMatrixTable from "@/components/ag-grid-matrix-table";
+import AgGridMatrixTable from "@/components/ag-grid-matrix";
 import AddButton from "@/components/shadcn-studio/button/button-01";
 import useDropdownConfigs from "@/variables/dropdownConfig";
 import Combobox from "@/components/shadcn-studio/combobox/combobox-01";

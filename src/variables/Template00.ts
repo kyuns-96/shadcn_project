@@ -1,11 +1,11 @@
 import { addRow } from "@/store/matrixSlice";
 import type { AppDispatch } from "@/store";
 
-interface Row {
+interface RowTemplate {
   id: string;
   label: string;
   rowGroup: string;
-  data: Record<string, any>;
+  data: Record<string, string>;
 }
 
 export const Template00 = {
@@ -51,11 +51,11 @@ export const Template00 = {
       rowGroup: "Group C",
       data: { "col-1": "R6C1", "col-2": "R6C2", "col-3": "R6C3" },
     },
-  ],
+  ] as RowTemplate[],
 };
 
 export const addTemplate00Rows = (dispatch: AppDispatch) => {
-  Template00.rowHeaders.forEach((row: Row) => {
+  Template00.rowHeaders.forEach((row) => {
     dispatch(addRow(row));
   });
 };

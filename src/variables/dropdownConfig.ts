@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import type { RootState } from "@/store";
 
@@ -36,25 +36,30 @@ export default function useDropdownConfigs(): DropdownConfig[] {
     shallowEqual
   );
 
-  const setSelectedProject = (value: string) => {
-    dispatch(setProjectAction(value));
-  };
+  const setSelectedProject = useCallback(
+    (value: string) => dispatch(setProjectAction(value)),
+    [dispatch]
+  );
 
-  const setSelectedBlock = (value: string) => {
-    dispatch(setBlockAction(value));
-  };
+  const setSelectedBlock = useCallback(
+    (value: string) => dispatch(setBlockAction(value)),
+    [dispatch]
+  );
 
-  const setSelectedNetver = (value: string) => {
-    dispatch(setNetverAction(value));
-  };
+  const setSelectedNetver = useCallback(
+    (value: string) => dispatch(setNetverAction(value)),
+    [dispatch]
+  );
 
-  const setSelectedRevision = (value: string) => {
-    dispatch(setRevisionAction(value));
-  };
+  const setSelectedRevision = useCallback(
+    (value: string) => dispatch(setRevisionAction(value)),
+    [dispatch]
+  );
 
-  const setSelectedEconum = (value: string) => {
-    dispatch(setEconumAction(value));
-  };
+  const setSelectedEconum = useCallback(
+    (value: string) => dispatch(setEconumAction(value)),
+    [dispatch]
+  );
 
   const { projectList, blockList, netverList, revisionList, econumList } =
     useSelector(
@@ -86,32 +91,32 @@ export default function useDropdownConfigs(): DropdownConfig[] {
       {
         value: selectedProject,
         placeholder: "PROJECT_NAME",
-        data: (Array.isArray(projectList) ? projectList : []) as string[],
-        set: (v: string) => setSelectedProject(v),
+        data: Array.isArray(projectList) ? projectList : [],
+        set: setSelectedProject,
       },
       {
         value: selectedBlock,
         placeholder: "BLOCK",
-        data: (Array.isArray(blockList) ? blockList : []) as string[],
-        set: (v: string) => setSelectedBlock(v),
+        data: Array.isArray(blockList) ? blockList : [],
+        set: setSelectedBlock,
       },
       {
         value: selectedNetver,
         placeholder: "NET_VER",
-        data: (Array.isArray(netverList) ? netverList : []) as string[],
-        set: (v: string) => setSelectedNetver(v),
+        data: Array.isArray(netverList) ? netverList : [],
+        set: setSelectedNetver,
       },
       {
         value: selectedRevision,
         placeholder: "REVISION",
-        data: (Array.isArray(revisionList) ? revisionList : []) as string[],
-        set: (v: string) => setSelectedRevision(v),
+        data: Array.isArray(revisionList) ? revisionList : [],
+        set: setSelectedRevision,
       },
       {
         value: selectedEconum,
         placeholder: "ECO_NUM",
-        data: (Array.isArray(econumList) ? econumList : []) as string[],
-        set: (v: string) => setSelectedEconum(v),
+        data: Array.isArray(econumList) ? econumList : [],
+        set: setSelectedEconum,
       },
     ],
     [
@@ -125,6 +130,11 @@ export default function useDropdownConfigs(): DropdownConfig[] {
       netverList,
       revisionList,
       econumList,
+      setSelectedProject,
+      setSelectedBlock,
+      setSelectedNetver,
+      setSelectedRevision,
+      setSelectedEconum,
     ]
   );
   return dropdownConfigs;

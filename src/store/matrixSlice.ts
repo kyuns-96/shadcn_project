@@ -1,20 +1,27 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { arrayMove } from "@dnd-kit/sortable";
 
+export interface ColumnHeader {
+  id: string;
+  label: string;
+  accessorKey: string;
+  PROJECT_NAME?: string;
+  BLOCK?: string;
+  NET_VER?: string;
+  REVISION?: string;
+  ECO_NUM?: string;
+}
+
+export interface RowHeader {
+  id: string;
+  label: string;
+  rowGroup: string;
+  data: Record<string, string>;
+}
+
 export interface MatrixState {
-  columnHeaders: Array<{
-    id: string;
-    label: string;
-    accessorKey: string;
-    [key: string]: any;
-  }>;
-  rowHeaders: Array<{
-    id: string;
-    label: string;
-    rowGroup: string; // Row header group for row spanning
-    data: any;
-    [key: string]: any;
-  }>;
+  columnHeaders: ColumnHeader[];
+  rowHeaders: RowHeader[];
 }
 
 const initialState: MatrixState = {
@@ -76,7 +83,6 @@ const matrixSlice = createSlice({
     ) => {
       const { groupName, targetIndex } = action.payload;
 
-      // Find all rows belonging to this group
       const groupRows = state.rowHeaders.filter(
         (row) => row.rowGroup === groupName
       );
@@ -86,7 +92,6 @@ const matrixSlice = createSlice({
 
       if (groupRows.length === 0) return;
 
-      // Insert the group at the target position
       const result = [...otherRows];
       const insertAt = Math.min(Math.max(0, targetIndex), result.length);
       result.splice(insertAt, 0, ...groupRows);
@@ -102,19 +107,18 @@ const matrixSlice = createSlice({
         id?: string;
         label: string;
         rowGroup: string;
-        data?: Record<string, any>;
+        data?: Record<string, string>;
       }>
     ) => {
       const { label, rowGroup, data } = action.payload;
       const id = action.payload.id || `row-${Date.now()}`;
 
-      // Initialize data with empty values for all existing columns if not provided
       const rowData =
         data ||
         state.columnHeaders.reduce((acc, col) => {
           acc[col.id] = "";
           return acc;
-        }, {} as Record<string, any>);
+        }, {} as Record<string, string>);
 
       state.rowHeaders.push({
         id,
@@ -129,7 +133,7 @@ const matrixSlice = createSlice({
         id?: string;
         label: string;
         accessorKey?: string;
-        defaultValue?: any;
+        defaultValue?: string;
         meta?: {
           PROJECT_NAME?: string;
           BLOCK?: string;
@@ -143,7 +147,6 @@ const matrixSlice = createSlice({
       const id = action.payload.id || `col-${Date.now()}`;
       const accessorKey = action.payload.accessorKey || id;
 
-      // Add the new column header
       state.columnHeaders.push({
         id,
         label,
@@ -151,7 +154,6 @@ const matrixSlice = createSlice({
         ...(meta || {}),
       });
 
-      // Add default value for this column to all existing rows
       state.rowHeaders.forEach((row) => {
         row.data[id] = defaultValue;
       });
@@ -161,7 +163,7 @@ const matrixSlice = createSlice({
       action: PayloadAction<{
         rowId: string;
         columnId: string;
-        value: any;
+        value: string;
       }>
     ) => {
       const { rowId, columnId, value } = action.payload;

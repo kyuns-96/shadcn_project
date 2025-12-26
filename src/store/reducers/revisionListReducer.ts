@@ -3,6 +3,11 @@ import { getRevision } from "@/api/getRevision";
 
 type RevisionList = string[];
 
+interface RevisionListAction {
+  type: string;
+  payload?: RevisionList;
+}
+
 export const fetchRevisionList = createAsyncThunk<
   RevisionList,
   {
@@ -20,16 +25,17 @@ export const fetchRevisionList = createAsyncThunk<
     try {
       const data = await getRevision(projectName, blockName, netverName);
       return Array.isArray(data) ? data : [];
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return rejectWithValue(message);
     }
   }
 );
 
 const revisionListReducer = (
   state: RevisionList = [],
-  action: { type: string; payload?: RevisionList }
-) => {
+  action: RevisionListAction
+): RevisionList => {
   switch (action.type) {
     case "revisionList/set":
     case "revisionList/fetch/fulfilled":
