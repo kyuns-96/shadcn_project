@@ -6,6 +6,7 @@ export interface SelectedState {
   selectedNetver: string | null;
   selectedRevision: string | null;
   selectedEconum: string | null;
+  doeName: string;
 }
 
 const initialState: SelectedState = {
@@ -14,6 +15,7 @@ const initialState: SelectedState = {
   selectedNetver: null,
   selectedRevision: null,
   selectedEconum: null,
+  doeName: "",
 };
 
 const selectedSlice = createSlice({
@@ -45,6 +47,9 @@ const selectedSlice = createSlice({
     setSelectedEconum: (state, action: PayloadAction<string | null>) => {
       state.selectedEconum = action.payload;
     },
+    setDoeName: (state, action: PayloadAction<string>) => {
+      state.doeName = action.payload;
+    },
   },
 });
 
@@ -54,6 +59,7 @@ export const {
   setSelectedNetver,
   setSelectedRevision,
   setSelectedEconum,
+  setDoeName,
 } = selectedSlice.actions;
 
 export default selectedSlice.reducer;

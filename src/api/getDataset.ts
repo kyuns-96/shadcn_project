@@ -4,19 +4,27 @@ export interface DatasetParams {
   netver: string;
   revision: string;
   econum: string;
+  func: string;
 }
 
 export async function getDataset(
   params: DatasetParams
 ): Promise<Record<string, any>> {
   try {
-    const response = await fetch("/api/get_dataset", {
+    console.log(`${params.func}`);
+    const response = await fetch(`${params.func}`, {
       method: "POST",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        project: params.project,
+        block: params.block,
+        netver: params.netver,
+        revision: params.revision,
+        econum: params.econum,
+      }),
     });
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
