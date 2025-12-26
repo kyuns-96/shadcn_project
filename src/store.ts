@@ -37,17 +37,3 @@ export type RootState = ReturnType<typeof store.getState>;
 
 export const useAppDispatch = () => useDispatch<AppDispatch>();
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
-
-// Action creators
-// Updated to accept a column definition (or an array of column definitions) as payload.
-import type { ColumnDef } from "@tanstack/react-table";
-export const addColumn = (
-  column: ColumnDef<unknown, unknown> | ColumnDef<unknown, unknown>[]
-) => ({
-  type: "colDef/add",
-  payload: Array.isArray(column) ? column : [column],
-});
-export const setDoeName = (name: string) => ({
-  type: "doeName/set",
-  payload: name,
-});

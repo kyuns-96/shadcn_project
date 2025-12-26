@@ -37,14 +37,11 @@ const AddButton = () => {
 
     dispatch(fetchDataset()).then((action) => {
       if (fetchDataset.fulfilled.match(action)) {
-        console.log("Dataset:", action.payload);
-        const data = (action.payload?.[doeName] ?? {}) as any;
+        const data = (action.payload?.[doeName] ?? {}) as Record<string, Record<string, unknown>>;
         rowHeaders.forEach((row) => {
           const metricKey = `${row.rowGroup}!${row.label}`;
-          let value = getMetric(metricKey, data);
-          if (value === undefined) {
-            value = "-";
-          }
+          const metricValue = getMetric(metricKey, data);
+          const value = metricValue !== undefined ? String(metricValue) : "-";
           dispatch(updateCell({ rowId: row.id, columnId: id, value }));
         });
       }

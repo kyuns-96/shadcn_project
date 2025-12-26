@@ -3,6 +3,11 @@ import { getBlock } from "@/api/getBlock";
 
 type BlockList = string[];
 
+interface BlockListAction {
+  type: string;
+  payload?: BlockList;
+}
+
 export const fetchBlockList = createAsyncThunk<
   BlockList,
   string | null | undefined,
@@ -14,15 +19,16 @@ export const fetchBlockList = createAsyncThunk<
   try {
     const data = await getBlock(projectName);
     return Array.isArray(data) ? data : [];
-  } catch (error: any) {
-    return rejectWithValue(error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return rejectWithValue(message);
   }
 });
 
 const blockListReducer = (
   state: BlockList = [],
-  action: { type: string; payload?: BlockList }
-) => {
+  action: BlockListAction
+): BlockList => {
   switch (action.type) {
     case "blockList/set":
     case "blockList/fetch/fulfilled":

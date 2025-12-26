@@ -3,16 +3,22 @@ import { getDataset } from "@/api/getDataset";
 import type { RootState } from "@/store";
 import { getFunction } from "@/api/getFunction";
 
-type Dataset = Record<string, any>;
+type Dataset = Record<string, Record<string, unknown>>;
+
+interface FunctionListItem {
+  method: string;
+  path: string;
+}
+
+type FunctionListResponse = Record<string, FunctionListItem[]>;
 
 export const fetchDataset = createAsyncThunk<
-  Record<string, any>,
+  Record<string, Record<string, unknown>>,
   void,
   { state: RootState; rejectValue: string }
 >("dataset/fetch", async (_, { rejectWithValue, getState }) => {
   try {
-    // Extract selection parameters from the redux store
-    const { selected } = getState() as RootState;
+    const { selected } = getState();
     const {
       selectedProject = "",
       selectedBlock = "",
@@ -22,17 +28,14 @@ export const fetchDataset = createAsyncThunk<
       doeName = "",
     } = selected ?? {};
 
-    // Retrieve function list
     const funcListRaw = await getFunction();
-    const funcList = Object.entries(
-      funcListRaw as Record<string, { method: string; path: string }[]>
-    )
+    const funcList = Object.entries(funcListRaw as FunctionListResponse)
       .filter(([key]) => key !== "Info" && key !== "Version Info")
       .flatMap(([, arr]) =>
         arr.filter((item) => item.method === "GET").map((item) => item.path)
       );
 
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     for (const fn of funcList) {
       const data = await getDataset(
         selectedProject || "ASDF",
@@ -45,9 +48,8 @@ export const fetchDataset = createAsyncThunk<
       const strippedFn = fn.replace(/\/api\//, "");
       result[strippedFn] = data;
     }
-    const key = doeName;
-    return { [key]: result };
-  } catch (error) {
+    return { [doeName]: result };
+  } catch {
     return rejectWithValue("Failed to fetch dataset");
   }
 });

@@ -3,6 +3,11 @@ import { getMethodList } from "@/api/getMethodList";
 
 type MethodList = string[];
 
+interface MethodListAction {
+  type: string;
+  payload?: MethodList;
+}
+
 export const fetchMethodList = createAsyncThunk<
   MethodList,
   void,
@@ -11,15 +16,16 @@ export const fetchMethodList = createAsyncThunk<
   try {
     const data = await getMethodList();
     return Array.isArray(data) ? data : [];
-  } catch (error: any) {
-    return rejectWithValue(error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return rejectWithValue(message);
   }
 });
 
 const methodListReducer = (
   state: MethodList = [],
-  action: { type: string; payload?: MethodList }
-) => {
+  action: MethodListAction
+): MethodList => {
   switch (action.type) {
     case "methodList/set":
     case "methodList/fetch/fulfilled":
