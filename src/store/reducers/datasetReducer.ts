@@ -24,7 +24,6 @@ export const fetchDataset = createAsyncThunk<
 
     // Retrieve function list
     const funcListRaw = await getFunction();
-    const excludedKeys = ["Info", "Version Info"];
     const funcList = Object.entries(
       funcListRaw as Record<string, { method: string; path: string }[]>
     )

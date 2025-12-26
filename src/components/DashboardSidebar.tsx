@@ -34,8 +34,17 @@ import AddButton from "@/components/shadcn-studio/button/button-01";
 import useDropdownConfigs from "@/variables/dropdownConfig";
 import Combobox from "@/components/shadcn-studio/combobox/combobox-01";
 import DoeNameInput from "@/components/shadcn-studio/input/doeInput";
+import { useEffect } from "react";
 const DashboardSidebar = () => {
   const dropdownConfigs = useDropdownConfigs();
+  const dispatch = useAppDispatch();
+  const template00 = useRef(false);
+  useEffect(() => {
+    if (!template00.current) {
+      addTemplate00Rows(dispatch);
+      template00.current = true;
+    }
+  }, [dispatch]);
   return (
     <div className="flex min-h-dvh w-full">
       <SidebarProvider>
