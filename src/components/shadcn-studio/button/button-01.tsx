@@ -7,6 +7,7 @@ import { fetchDataset } from "@/store/reducers/datasetReducer";
 
 const AddButton = () => {
   const dispatch = useAppDispatch();
+  const doeName = useAppSelector((state) => state.selected.doeName);
   const {
     selectedProject,
     selectedBlock,
@@ -18,7 +19,7 @@ const AddButton = () => {
 
   const handleAdd = () => {
     const id = `col${Date.now()}`;
-    const label = id;
+    const label = doeName || id;
     dispatch(
       addColumn({
         id,
@@ -37,7 +38,7 @@ const AddButton = () => {
     dispatch(fetchDataset()).then((action) => {
       if (fetchDataset.fulfilled.match(action)) {
         console.log("Dataset:", action.payload);
-        const data = (action.payload ?? {}) as any;
+        const data = (action.payload?.[doeName] ?? {}) as any;
         rowHeaders.forEach((row) => {
           const metricKey = `${row.rowGroup}!${row.label}`;
           let value = getMetric(metricKey, data);
