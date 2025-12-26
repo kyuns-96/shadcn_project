@@ -29,10 +29,8 @@ export const fetchDataset = createAsyncThunk<
       funcListRaw as Record<string, { method: string; path: string }[]>
     )
       .filter(([key]) => !excludedKeys.includes(key))
-      .flatMap(([_, arr]) =>
-        arr
-          .filter((item) => (item.method || "").trim().toUpperCase() === "GET")
-          .map((item) => item.path)
+      .flatMap(([, arr]) =>
+        arr.filter((item) => item.method === "GET").map((item) => item.path)
       );
 
     const result: Record<string, any> = {};
