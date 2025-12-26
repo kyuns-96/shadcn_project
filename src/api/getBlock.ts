@@ -1,6 +1,6 @@
 export async function getBlock(projectName: string): Promise<string[]> {
   try {
-    const response = await fetch("/api/get_block", {
+    const response = await fetch("/api/get_block_list", {
       method: "POST",
       headers: {
         Accept: "application/json",

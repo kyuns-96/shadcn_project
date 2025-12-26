@@ -1,6 +1,6 @@
 export async function getProject(): Promise<any> {
   try {
-    const response = await fetch("/api/get_project", {
+    const response = await fetch("/api/get_project_list", {
       method: "GET",
       headers: {
         Accept: "application/json",

@@ -5,7 +5,7 @@ export async function getEconum(
   revisionName: string
 ): Promise<string[]> {
   try {
-    const response = await fetch("/api/get_econum", {
+    const response = await fetch("/api/get_econum_list", {
       method: "POST",
       headers: {
         Accept: "application/json",

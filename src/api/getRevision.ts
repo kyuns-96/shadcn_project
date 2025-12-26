@@ -4,7 +4,7 @@ export async function getRevision(
   netverName: string
 ): Promise<string[]> {
   try {
-    const response = await fetch("/api/get_revision", {
+    const response = await fetch("/api/get_revision_list", {
       method: "POST",
       headers: {
         Accept: "application/json",

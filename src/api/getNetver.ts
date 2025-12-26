@@ -3,7 +3,7 @@ export async function getNetver(
   blockName: string
 ): Promise<string[]> {
   try {
-    const response = await fetch("/api/get_netver", {
+    const response = await fetch("/api/get_netver_list", {
       method: "POST",
       headers: {
         Accept: "application/json",
