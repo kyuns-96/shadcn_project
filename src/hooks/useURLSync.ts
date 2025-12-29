@@ -9,7 +9,7 @@ import {
   setFCSelectedNetver,
   setFCSelectedRevision,
 } from "@/store/reducers/fcCheckToolReducer";
-import { updateCell, setColumnHeaders } from "@/store/matrixSlice";
+import { updateCell, restoreColumnsFromURL, markColumnFetched } from "@/store/matrixSlice";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import { getMetric } from "@/variables/getMetric";
 
@@ -121,7 +121,7 @@ export function useURLSync() {
           isRestoringFromURL.current = true;
 
           // We need to wait for rowHeaders to be initialized before fetching data
-          // Store columns first, then fetch data
+          // Store columns first with _needsDataFetch flag, then fetch data
           const storedColumns = columns.map((col) => ({
             id: col.id,
             label: col.label,
@@ -133,7 +133,7 @@ export function useURLSync() {
             ECO_NUM: col.ECO_NUM,
           }));
 
-          dispatch(setColumnHeaders(storedColumns));
+          dispatch(restoreColumnsFromURL(storedColumns));
 
           // Delay data fetch to allow template rows to initialize
           setTimeout(() => {
@@ -205,10 +205,11 @@ export function useURLSync() {
 
 /**
  * Hook to restore column data after template rows are initialized
+ * Only fetches data for columns that have _needsDataFetch flag (from URL restoration)
  */
 export function useRestoreColumnData() {
   const dispatch = useDispatch<AppDispatch>();
-  const hasRestored = useRef(false);
+  const isFetching = useRef(false);
 
   const { columnHeaders, rowHeaders } = useSelector(
     (state: RootState) => ({
@@ -219,36 +220,23 @@ export function useRestoreColumnData() {
   );
 
   useEffect(() => {
-    // Only restore once, when we have both columns and rows
-    if (hasRestored.current || columnHeaders.length === 0 || rowHeaders.length === 0) {
-      return;
-    }
+    // Prevent concurrent fetches
+    if (isFetching.current) return;
+    
+    // Check if we have rows initialized
+    if (rowHeaders.length === 0) return;
 
-    // Check if this is a URL restoration (columns exist but cells are empty)
-    const needsDataFetch = columnHeaders.some((col) => {
-      const hasData = rowHeaders.some((row) => {
-        const cellValue = row.data[col.id];
-        return cellValue !== undefined && cellValue !== "" && cellValue !== "___LOADING___";
-      });
-      return !hasData;
-    });
+    // Find columns that need data fetch (from URL restoration)
+    const columnsToFetch = columnHeaders.filter((col) => col._needsDataFetch === true);
+    
+    if (columnsToFetch.length === 0) return;
 
-    if (!needsDataFetch) {
-      hasRestored.current = true;
-      return;
-    }
-
-    hasRestored.current = true;
+    isFetching.current = true;
 
     // Fetch data for each column sequentially
     const fetchAllColumns = async () => {
-      for (const col of columnHeaders) {
-        // Mark cells as loading
-        rowHeaders.forEach((row) => {
-          dispatch(updateCell({ rowId: row.id, columnId: col.id, value: "___LOADING___" }));
-        });
-
-        // Set selection state
+      for (const col of columnsToFetch) {
+        // Set selection state for this column
         dispatch(
           restoreFromURL({
             selectedProject: col.PROJECT_NAME || null,
@@ -272,6 +260,9 @@ export function useRestoreColumnData() {
             dispatch(updateCell({ rowId: row.id, columnId: col.id, value }));
           });
         }
+
+        // Mark this column as fetched
+        dispatch(markColumnFetched(col.id));
       }
 
       // Clear selection after restoration
@@ -284,6 +275,8 @@ export function useRestoreColumnData() {
           selectedEconum: null,
         })
       );
+
+      isFetching.current = false;
     };
 
     fetchAllColumns();
