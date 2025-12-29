@@ -1,17 +1,8 @@
 import {
-  ArrowRightLeftIcon,
-  CalendarClockIcon,
-  ChartNoAxesCombinedIcon,
-  ChartPieIcon,
-  ChartSplineIcon,
-  ClipboardListIcon,
-  Clock9Icon,
-  CrownIcon,
-  HashIcon,
-  SettingsIcon,
-  SquareActivityIcon,
-  Undo2Icon,
-  UsersIcon,
+  CheckCircle2Icon,
+  GitCompareArrowsIcon,
+  ClockIcon,
+  ZapIcon,
 } from "lucide-react";
 
 import {
@@ -21,7 +12,6 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
@@ -29,164 +19,81 @@ import {
 } from "@/components/ui/sidebar";
 import { ModeToggle } from "./mode-toggle";
 
-import AgGridMatrixTable from "@/components/ag-grid-matrix-table";
-import AddButton from "@/components/shadcn-studio/button/button-01";
-import useDropdownConfigs from "@/variables/dropdownConfig";
-import Combobox from "@/components/shadcn-studio/combobox/combobox-01";
-import DoeNameInput from "@/components/shadcn-studio/input/doeInput";
-import { useEffect, useRef } from "react";
-import { useAppDispatch } from "@/store";
-import { addTemplate00Rows } from "@/variables/Template00";
+import { useAppDispatch, useAppSelector, setCurrentPage, type PageType } from "@/store";
+import {
+  FCCheckToolPage,
+  QORComparePage,
+  TimingPage,
+  PowerPage,
+} from "@/pages";
+
+const pages = [
+  {
+    id: "fc-check-tool" as PageType,
+    title: "FC Check Tool",
+    icon: CheckCircle2Icon,
+  },
+  {
+    id: "qor-compare" as PageType,
+    title: "QOR Compare",
+    icon: GitCompareArrowsIcon,
+  },
+  {
+    id: "timing" as PageType,
+    title: "Timing",
+    icon: ClockIcon,
+  },
+  {
+    id: "power" as PageType,
+    title: "Power",
+    icon: ZapIcon,
+  },
+];
+
 const DashboardSidebar = () => {
-  const dropdownConfigs = useDropdownConfigs();
   const dispatch = useAppDispatch();
-  const template00 = useRef(false);
-  useEffect(() => {
-    if (!template00.current) {
-      addTemplate00Rows(dispatch);
-      template00.current = true;
+  const currentPage = useAppSelector((state) => state.page.currentPage);
+
+  const handlePageChange = (pageId: PageType) => {
+    dispatch(setCurrentPage(pageId));
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case "fc-check-tool":
+        return <FCCheckToolPage />;
+      case "qor-compare":
+        return <QORComparePage />;
+      case "timing":
+        return <TimingPage />;
+      case "power":
+        return <PowerPage />;
+      default:
+        return <QORComparePage />;
     }
-  }, [dispatch]);
+  };
+
   return (
     <div className="flex min-h-dvh w-full">
       <SidebarProvider>
         <Sidebar>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <ChartNoAxesCombinedIcon />
-                        <span>Dashboard</span>
-                      </a>
-                    </SidebarMenuButton>
-                    <SidebarMenuBadge className="bg-primary/10 rounded-full">
-                      5
-                    </SidebarMenuBadge>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarGroup>
               <SidebarGroupLabel>Pages</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <ChartSplineIcon />
-                        <span>Content Performance</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <UsersIcon />
-                        <span>Audience Insight</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <ChartPieIcon />
-                        <span>Engagement Metrics</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <HashIcon />
-                        <span>Hashtag Performance</span>
-                      </a>
-                    </SidebarMenuButton>
-                    <SidebarMenuBadge className="bg-primary/10 rounded-full">
-                      3
-                    </SidebarMenuBadge>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <ArrowRightLeftIcon />
-                        <span>Competitor Analysis</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <Clock9Icon />
-                        <span>Campaign Tracking</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <ClipboardListIcon />
-                        <span>Sentiment Tracking</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <CrownIcon />
-                        <span>Influencer</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarGroup>
-              <SidebarGroupLabel>Supporting Features</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <SquareActivityIcon />
-                        <span>Real Time Monitoring</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <CalendarClockIcon />
-                        <span>Schedule Post & Calendar</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <Undo2Icon />
-                        <span>Report & Export</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <SettingsIcon />
-                        <span>Settings & Integrations</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href="#">
-                        <UsersIcon />
-                        <span>User Management</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  {pages.map((page) => (
+                    <SidebarMenuItem key={page.id}>
+                      <SidebarMenuButton
+                        isActive={currentPage === page.id}
+                        onClick={() => handlePageChange(page.id)}
+                        className="cursor-pointer"
+                      >
+                        <page.icon />
+                        <span>{page.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
@@ -200,14 +107,7 @@ const DashboardSidebar = () => {
             </div>
           </header>
           <main className="size-full flex-1 px-4 py-6 sm:px-6">
-            <div className="flex flex-wrap gap-2 mb-4">
-              {dropdownConfigs.map((config, index) => (
-                <Combobox key={index} dropdownConfigs={[config]} />
-              ))}
-              <DoeNameInput />
-              <AddButton />
-            </div>
-            <AgGridMatrixTable />
+            {renderPage()}
           </main>
         </div>
       </SidebarProvider>
