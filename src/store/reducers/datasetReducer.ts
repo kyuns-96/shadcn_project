@@ -29,7 +29,7 @@ export const fetchDataset = createAsyncThunk<
     )
       .filter(([key]) => key !== "Info" && key !== "Version Info")
       .flatMap(([, arr]) =>
-        arr.filter((item) => item.method === "GET").map((item) => item.path)
+        arr.filter((item) => item.method !== "GET").map((item) => item.path)
       );
 
     const result: Record<string, any> = {};
