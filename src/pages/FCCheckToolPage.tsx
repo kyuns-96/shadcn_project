@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Copy, Check } from "lucide-react";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
 import type { RootState } from "@/store";
@@ -55,15 +55,12 @@ const FCCheckToolPage = () => {
     }
   }, [htmlContent]);
 
-  // Ref for the HTML content container
-  const htmlContainerRef = useRef<HTMLDivElement>(null);
-
-  // Process DOM to right-align numeric data in table cells (excluding headers)
-  useEffect(() => {
-    if (!htmlContainerRef.current || !htmlContent) return;
+  // Function to apply right-alignment to numeric cells
+  const applyNumericAlignment = useCallback((container: HTMLDivElement | null) => {
+    if (!container) return;
     
     // Find all td elements (not th - headers)
-    const tdElements = htmlContainerRef.current.querySelectorAll("td");
+    const tdElements = container.querySelectorAll("td");
     
     tdElements.forEach((td) => {
       // Skip if it's the first cell in a row (row header)
@@ -86,7 +83,18 @@ const FCCheckToolPage = () => {
         (td as HTMLElement).style.textAlign = "right";
       }
     });
-  }, [htmlContent]);
+  }, []);
+
+  // Ref callback that applies alignment whenever the DOM element is mounted
+  // This ensures alignment is applied on initial mount and when navigating back to the page
+  const htmlContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node && htmlContent) {
+        applyNumericAlignment(node);
+      }
+    },
+    [htmlContent, applyNumericAlignment]
+  );
 
   // Get lists from Redux store
   const { projectList, blockList, netverList, revisionList } =
