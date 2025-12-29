@@ -26,6 +26,7 @@ import {
   TimingPage,
   PowerPage,
 } from "@/pages";
+import { useURLSync } from "@/hooks/useURLSync";
 
 const pages = [
   {
@@ -53,6 +54,9 @@ const pages = [
 const DashboardSidebar = () => {
   const dispatch = useAppDispatch();
   const currentPage = useAppSelector((state) => state.page.currentPage);
+
+  // Sync URL with Redux state for persistent navigation
+  useURLSync();
 
   const handlePageChange = (pageId: PageType) => {
     dispatch(setCurrentPage(pageId));

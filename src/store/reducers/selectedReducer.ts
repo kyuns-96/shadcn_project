@@ -9,6 +9,15 @@ export interface SelectedState {
   doeName: string;
 }
 
+// Payload type for restoring state from URL
+export interface RestoreFromURLPayload {
+  selectedProject: string | null;
+  selectedBlock: string | null;
+  selectedNetver: string | null;
+  selectedRevision: string | null;
+  selectedEconum: string | null;
+}
+
 const initialState: SelectedState = {
   selectedProject: null,
   selectedBlock: null,
@@ -50,6 +59,15 @@ const selectedSlice = createSlice({
     setDoeName: (state, action: PayloadAction<string>) => {
       state.doeName = action.payload;
     },
+    // Restore all selections from URL parameters at once
+    // This does not reset dependent values since they are restored together
+    restoreFromURL: (state, action: PayloadAction<RestoreFromURLPayload>) => {
+      state.selectedProject = action.payload.selectedProject;
+      state.selectedBlock = action.payload.selectedBlock;
+      state.selectedNetver = action.payload.selectedNetver;
+      state.selectedRevision = action.payload.selectedRevision;
+      state.selectedEconum = action.payload.selectedEconum;
+    },
   },
 });
 
@@ -60,6 +78,7 @@ export const {
   setSelectedRevision,
   setSelectedEconum,
   setDoeName,
+  restoreFromURL,
 } = selectedSlice.actions;
 
 export default selectedSlice.reducer;
