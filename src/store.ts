@@ -13,7 +13,10 @@ import econumListReducer from "@/store/reducers/econumListReducer";
 import selectedReducer from "@/store/reducers/selectedReducer";
 import methodListReducer from "@/store/reducers/methodListReducer";
 import datasetReducer from "@/store/reducers/datasetReducer";
+import pageReducer from "@/store/reducers/pageReducer";
 export type { SelectedState } from "@/store/reducers/selectedReducer";
+export type { PageType } from "@/store/reducers/pageReducer";
+export { setCurrentPage } from "@/store/reducers/pageReducer";
 
 const rootReducer = combineReducers({
   matrix: matrixSlice,
@@ -25,6 +28,7 @@ const rootReducer = combineReducers({
   selected: selectedReducer,
   methodList: methodListReducer,
   dataset: datasetReducer,
+  page: pageReducer,
 });
 
 export const store = configureStore({
