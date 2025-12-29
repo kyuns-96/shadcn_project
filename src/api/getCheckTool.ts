@@ -36,10 +36,10 @@ export async function getCheckTool(params: CheckToolParams): Promise<string> {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json() as { html: string };
+    const data = await response.json() as { data: { html_data: { html: string } } };
     console.log('[DEBUG] Response data parsed');
 
-    const result = data.html || "";
+    const result = data.data?.html_data?.html || "";
     console.log('[DEBUG] Returning HTML result');
     return result;
   } catch (error) {
