@@ -12,6 +12,7 @@ const QORComparePage = () => {
   const dropdownConfigs = useDropdownConfigs();
   const dispatch = useAppDispatch();
   const rowHeaders = useAppSelector((state) => state.matrix.rowHeaders);
+  const columnHeaders = useAppSelector((state) => state.matrix.columnHeaders);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ const QORComparePage = () => {
   }, [dispatch, rowHeaders.length]);
 
   // Restore column data from URL when template rows are ready
+  // This hook will fetch data for columns that were restored from URL
   useRestoreColumnData();
 
   return (
