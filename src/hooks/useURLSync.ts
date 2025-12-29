@@ -135,10 +135,11 @@ export function useURLSync() {
 
           dispatch(restoreColumnsFromURL(storedColumns));
 
-          // Delay data fetch to allow template rows to initialize
+          // Allow URL updates after a short delay to let components mount
+          // The actual data fetch will be handled by useRestoreColumnData hook
           setTimeout(() => {
             isRestoringFromURL.current = false;
-          }, 500);
+          }, 100);
         }
       }
     } else if (effectivePage === "fc-check-tool") {
@@ -210,6 +211,7 @@ export function useURLSync() {
 export function useRestoreColumnData() {
   const dispatch = useDispatch<AppDispatch>();
   const isFetching = useRef(false);
+  const hasInitialized = useRef(false);
 
   const { columnHeaders, rowHeaders } = useSelector(
     (state: RootState) => ({
@@ -224,17 +226,32 @@ export function useRestoreColumnData() {
     if (isFetching.current) return;
     
     // Check if we have rows initialized
-    if (rowHeaders.length === 0) return;
+    if (rowHeaders.length === 0) {
+      // Reset initialization flag if rows are cleared
+      hasInitialized.current = false;
+      return;
+    }
 
     // Find columns that need data fetch (from URL restoration)
     const columnsToFetch = columnHeaders.filter((col) => col._needsDataFetch === true);
     
-    if (columnsToFetch.length === 0) return;
+    if (columnsToFetch.length === 0) {
+      // If no columns need fetching and we've already initialized, we're done
+      if (hasInitialized.current) return;
+      // Otherwise, mark as initialized if rows exist but no columns need fetching
+      hasInitialized.current = true;
+      return;
+    }
 
+    // Mark as initialized to prevent re-running unnecessarily
+    hasInitialized.current = true;
     isFetching.current = true;
 
     // Fetch data for each column sequentially
     const fetchAllColumns = async () => {
+      // Use current rowHeaders from closure to ensure we have the latest
+      const currentRowHeaders = rowHeaders;
+      
       for (const col of columnsToFetch) {
         // Set selection state for this column
         dispatch(
@@ -251,7 +268,7 @@ export function useRestoreColumnData() {
         const action = await dispatch(fetchDataset());
         if (fetchDataset.fulfilled.match(action)) {
           const data = (action.payload?.[col.label] ?? {}) as Record<string, unknown>;
-          rowHeaders.forEach((row) => {
+          currentRowHeaders.forEach((row) => {
             const metricKey = `${row.rowGroup}!${row.label}`;
             let value = getMetric(metricKey, data);
             if (value === undefined) {
