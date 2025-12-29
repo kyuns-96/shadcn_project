@@ -1,20 +1,30 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { arrayMove } from "@dnd-kit/sortable";
 
+export interface ColumnHeader {
+  id: string;
+  label: string;
+  accessorKey: string;
+  PROJECT_NAME?: string;
+  BLOCK?: string;
+  NET_VER?: string;
+  REVISION?: string;
+  ECO_NUM?: string;
+  _needsDataFetch?: boolean; // Flag for URL restoration
+  [key: string]: unknown;
+}
+
+export interface RowHeader {
+  id: string;
+  label: string;
+  rowGroup: string; // Row header group for row spanning
+  data: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export interface MatrixState {
-  columnHeaders: Array<{
-    id: string;
-    label: string;
-    accessorKey: string;
-    [key: string]: any;
-  }>;
-  rowHeaders: Array<{
-    id: string;
-    label: string;
-    rowGroup: string; // Row header group for row spanning
-    data: any;
-    [key: string]: any;
-  }>;
+  columnHeaders: ColumnHeader[];
+  rowHeaders: RowHeader[];
 }
 
 const initialState: MatrixState = {
@@ -31,6 +41,42 @@ const matrixSlice = createSlice({
       action: PayloadAction<MatrixState["columnHeaders"]>
     ) => {
       state.columnHeaders = action.payload;
+      // Initialize data for new columns in existing rows
+      const columnIds = new Set(action.payload.map((col) => col.id));
+      state.rowHeaders.forEach((row) => {
+        columnIds.forEach((colId) => {
+          if (!(colId in row.data)) {
+            row.data[colId] = "";
+          }
+        });
+      });
+    },
+    // Restore columns from URL with _needsDataFetch flag
+    restoreColumnsFromURL: (
+      state,
+      action: PayloadAction<MatrixState["columnHeaders"]>
+    ) => {
+      // Mark columns as needing data fetch
+      state.columnHeaders = action.payload.map((col) => ({
+        ...col,
+        _needsDataFetch: true,
+      }));
+      // Initialize data for new columns in existing rows
+      const columnIds = action.payload.map((col) => col.id);
+      state.rowHeaders.forEach((row) => {
+        columnIds.forEach((colId) => {
+          if (!(colId in row.data)) {
+            row.data[colId] = "___LOADING___";
+          }
+        });
+      });
+    },
+    // Mark a column as having fetched data
+    markColumnFetched: (state, action: PayloadAction<string>) => {
+      const col = state.columnHeaders.find((c) => c.id === action.payload);
+      if (col) {
+        col._needsDataFetch = false;
+      }
     },
     setRowHeaders: (
       state,
@@ -182,6 +228,8 @@ const matrixSlice = createSlice({
 
 export const {
   setColumnHeaders,
+  restoreColumnsFromURL,
+  markColumnFetched,
   setRowHeaders,
   moveColumn,
   moveRow,
