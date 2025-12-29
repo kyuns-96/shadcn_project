@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { Copy, Check } from "lucide-react";
 import { useSelector, shallowEqual } from "react-redux";
 import type { RootState } from "@/store";
 
@@ -24,6 +25,20 @@ const FCCheckToolPage = () => {
   const [htmlContent, setHtmlContent] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState<boolean>(false);
+
+  // Handle copy to clipboard
+  const handleCopyToClipboard = useCallback(async () => {
+    if (!htmlContent) return;
+    
+    try {
+      await navigator.clipboard.writeText(htmlContent);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+  }, [htmlContent]);
 
   // Get lists from Redux store
   const { projectList, blockList, netverList, revisionList } =
@@ -175,25 +190,47 @@ const FCCheckToolPage = () => {
 
       {/* HTML Content Display */}
       {htmlContent && (
-        <div
-          className="flex-1 border rounded-md p-4 bg-card overflow-auto
-            [&_*]:!text-foreground [&_*]:!border-border
-            [&_table]:border-collapse [&_table]:w-auto
-            [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left
-            [&_td]:border [&_td]:border-border [&_td]:p-2
-            [&_tr:hover]:bg-muted/50
-            [&_a]:text-primary [&_a]:underline
-            [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-auto
-            [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded
-            [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4
-            [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3
-            [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-2
-            [&_p]:mb-2
-            [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
-            [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
-            [&_hr]:border-border [&_hr]:my-4"
-          dangerouslySetInnerHTML={{ __html: htmlContent }}
-        />
+        <div className="flex-1 flex flex-col">
+          <div className="flex justify-end mb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyToClipboard}
+              className="gap-2"
+            >
+              {isCopied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copy HTML
+                </>
+              )}
+            </Button>
+          </div>
+          <div
+            className="flex-1 border rounded-md p-4 bg-card overflow-auto
+              [&_*]:!text-foreground [&_*]:!border-border
+              [&_table]:border-collapse [&_table]:w-auto
+              [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left
+              [&_td]:border [&_td]:border-border [&_td]:p-2
+              [&_tr:hover]:bg-muted/50
+              [&_a]:text-primary [&_a]:underline
+              [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-auto
+              [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded
+              [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4
+              [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3
+              [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-2
+              [&_p]:mb-2
+              [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
+              [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
+              [&_hr]:border-border [&_hr]:my-4"
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
+          />
+        </div>
       )}
     </div>
   );
