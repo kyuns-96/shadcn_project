@@ -176,7 +176,22 @@ const FCCheckToolPage = () => {
       {/* HTML Content Display */}
       {htmlContent && (
         <div
-          className="flex-1 border rounded-md p-4 bg-card overflow-auto"
+          className="flex-1 border rounded-md p-4 bg-card overflow-auto
+            [&_*]:text-foreground
+            [&_table]:w-full [&_table]:border-collapse
+            [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left
+            [&_td]:border [&_td]:border-border [&_td]:p-2
+            [&_tr:hover]:bg-muted/50
+            [&_a]:text-primary [&_a]:underline
+            [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-auto
+            [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded
+            [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4
+            [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3
+            [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-2
+            [&_p]:mb-2
+            [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
+            [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
+            [&_hr]:border-border [&_hr]:my-4"
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
       )}
