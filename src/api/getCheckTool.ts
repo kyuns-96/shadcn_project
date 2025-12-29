@@ -8,7 +8,7 @@ export interface CheckToolParams {
 
 export async function getCheckTool(params: CheckToolParams): Promise<string> {
   try {
-    console.log('[DEBUG] getCheckTool function invoked with params:', params);
+    console.log("[DEBUG] getCheckTool function invoked with params:", params);
 
     const payload = {
       project: params.project,
@@ -17,9 +17,9 @@ export async function getCheckTool(params: CheckToolParams): Promise<string> {
       revision: params.revision,
       eco_num: params.eco_num,
     };
-    console.log('[DEBUG] Request payload:', JSON.stringify(payload));
+    console.log("[DEBUG] Request payload:", JSON.stringify(payload));
 
-    console.log('[DEBUG] Initiating POST request to /api/get_check_tool');
+    console.log("[DEBUG] Initiating POST request to /api/get_check_tool");
     const response = await fetch("/api/get_check_tool", {
       method: "POST",
       headers: {
@@ -29,18 +29,25 @@ export async function getCheckTool(params: CheckToolParams): Promise<string> {
       body: JSON.stringify(payload),
     });
 
-    console.log('[DEBUG] Response received - Status:', response.status, 'OK:', response.ok);
+    console.log(
+      "[DEBUG] Response received - Status:",
+      response.status,
+      "OK:",
+      response.ok
+    );
 
     if (!response.ok) {
-      console.error('[DEBUG] HTTP error detected - Status:', response.status);
+      console.error("[DEBUG] HTTP error detected - Status:", response.status);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json() as { data: { html_data: { html: string } } };
-    console.log('[DEBUG] Response data parsed');
+    const data = (await response.json()) as {
+      check_tool_data: { html: { html_data: string } };
+    };
+    console.log("[DEBUG] Response data parsed");
 
-    const result = data.data?.html_data?.html || "";
-    console.log('[DEBUG] Returning HTML result');
+    const result = data.check_tool_data?.html?.html_data || "";
+    console.log("[DEBUG] Returning HTML result");
     return result;
   } catch (error) {
     console.error("[DEBUG] Error caught in getCheckTool:", {
