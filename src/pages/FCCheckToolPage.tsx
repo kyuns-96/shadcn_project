@@ -177,8 +177,8 @@ const FCCheckToolPage = () => {
       {htmlContent && (
         <div
           className="flex-1 border rounded-md p-4 bg-card overflow-auto
-            [&_*]:text-foreground
-            [&_table]:w-full [&_table]:border-collapse
+            [&_*]:!text-foreground [&_*]:!border-border
+            [&_table]:border-collapse [&_table]:w-auto
             [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left
             [&_td]:border [&_td]:border-border [&_td]:p-2
             [&_tr:hover]:bg-muted/50
