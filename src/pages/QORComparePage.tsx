@@ -6,6 +6,7 @@ import DoeNameInput from "@/components/shadcn-studio/input/doeInput";
 import { useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { addTemplate00Rows } from "@/variables/Template00";
+import { useRestoreColumnData } from "@/hooks/useURLSync";
 
 const QORComparePage = () => {
   const dropdownConfigs = useDropdownConfigs();
@@ -21,6 +22,9 @@ const QORComparePage = () => {
       initialized.current = true;
     }
   }, [dispatch, rowHeaders.length]);
+
+  // Restore column data from URL when template rows are ready
+  useRestoreColumnData();
 
   return (
     <>
