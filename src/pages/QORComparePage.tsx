@@ -4,20 +4,23 @@ import useDropdownConfigs from "@/variables/dropdownConfig";
 import Combobox from "@/components/shadcn-studio/combobox/combobox-01";
 import DoeNameInput from "@/components/shadcn-studio/input/doeInput";
 import { useEffect, useRef } from "react";
-import { useAppDispatch } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store";
 import { addTemplate00Rows } from "@/variables/Template00";
 
 const QORComparePage = () => {
   const dropdownConfigs = useDropdownConfigs();
   const dispatch = useAppDispatch();
-  const template00 = useRef(false);
+  const rowHeaders = useAppSelector((state) => state.matrix.rowHeaders);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (!template00.current) {
+    // Only initialize template rows if the store is empty and not yet initialized
+    // This prevents re-initializing when navigating back from another page
+    if (!initialized.current && rowHeaders.length === 0) {
       addTemplate00Rows(dispatch);
-      template00.current = true;
+      initialized.current = true;
     }
-  }, [dispatch]);
+  }, [dispatch, rowHeaders.length]);
 
   return (
     <>
