@@ -213,7 +213,7 @@ const FCCheckToolPage = () => {
           </div>
           <div
             className="flex-1 border rounded-md p-4 bg-card overflow-auto
-              [&_*]:text-foreground [&_*]:border-border
+              [&_*]:!text-foreground [&_*]:!border-border
               [&_[style*='red']]:!text-red-500 [&_[color='red']]:!text-red-500
               [&_font[color='red']]:!text-red-500 [&_.red]:!text-red-500
               [&_table]:border-collapse [&_table]:w-auto
