@@ -15,7 +15,7 @@ export async function getCheckTool(params: CheckToolParams): Promise<string> {
       block: params.block,
       netver: params.netver,
       revision: params.revision,
-      eco_num: params.eco_num,
+      econum: params.eco_num,
     };
     console.log("[DEBUG] Request payload:", JSON.stringify(payload));
 
