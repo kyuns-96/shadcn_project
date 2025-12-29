@@ -1,3 +1,22 @@
+/**
+ * @file useFilterDropdownConfigs.ts
+ *
+ * @purpose
+ * QOR Compare 페이지에서 사용되는 필터 드롭다운 구성을 제공하는 커스텀 훅입니다.
+ * 프로젝트, 블록, 넷버전, 리비전, ECO 번호 선택을 위한
+ * 계층적 드롭다운 데이터를 관리합니다.
+ *
+ * @structure
+ * 1. Redux에서 현재 선택 상태 및 목록 데이터 조회
+ * 2. 각 드롭다운의 데이터 fetch 훅 호출
+ * 3. DropdownConfig 배열 생성 및 반환
+ *
+ * @dependencies
+ * - react-redux: Redux 상태 접근
+ * - @/store/reducers/selectedReducer: 선택 상태 관리
+ * - @/hooks/useFetch*List: 각 드롭다운 데이터 fetch
+ */
+
 import { useMemo } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import type { RootState } from "@/store";
@@ -8,17 +27,24 @@ import useFetchNetverList from "@/hooks/useFetchNetverList";
 import useFetchRevisionList from "@/hooks/useFetchRevisionList";
 import useFetchEconumList from "@/hooks/useFetchEconumList";
 
-import type { DropdownConfig } from "@/components/shadcn-studio/combobox/combobox-01";
+import type { DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import {
-  setSelectedProject as setProjectAction,
-  setSelectedBlock as setBlockAction,
-  setSelectedNetver as setNetverAction,
-  setSelectedRevision as setRevisionAction,
-  setSelectedEconum as setEconumAction,
+  setSelectedProject,
+  setSelectedBlock,
+  setSelectedNetver,
+  setSelectedRevision,
+  setSelectedEconum,
 } from "@/store/reducers/selectedReducer";
 
-export default function useDropdownConfigs(): DropdownConfig[] {
+/**
+ * 필터 드롭다운 구성을 생성하고 반환하는 커스텀 훅
+ *
+ * @returns 필터 드롭다운 구성 배열
+ */
+export default function useFilterDropdownConfigs(): DropdownConfig[] {
   const dispatch = useDispatch();
+
+  // Redux에서 현재 선택된 값들 조회
   const {
     selectedProject,
     selectedBlock,
@@ -36,24 +62,25 @@ export default function useDropdownConfigs(): DropdownConfig[] {
     shallowEqual
   );
 
-  const setSelectedProject = (value: string) => {
-    dispatch(setProjectAction(value));
+  // 각 필터 변경 핸들러
+  const handleProjectChange = (value: string) => {
+    dispatch(setSelectedProject(value));
   };
 
-  const setSelectedBlock = (value: string) => {
-    dispatch(setBlockAction(value));
+  const handleBlockChange = (value: string) => {
+    dispatch(setSelectedBlock(value));
   };
 
-  const setSelectedNetver = (value: string) => {
-    dispatch(setNetverAction(value));
+  const handleNetverChange = (value: string) => {
+    dispatch(setSelectedNetver(value));
   };
 
-  const setSelectedRevision = (value: string) => {
-    dispatch(setRevisionAction(value));
+  const handleRevisionChange = (value: string) => {
+    dispatch(setSelectedRevision(value));
   };
 
-  const setSelectedEconum = (value: string) => {
-    dispatch(setEconumAction(value));
+  const handleEconumChange = (value: string) => {
+    dispatch(setSelectedEconum(value));
   };
 
   const { projectList, blockList, netverList, revisionList, econumList } =
@@ -80,38 +107,38 @@ export default function useDropdownConfigs(): DropdownConfig[] {
     selectedRevision
   );
 
-  // build config objects for each dropdown
-  const dropdownConfigs = useMemo<DropdownConfig[]>(
+  // 드롭다운 설정 배열 생성
+  const filterDropdownConfigs = useMemo<DropdownConfig[]>(
     () => [
       {
         value: selectedProject,
         placeholder: "PROJECT_NAME",
         data: (Array.isArray(projectList) ? projectList : []) as string[],
-        set: (v: string) => setSelectedProject(v),
+        set: handleProjectChange,
       },
       {
         value: selectedBlock,
         placeholder: "BLOCK",
         data: (Array.isArray(blockList) ? blockList : []) as string[],
-        set: (v: string) => setSelectedBlock(v),
+        set: handleBlockChange,
       },
       {
         value: selectedNetver,
         placeholder: "NET_VER",
         data: (Array.isArray(netverList) ? netverList : []) as string[],
-        set: (v: string) => setSelectedNetver(v),
+        set: handleNetverChange,
       },
       {
         value: selectedRevision,
         placeholder: "REVISION",
         data: (Array.isArray(revisionList) ? revisionList : []) as string[],
-        set: (v: string) => setSelectedRevision(v),
+        set: handleRevisionChange,
       },
       {
         value: selectedEconum,
         placeholder: "ECO_NUM",
         data: (Array.isArray(econumList) ? econumList : []) as string[],
-        set: (v: string) => setSelectedEconum(v),
+        set: handleEconumChange,
       },
     ],
     [
@@ -127,5 +154,6 @@ export default function useDropdownConfigs(): DropdownConfig[] {
       econumList,
     ]
   );
-  return dropdownConfigs;
+
+  return filterDropdownConfigs;
 }

@@ -1,0 +1,129 @@
+/**
+ * @file DatasetColumnAddButton.tsx
+ *
+ * @purpose
+ * 매트릭스 테이블에 새로운 데이터셋 컬럼을 추가하는 버튼 컴포넌트입니다.
+ * 사용자가 선택한 필터 조건(프로젝트, 블록, 넷버전 등)을 기반으로
+ * 서버에서 데이터를 가져와 테이블에 새 컬럼으로 표시합니다.
+ *
+ * @structure
+ * 1. useSelectedFilters: Redux에서 현재 선택된 필터 조건들을 조회
+ * 2. handleAddDatasetColumn: 컬럼 생성 → 데이터 fetch → 셀 업데이트 순서로 처리
+ * 3. DatasetColumnAddButton: 렌더링 담당 (버튼 UI)
+ *
+ * @dependencies
+ * - @/store: Redux store 및 hooks (useAppDispatch, useAppSelector)
+ * - @/store/matrixSlice: 매트릭스 테이블 상태 관리 (addColumn, updateCell)
+ * - @/store/reducers/datasetReducer: 데이터셋 API 호출 (fetchDataset)
+ * - @/variables/getMetric: 메트릭 키로 값을 추출하는 유틸리티
+ * - lucide-react: 아이콘 컴포넌트
+ */
+
+import { ArrowRightIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { addColumn, updateCell } from "@/store/matrixSlice";
+import { extractMetricValue } from "@/variables/metricValueExtractor";
+import { fetchDataset } from "@/store/reducers/datasetReducer";
+
+/** 새 컬럼 ID 생성을 위한 접두사 */
+const COLUMN_ID_PREFIX = "col";
+
+/** 데이터 로딩 중 표시되는 placeholder 값 */
+const LOADING_PLACEHOLDER = "___LOADING___";
+
+/** 데이터가 없을 때 표시되는 기본값 */
+const EMPTY_VALUE_PLACEHOLDER = "-";
+
+/**
+ * 타임스탬프 기반의 고유한 컬럼 ID를 생성합니다.
+ * @returns 생성된 컬럼 ID (예: "col1703849234567")
+ */
+const generateUniqueColumnId = (): string => {
+  return `${COLUMN_ID_PREFIX}${Date.now()}`;
+};
+
+/**
+ * 데이터셋 컬럼 추가 버튼 컴포넌트
+ *
+ * 사용자가 클릭하면 현재 선택된 필터 조건을 기반으로
+ * 새로운 컬럼을 매트릭스 테이블에 추가합니다.
+ */
+const DatasetColumnAddButton = () => {
+  const dispatch = useAppDispatch();
+
+  // Redux에서 현재 선택된 필터 조건들 조회
+  const doeName = useAppSelector((state) => state.selected.doeName);
+  const {
+    selectedProject,
+    selectedBlock,
+    selectedNetver,
+    selectedRevision,
+    selectedEconum,
+  } = useAppSelector((state) => state.selected);
+  const { rowHeaders } = useAppSelector((state) => state.matrix);
+
+  /**
+   * 새 데이터셋 컬럼을 추가하고 데이터를 로드합니다.
+   *
+   * 처리 순서:
+   * 1. 고유한 컬럼 ID 생성
+   * 2. 로딩 상태의 빈 컬럼을 테이블에 추가
+   * 3. API에서 데이터셋 조회
+   * 4. 각 행에 해당하는 메트릭 값으로 셀 업데이트
+   */
+  const handleAddDatasetColumn = () => {
+    const columnId = generateUniqueColumnId();
+    const columnLabel = doeName || columnId;
+
+    // 1. 로딩 상태의 새 컬럼 추가
+    dispatch(
+      addColumn({
+        id: columnId,
+        label: columnLabel,
+        defaultValue: LOADING_PLACEHOLDER,
+        meta: {
+          PROJECT_NAME: selectedProject || undefined,
+          BLOCK: selectedBlock || undefined,
+          NET_VER: selectedNetver || undefined,
+          REVISION: selectedRevision || undefined,
+          ECO_NUM: selectedEconum || undefined,
+        },
+      })
+    );
+
+    // 2. 데이터셋 fetch 후 각 셀에 값 업데이트
+    dispatch(fetchDataset()).then((action) => {
+      if (fetchDataset.fulfilled.match(action)) {
+        const datasetPayload = action.payload?.[doeName] ?? {};
+
+        rowHeaders.forEach((rowHeader) => {
+          const metricKey = `${rowHeader.rowGroup}!${rowHeader.label}`;
+          const metricValue =
+            extractMetricValue(metricKey, datasetPayload) ??
+            EMPTY_VALUE_PLACEHOLDER;
+
+          dispatch(
+            updateCell({
+              rowId: rowHeader.id,
+              columnId: columnId,
+              value: metricValue,
+            })
+          );
+        });
+      }
+    });
+  };
+
+  return (
+    <div className="w-auto space-y-2">
+      <div className="h-5" />
+      <Button className="group w-full" onClick={handleAddDatasetColumn}>
+        Add
+        <ArrowRightIcon className="transition-transform duration-200 group-hover:translate-x-0.5" />
+      </Button>
+    </div>
+  );
+};
+
+export default DatasetColumnAddButton;

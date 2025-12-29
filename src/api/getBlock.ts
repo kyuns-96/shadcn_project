@@ -1,47 +1,45 @@
-export async function getBlock(projectName: string): Promise<string[]> {
-  try {
-    // Entry Point: Log function invocation and incoming parameter
-    console.log('[DEBUG] getBlock function invoked with projectName:', projectName);
+/**
+ * @file getBlock.ts
+ *
+ * @purpose
+ * 특정 프로젝트에 속한 블록 목록을 서버에서 가져오는 API 함수입니다.
+ *
+ * @structure
+ * 1. fetchBlockList: POST 요청으로 블록 목록 조회
+ *
+ * @dependencies
+ * - Fetch API
+ */
 
-    // Prepare payload
-    const payload = {
-      project: projectName,
-    };
-    console.log('[DEBUG] Request payload:', JSON.stringify(payload));
-
-    // Make the POST request
-    console.log('[DEBUG] Initiating POST request to /api/get_block_list');
-    const response = await fetch("/api/get_block_list", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    // Log response metadata
-    console.log('[DEBUG] Response received - Status:', response.status, 'OK:', response.ok);
-
-    if (!response.ok) {
-      console.error('[DEBUG] HTTP error detected - Status:', response.status);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    // Parse and log response data
-    const data = (await response.json()) as { block_list: string[] };
-    console.log('[DEBUG] Response data parsed:', data);
-    console.log('[DEBUG] Block list extracted:', data.block_list);
-
-    const result = data.block_list || [];
-    console.log('[DEBUG] Returning final result:', result);
-    return result;
-  } catch (error) {
-    console.error("[DEBUG] Error caught in getBlock:", {
-      errorMessage: error instanceof Error ? error.message : String(error),
-      errorObject: error,
-      errorType: error instanceof Error ? error.constructor.name : typeof error,
-    });
-    throw error;
-  }
+/** 블록 API 응답 타입 */
+interface BlockListResponse {
+  block_list: string[];
 }
+
+/**
+ * 특정 프로젝트의 블록 목록을 조회합니다.
+ *
+ * @param projectName - 프로젝트 이름
+ * @returns 블록 목록 배열
+ * @throws HTTP 에러 또는 네트워크 에러
+ */
+export async function fetchBlockList(projectName: string): Promise<string[]> {
+  const response = await fetch("/api/get_block_list", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ project: projectName }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data: BlockListResponse = await response.json();
+  return data.block_list || [];
+}
+
+// 기존 함수명과의 호환성을 위한 alias
+export const getBlock = fetchBlockList;

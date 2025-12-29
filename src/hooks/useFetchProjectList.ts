@@ -1,9 +1,19 @@
-/*
-  Hook to fetch the list of all available projects.
+/**
+ * @file useFetchProjectList.ts
+ *
+ * @purpose
+ * 프로젝트 목록을 자동으로 fetch하는 커스텀 훅입니다.
+ * 컴포넌트 마운트 시 자동으로 API를 호출합니다.
+ *
+ * @structure
+ * 1. useFetchProjectList: 프로젝트 목록 fetch 훅
+ *
+ * @dependencies
+ * - react-redux: useDispatch
+ * - @/store: AppDispatch 타입
+ * - @/store/reducers/projectListReducer: fetchProjectList 액션
+ */
 
-  This hook dispatches an action to retrieve project data from the backend.
-  when the component mounts. it does not require any parameters.
-*/
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";

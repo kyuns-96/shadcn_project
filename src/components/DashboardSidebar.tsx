@@ -1,3 +1,22 @@
+/**
+ * @file DashboardSidebar.tsx
+ *
+ * @purpose
+ * 애플리케이션의 메인 레이아웃 컴포넌트입니다.
+ * 사이드바 네비게이션, 테마 토글, 페이지 렌더링을 담당합니다.
+ *
+ * @structure
+ * 1. NAVIGATION_PAGES: 네비게이션 페이지 정의
+ * 2. DashboardSidebar: 레이아웃 및 라우팅 컴포넌트
+ *
+ * @dependencies
+ * - lucide-react: 사이드바 아이콘
+ * - @/components/ui/sidebar: 사이드바 UI 컴포넌트
+ * - @/store: Redux 훅 및 액션
+ * - @/pages: 페이지 컴포넌트들
+ * - @/hooks/useURLSync: URL 동기화 훅
+ */
+
 import {
   CheckCircle2Icon,
   GitCompareArrowsIcon,
@@ -19,7 +38,12 @@ import {
 } from "@/components/ui/sidebar";
 import { ModeToggle } from "./mode-toggle";
 
-import { useAppDispatch, useAppSelector, setCurrentPage, type PageType } from "@/store";
+import {
+  useAppDispatch,
+  useAppSelector,
+  setCurrentPage,
+  type PageType,
+} from "@/store";
 import {
   FCCheckToolPage,
   QORComparePage,
@@ -28,7 +52,8 @@ import {
 } from "@/pages";
 import { useURLSync } from "@/hooks/useURLSync";
 
-const pages = [
+/** 네비게이션 페이지 정의 */
+const NAVIGATION_PAGES = [
   {
     id: "fc-check-tool" as PageType,
     title: "FC Check Tool",
@@ -51,18 +76,24 @@ const pages = [
   },
 ];
 
+/**
+ * 대시보드 레이아웃 컴포넌트
+ *
+ * 사이드바 네비게이션과 메인 콘텐츠 영역을 포함합니다.
+ */
 const DashboardSidebar = () => {
   const dispatch = useAppDispatch();
   const currentPage = useAppSelector((state) => state.page.currentPage);
 
-  // Sync URL with Redux state for persistent navigation
+  // URL과 Redux 상태를 동기화하여 영구 네비게이션 지원
   useURLSync();
 
   const handlePageChange = (pageId: PageType) => {
     dispatch(setCurrentPage(pageId));
   };
 
-  const renderPage = () => {
+  /** 현재 페이지에 따라 적절한 컴포넌트 렌더링 */
+  const renderCurrentPage = () => {
     switch (currentPage) {
       case "fc-check-tool":
         return <FCCheckToolPage />;
@@ -86,7 +117,7 @@ const DashboardSidebar = () => {
               <SidebarGroupLabel>Pages</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {pages.map((page) => (
+                  {NAVIGATION_PAGES.map((page) => (
                     <SidebarMenuItem key={page.id}>
                       <SidebarMenuButton
                         isActive={currentPage === page.id}
@@ -111,7 +142,7 @@ const DashboardSidebar = () => {
             </div>
           </header>
           <main className="size-full flex-1 px-4 py-6 sm:px-6">
-            {renderPage()}
+            {renderCurrentPage()}
           </main>
         </div>
       </SidebarProvider>

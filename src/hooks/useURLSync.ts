@@ -15,7 +15,7 @@ import {
   markColumnFetched,
 } from "@/store/matrixSlice";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
-import { getMetric } from "@/variables/getMetric";
+import { extractMetricValue } from "@/variables/metricValueExtractor";
 
 // URL parameter keys
 const URL_PARAMS = {
@@ -288,7 +288,7 @@ export function useRestoreColumnData() {
           // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
           currentRowHeaders.forEach((row) => {
             const metricKey = `${row.rowGroup}!${row.label}`;
-            let value = getMetric(metricKey, data);
+            let value = extractMetricValue(metricKey, data);
             if (value === undefined) {
               value = "-";
             }

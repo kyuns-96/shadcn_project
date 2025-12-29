@@ -1,3 +1,24 @@
+/**
+ * @file ag-grid-matrix-table/index.tsx
+ *
+ * @purpose
+ * AG Grid 기반의 매트릭스 테이블 컴포넌트입니다.
+ * 행 그룹핑, 드래그 압 드롭, 셀 편집 등의 기능을 제공합니다.
+ *
+ * @structure
+ * 1. AgGridMatrixTable: 메인 컴포넌트
+ * 2. 툴바: 행 높이, 텍스트 정렬, 소수점 자리수 조정
+ * 3. 클립보드 복사 기능
+ *
+ * @dependencies
+ * - ag-grid-react: AG Grid React 컴포넌트
+ * - ag-grid-community: AG Grid 코어 모듈
+ * - @/store: Redux hooks
+ * - ./Toolbar: 툴바 컴포넌트
+ * - ./columns: 컬럼 정의 빌더
+ * - ./hooks: 커스텀 훅들
+ */
+
 "use client";
 
 import { useMemo, useCallback, useRef, useState } from "react";
@@ -23,7 +44,7 @@ import {
   useSelectionHandlers,
 } from "./hooks";
 
-// Register AG Grid modules
+// AG Grid 모듈 등록
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 export default function AgGridMatrixTable() {
