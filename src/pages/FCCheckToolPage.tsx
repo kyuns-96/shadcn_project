@@ -6,7 +6,6 @@ import { useFetchProjectList } from "@/hooks/useFetchProjectList";
 import useFetchBlockList from "@/hooks/useFetchBlockList";
 import useFetchNetverList from "@/hooks/useFetchNetverList";
 import useFetchRevisionList from "@/hooks/useFetchRevisionList";
-import useFetchEconumList from "@/hooks/useFetchEconumList";
 
 import Combobox from "@/components/shadcn-studio/combobox/combobox-01";
 import type { DropdownConfig } from "@/components/shadcn-studio/combobox/combobox-01";
@@ -20,7 +19,6 @@ const FCCheckToolPage = () => {
   const [selectedBlock, setSelectedBlock] = useState<string>("");
   const [selectedNetver, setSelectedNetver] = useState<string>("");
   const [selectedRevision, setSelectedRevision] = useState<string>("");
-  const [selectedEconum, setSelectedEconum] = useState<string>("");
 
   // State for API call and HTML result
   const [htmlContent, setHtmlContent] = useState<string>("");
@@ -28,29 +26,28 @@ const FCCheckToolPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Get lists from Redux store
-  const { projectList, blockList, netverList, revisionList, econumList } =
+  const { projectList, blockList, netverList, revisionList } =
     useSelector(
       (state: RootState) => ({
         projectList: state.projectList,
         blockList: state.blockList,
         netverList: state.netverList,
         revisionList: state.revisionList,
-        econumList: state.econumList,
       }),
       shallowEqual
     );
+
+  // Filter revision list to only include items with "-BE"
+  const filteredRevisionList = useMemo(() => {
+    const list = Array.isArray(revisionList) ? revisionList : [];
+    return list.filter((item: string) => item.includes("-BE"));
+  }, [revisionList]);
 
   // Fetch data based on local selections
   useFetchProjectList();
   useFetchBlockList(selectedProject);
   useFetchNetverList(selectedProject, selectedBlock);
   useFetchRevisionList(selectedProject, selectedBlock, selectedNetver);
-  useFetchEconumList(
-    selectedProject,
-    selectedBlock,
-    selectedNetver,
-    selectedRevision
-  );
 
   // Handlers that reset dependent values
   const handleProjectChange = (value: string) => {
@@ -58,29 +55,21 @@ const FCCheckToolPage = () => {
     setSelectedBlock("");
     setSelectedNetver("");
     setSelectedRevision("");
-    setSelectedEconum("");
   };
 
   const handleBlockChange = (value: string) => {
     setSelectedBlock(value);
     setSelectedNetver("");
     setSelectedRevision("");
-    setSelectedEconum("");
   };
 
   const handleNetverChange = (value: string) => {
     setSelectedNetver(value);
     setSelectedRevision("");
-    setSelectedEconum("");
   };
 
   const handleRevisionChange = (value: string) => {
     setSelectedRevision(value);
-    setSelectedEconum("");
-  };
-
-  const handleEconumChange = (value: string) => {
-    setSelectedEconum(value);
   };
 
   // Build dropdown configs
@@ -107,14 +96,8 @@ const FCCheckToolPage = () => {
       {
         value: selectedRevision,
         placeholder: "REVISION",
-        data: (Array.isArray(revisionList) ? revisionList : []) as string[],
+        data: filteredRevisionList as string[],
         set: handleRevisionChange,
-      },
-      {
-        value: selectedEconum,
-        placeholder: "ECO_NUM",
-        data: (Array.isArray(econumList) ? econumList : []) as string[],
-        set: handleEconumChange,
       },
     ],
     [
@@ -122,12 +105,10 @@ const FCCheckToolPage = () => {
       selectedBlock,
       selectedNetver,
       selectedRevision,
-      selectedEconum,
       projectList,
       blockList,
       netverList,
-      revisionList,
-      econumList,
+      filteredRevisionList,
     ]
   );
 
@@ -136,8 +117,7 @@ const FCCheckToolPage = () => {
     selectedProject &&
     selectedBlock &&
     selectedNetver &&
-    selectedRevision &&
-    selectedEconum;
+    selectedRevision;
 
   // Handle OK button click
   const handleOkClick = async () => {
@@ -153,7 +133,7 @@ const FCCheckToolPage = () => {
         block: selectedBlock,
         netver: selectedNetver,
         revision: selectedRevision,
-        eco_num: selectedEconum,
+        eco_num: "",
       });
       setHtmlContent(html);
     } catch (err) {
