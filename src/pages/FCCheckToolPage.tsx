@@ -40,6 +40,33 @@ const FCCheckToolPage = () => {
     }
   }, [htmlContent]);
 
+  // Process HTML to right-align numeric data in table cells (excluding headers)
+  const processedHtmlContent = useMemo(() => {
+    if (!htmlContent) return "";
+    
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent, "text/html");
+    
+    // Find all td elements (not th - headers)
+    const tdElements = doc.querySelectorAll("td");
+    
+    tdElements.forEach((td) => {
+      // Skip if it's the first cell in a row (row header)
+      const row = td.parentElement;
+      if (row && row.children[0] === td) return;
+      
+      const text = td.textContent?.trim() || "";
+      // Check if the content is numeric (including negative, decimal, percentage, with commas)
+      const isNumeric = /^-?[\d,]+\.?\d*%?$/.test(text) || /^-?\d+\.?\d*[eE][+-]?\d+$/.test(text);
+      
+      if (isNumeric) {
+        td.style.textAlign = "right";
+      }
+    });
+    
+    return doc.body.innerHTML;
+  }, [htmlContent]);
+
   // Get lists from Redux store
   const { projectList, blockList, netverList, revisionList } =
     useSelector(
@@ -241,7 +268,7 @@ const FCCheckToolPage = () => {
               [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
               [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
               [&_hr]:border-border [&_hr]:my-4"
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
+            dangerouslySetInnerHTML={{ __html: processedHtmlContent }}
           />
         </div>
       )}
