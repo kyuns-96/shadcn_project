@@ -26,19 +26,29 @@ const FCCheckToolPage = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  
+  // Ref to store the original HTML for copying
+  const originalHtmlRef = useRef<string>("");
 
   // Handle copy to clipboard
   const handleCopyToClipboard = useCallback(async () => {
-    if (!htmlContent) return;
+    const htmlToCopy = originalHtmlRef.current;
+    console.log('[DEBUG] Copying HTML, length:', htmlToCopy.length);
+    
+    if (!htmlToCopy) {
+      console.log('[DEBUG] No HTML to copy');
+      return;
+    }
     
     try {
-      await navigator.clipboard.writeText(htmlContent);
+      await navigator.clipboard.writeText(htmlToCopy);
+      console.log('[DEBUG] Copy successful');
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy to clipboard:", err);
     }
-  }, [htmlContent]);
+  }, []);
 
   // Ref for the HTML content container
   const htmlContainerRef = useRef<HTMLDivElement>(null);
@@ -183,6 +193,8 @@ const FCCheckToolPage = () => {
         revision: selectedRevision,
         eco_num: "",
       });
+      console.log('[DEBUG] Received HTML length:', html.length);
+      originalHtmlRef.current = html;
       setHtmlContent(html);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

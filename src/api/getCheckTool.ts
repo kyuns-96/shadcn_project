@@ -36,10 +36,12 @@ export async function getCheckTool(params: CheckToolParams): Promise<string> {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json() as { data: { html_data: { html: string } } };
-    console.log('[DEBUG] Response data parsed');
+    const data = await response.json();
+    console.log('[DEBUG] Response data parsed:', JSON.stringify(data, null, 2));
 
-    const result = data.data?.html_data?.html || "";
+    const typedData = data as { data: { html_data: { html: string } } };
+    const result = typedData.data?.html_data?.html || "";
+    console.log('[DEBUG] Extracted HTML length:', result.length);
     console.log('[DEBUG] Returning HTML result');
     return result;
   } catch (error) {
