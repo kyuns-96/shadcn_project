@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { Copy, Check } from "lucide-react";
 import { useSelector, shallowEqual } from "react-redux";
 import type { RootState } from "@/store";
@@ -40,31 +40,37 @@ const FCCheckToolPage = () => {
     }
   }, [htmlContent]);
 
-  // Process HTML to right-align numeric data in table cells (excluding headers)
-  const processedHtmlContent = useMemo(() => {
-    if (!htmlContent) return "";
-    
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, "text/html");
+  // Ref for the HTML content container
+  const htmlContainerRef = useRef<HTMLDivElement>(null);
+
+  // Process DOM to right-align numeric data in table cells (excluding headers)
+  useEffect(() => {
+    if (!htmlContainerRef.current || !htmlContent) return;
     
     // Find all td elements (not th - headers)
-    const tdElements = doc.querySelectorAll("td");
+    const tdElements = htmlContainerRef.current.querySelectorAll("td");
     
     tdElements.forEach((td) => {
       // Skip if it's the first cell in a row (row header)
       const row = td.parentElement;
       if (row && row.children[0] === td) return;
       
+      // Skip if the cell contains complex elements (graphs, images, SVG, canvas, etc.)
+      const hasComplexElements = td.querySelector("svg, canvas, img, object, embed, iframe, video, audio, script, style");
+      if (hasComplexElements) return;
+      
+      // Skip if cell has child elements other than simple inline elements
+      const hasBlockElements = td.querySelector("div, table, p, ul, ol, pre, blockquote");
+      if (hasBlockElements) return;
+      
       const text = td.textContent?.trim() || "";
       // Check if the content is numeric (including negative, decimal, percentage, with commas)
       const isNumeric = /^-?[\d,]+\.?\d*%?$/.test(text) || /^-?\d+\.?\d*[eE][+-]?\d+$/.test(text);
       
       if (isNumeric) {
-        td.style.textAlign = "right";
+        (td as HTMLElement).style.textAlign = "right";
       }
     });
-    
-    return doc.body.innerHTML;
   }, [htmlContent]);
 
   // Get lists from Redux store
@@ -268,7 +274,8 @@ const FCCheckToolPage = () => {
               [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
               [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
               [&_hr]:border-border [&_hr]:my-4"
-            dangerouslySetInnerHTML={{ __html: processedHtmlContent }}
+            ref={htmlContainerRef}
+            dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
         </div>
       )}
