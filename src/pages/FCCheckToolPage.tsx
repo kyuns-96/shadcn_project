@@ -55,12 +55,17 @@ const FCCheckToolPage = () => {
     }
   }, [htmlContent]);
 
-  // Function to apply right-alignment to numeric cells
-  const applyNumericAlignment = useCallback((container: HTMLDivElement | null) => {
-    if (!container) return;
+  // Function to apply right-alignment to numeric cells in HTML string
+  // Returns the modified HTML with alignment styles embedded
+  const applyNumericAlignmentToHtml = useCallback((html: string): string => {
+    if (!html) return html;
+    
+    // Create a temporary container to parse the HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
     
     // Find all td elements (not th - headers)
-    const tdElements = container.querySelectorAll("td");
+    const tdElements = doc.querySelectorAll("td");
     
     tdElements.forEach((td) => {
       // Skip if it's the first cell in a row (row header)
@@ -83,18 +88,10 @@ const FCCheckToolPage = () => {
         (td as HTMLElement).style.textAlign = "right";
       }
     });
+    
+    // Return the modified HTML
+    return doc.body.innerHTML;
   }, []);
-
-  // Ref callback that applies alignment whenever the DOM element is mounted
-  // This ensures alignment is applied on initial mount and when navigating back to the page
-  const htmlContainerRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (node && htmlContent) {
-        applyNumericAlignment(node);
-      }
-    },
-    [htmlContent, applyNumericAlignment]
-  );
 
   // Get lists from Redux store
   const { projectList, blockList, netverList, revisionList } =
@@ -200,7 +197,10 @@ const FCCheckToolPage = () => {
         revision: selectedRevision,
         eco_num: "",
       });
-      dispatch(setFCHtmlContent(html));
+      // Apply numeric alignment to HTML before storing in Redux
+      // This ensures alignment persists across page navigation
+      const alignedHtml = applyNumericAlignmentToHtml(html);
+      dispatch(setFCHtmlContent(alignedHtml));
     } catch (err) {
       dispatch(setFCError(err instanceof Error ? err.message : "An error occurred"));
     } finally {
@@ -291,7 +291,6 @@ const FCCheckToolPage = () => {
               [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
               [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
               [&_hr]:border-border [&_hr]:my-4"
-            ref={htmlContainerRef}
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
         </div>
