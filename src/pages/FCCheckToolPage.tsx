@@ -191,7 +191,7 @@ const FCCheckToolPage = () => {
       {/* HTML Content Display */}
       {htmlContent && (
         <div className="flex-1 flex flex-col">
-          <div className="flex justify-end mb-2">
+          <div className="flex justify-start mb-2">
             <Button
               variant="outline"
               size="sm"
@@ -213,7 +213,9 @@ const FCCheckToolPage = () => {
           </div>
           <div
             className="flex-1 border rounded-md p-4 bg-card overflow-auto
-              [&_*]:!text-foreground [&_*]:!border-border
+              [&_*]:text-foreground [&_*]:border-border
+              [&_[style*='red']]:!text-red-500 [&_[color='red']]:!text-red-500
+              [&_font[color='red']]:!text-red-500 [&_.red]:!text-red-500
               [&_table]:border-collapse [&_table]:w-auto
               [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left
               [&_td]:border [&_td]:border-border [&_td]:p-2
