@@ -51,17 +51,20 @@ const matrixSlice = createSlice({
         });
       });
     },
-    // Restore columns from URL with _needsDataFetch flag
+    // [WHY] Restore columns from URL with _needsDataFetch flag
+    // This action is called during URL restoration to set up columns that need their data fetched
     restoreColumnsFromURL: (
       state,
       action: PayloadAction<MatrixState["columnHeaders"]>
     ) => {
-      // Mark columns as needing data fetch
+      // [WHY] Mark columns as needing data fetch so useRestoreColumnData knows to fetch them
       state.columnHeaders = action.payload.map((col) => ({
         ...col,
         _needsDataFetch: true,
       }));
-      // Initialize data for new columns in existing rows
+      // [WHY] Initialize data for new columns in existing rows with loading placeholder
+      // Note: If rowHeaders is empty at this point (template not initialized yet),
+      // the addRow reducer will handle initializing the column data for new rows
       const columnIds = action.payload.map((col) => col.id);
       state.rowHeaders.forEach((row) => {
         columnIds.forEach((colId) => {
@@ -154,13 +157,26 @@ const matrixSlice = createSlice({
       const { label, rowGroup, data } = action.payload;
       const id = action.payload.id || `row-${Date.now()}`;
 
-      // Initialize data with empty values for all existing columns if not provided
+      // [WHY] Initialize data with empty values or loading placeholder for all existing columns
+      // This is critical for URL restoration: when rows are added after columns are restored from URL,
+      // the columns with _needsDataFetch flag should have loading placeholder to indicate pending data
       const rowData =
         data ||
         state.columnHeaders.reduce((acc, col) => {
-          acc[col.id] = "";
+          // [WHY] Use loading placeholder for columns awaiting data fetch from URL restoration
+          acc[col.id] = col._needsDataFetch ? "___LOADING___" : "";
           return acc;
         }, {} as Record<string, any>);
+
+      // [WHY] Merge provided data with any missing column initializations
+      // This ensures columns restored from URL are properly initialized even if partial data is provided
+      if (data) {
+        state.columnHeaders.forEach((col) => {
+          if (!(col.id in rowData)) {
+            rowData[col.id] = col._needsDataFetch ? "___LOADING___" : "";
+          }
+        });
+      }
 
       state.rowHeaders.push({
         id,

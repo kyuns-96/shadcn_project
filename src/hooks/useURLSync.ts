@@ -2,14 +2,18 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import type { RootState, AppDispatch } from "@/store";
 import { setCurrentPage, type PageType } from "@/store/reducers/pageReducer";
-import { restoreFromURL } from "@/store/reducers/selectedReducer";
+import { restoreFromURL, setDoeName } from "@/store/reducers/selectedReducer";
 import {
   setFCSelectedProject,
   setFCSelectedBlock,
   setFCSelectedNetver,
   setFCSelectedRevision,
 } from "@/store/reducers/fcCheckToolReducer";
-import { updateCell, restoreColumnsFromURL, markColumnFetched } from "@/store/matrixSlice";
+import {
+  updateCell,
+  restoreColumnsFromURL,
+  markColumnFetched,
+} from "@/store/matrixSlice";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import { getMetric } from "@/variables/getMetric";
 
@@ -26,7 +30,12 @@ const URL_PARAMS = {
 } as const;
 
 // Valid page types for validation
-const VALID_PAGES: PageType[] = ["fc-check-tool", "qor-compare", "timing", "power"];
+const VALID_PAGES: PageType[] = [
+  "fc-check-tool",
+  "qor-compare",
+  "timing",
+  "power",
+];
 
 // Column metadata structure for URL
 interface ColumnMeta {
@@ -210,6 +219,8 @@ export function useURLSync() {
 export function useRestoreColumnData() {
   const dispatch = useDispatch<AppDispatch>();
   const isFetching = useRef(false);
+  // [WHY] Track which columns we've already processed to prevent re-fetching on re-renders
+  const fetchedColumnsRef = useRef<Set<string>>(new Set());
 
   const { columnHeaders, rowHeaders } = useSelector(
     (state: RootState) => ({
@@ -220,22 +231,38 @@ export function useRestoreColumnData() {
   );
 
   useEffect(() => {
-    // Prevent concurrent fetches
+    // [WHY] Prevent concurrent fetches to avoid race conditions
     if (isFetching.current) return;
-    
-    // Check if we have rows initialized
+
+    // [WHY] Wait for template rows to be initialized before attempting to fetch
+    // This ensures rowHeaders are available when we update cells
     if (rowHeaders.length === 0) return;
 
-    // Find columns that need data fetch (from URL restoration)
-    const columnsToFetch = columnHeaders.filter((col) => col._needsDataFetch === true);
-    
+    // [WHY] Filter columns that need fetch AND haven't been processed yet
+    // Using both _needsDataFetch flag and ref to handle React strict mode double-renders
+    const columnsToFetch = columnHeaders.filter(
+      (col) =>
+        col._needsDataFetch === true && !fetchedColumnsRef.current.has(col.id)
+    );
+
     if (columnsToFetch.length === 0) return;
 
     isFetching.current = true;
 
+    // [WHY] Capture current rowHeaders snapshot to avoid stale closure issues
+    // during async operations
+    const currentRowHeaders = [...rowHeaders];
+
     // Fetch data for each column sequentially
     const fetchAllColumns = async () => {
       for (const col of columnsToFetch) {
+        // [WHY] Mark column as being processed immediately to prevent duplicate fetches
+        fetchedColumnsRef.current.add(col.id);
+
+        // [WHY] Set doeName first - fetchDataset uses this as the key for storing results
+        // Without this, data would be stored under empty string key
+        dispatch(setDoeName(col.label));
+
         // Set selection state for this column
         dispatch(
           restoreFromURL({
@@ -247,11 +274,19 @@ export function useRestoreColumnData() {
           })
         );
 
+        // [WHY] Small delay to ensure Redux state is updated before fetch
+        // This prevents race condition where fetchDataset reads stale selection state
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
         // Fetch and update cells
         const action = await dispatch(fetchDataset());
         if (fetchDataset.fulfilled.match(action)) {
-          const data = (action.payload?.[col.label] ?? {}) as Record<string, unknown>;
-          rowHeaders.forEach((row) => {
+          const data = (action.payload?.[col.label] ?? {}) as Record<
+            string,
+            unknown
+          >;
+          // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
+          currentRowHeaders.forEach((row) => {
             const metricKey = `${row.rowGroup}!${row.label}`;
             let value = getMetric(metricKey, data);
             if (value === undefined) {
@@ -261,7 +296,7 @@ export function useRestoreColumnData() {
           });
         }
 
-        // Mark this column as fetched
+        // Mark this column as fetched in Redux
         dispatch(markColumnFetched(col.id));
       }
 
@@ -275,6 +310,9 @@ export function useRestoreColumnData() {
           selectedEconum: null,
         })
       );
+
+      // [WHY] Clear doeName after restoration to reset UI state
+      dispatch(setDoeName(""));
 
       isFetching.current = false;
     };
@@ -298,7 +336,11 @@ export function generateShareableURL(state: {
 
   params.set(URL_PARAMS.PAGE, state.page);
 
-  if (state.page === "qor-compare" && state.columns && state.columns.length > 0) {
+  if (
+    state.page === "qor-compare" &&
+    state.columns &&
+    state.columns.length > 0
+  ) {
     const encoded = encodeColumns(state.columns);
     if (encoded) {
       params.set(URL_PARAMS.COLUMNS, encoded);
@@ -310,7 +352,9 @@ export function generateShareableURL(state: {
     if (state.fcRevision) params.set(URL_PARAMS.FC_REVISION, state.fcRevision);
   }
 
-  return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  return `${window.location.origin}${
+    window.location.pathname
+  }?${params.toString()}`;
 }
 
 export default useURLSync;
