@@ -37,10 +37,10 @@ const FCCheckToolPage = () => {
       shallowEqual
     );
 
-  // Filter revision list to only include items with "-BE"
+  // Filter revision list to exclude items with "-BE"
   const filteredRevisionList = useMemo(() => {
     const list = Array.isArray(revisionList) ? revisionList : [];
-    return list.filter((item: string) => item.includes("-BE"));
+    return list.filter((item: string) => !item.includes("-BE"));
   }, [revisionList]);
 
   // Fetch data based on local selections
