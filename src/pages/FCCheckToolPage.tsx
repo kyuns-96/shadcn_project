@@ -212,15 +212,12 @@ const FCCheckToolPage = () => {
             </Button>
           </div>
           <div
-            className="flex-1 border rounded-md p-4 bg-card overflow-auto
-              [&_*]:!text-foreground [&_*]:!border-border
-              [&_[style*='red']]:!text-red-500 [&_[color='red']]:!text-red-500
-              [&_font[color='red']]:!text-red-500 [&_.red]:!text-red-500
+            className="flex-1 border rounded-md p-4 bg-card overflow-auto text-foreground
               [&_table]:border-collapse [&_table]:w-auto
-              [&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:p-2 [&_th]:text-left
-              [&_td]:border [&_td]:border-border [&_td]:p-2
+              [&_th]:p-2 [&_th]:text-left
+              [&_td]:p-2
               [&_tr:hover]:bg-muted/50
-              [&_a]:text-primary [&_a]:underline
+              [&_a]:underline
               [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-auto
               [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded
               [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4
