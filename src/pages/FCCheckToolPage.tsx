@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { Copy, Check } from "lucide-react";
-import { useSelector, shallowEqual } from "react-redux";
+import { useSelector, shallowEqual, useDispatch } from "react-redux";
 import type { RootState } from "@/store";
 
 import { useFetchProjectList } from "@/hooks/useFetchProjectList";
@@ -13,18 +13,33 @@ import type { DropdownConfig } from "@/components/shadcn-studio/combobox/combobo
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { getCheckTool } from "@/api/getCheckTool";
+import {
+  setFCSelectedProject,
+  setFCSelectedBlock,
+  setFCSelectedNetver,
+  setFCSelectedRevision,
+  setFCHtmlContent,
+  setFCError,
+} from "@/store/reducers/fcCheckToolReducer";
 
 const FCCheckToolPage = () => {
-  // Local state for FC Check Tool selections (independent from QOR Compare)
-  const [selectedProject, setSelectedProject] = useState<string>("");
-  const [selectedBlock, setSelectedBlock] = useState<string>("");
-  const [selectedNetver, setSelectedNetver] = useState<string>("");
-  const [selectedRevision, setSelectedRevision] = useState<string>("");
+  const dispatch = useDispatch();
 
-  // State for API call and HTML result
-  const [htmlContent, setHtmlContent] = useState<string>("");
+  // Get FC Check Tool state from Redux store (persists across page navigation)
+  const {
+    selectedProject,
+    selectedBlock,
+    selectedNetver,
+    selectedRevision,
+    htmlContent,
+    error,
+  } = useSelector(
+    (state: RootState) => state.fcCheckTool,
+    shallowEqual
+  );
+
+  // Local UI state (doesn't need to persist)
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Handle copy to clipboard
@@ -97,28 +112,22 @@ const FCCheckToolPage = () => {
   useFetchNetverList(selectedProject, selectedBlock);
   useFetchRevisionList(selectedProject, selectedBlock, selectedNetver);
 
-  // Handlers that reset dependent values
-  const handleProjectChange = (value: string) => {
-    setSelectedProject(value);
-    setSelectedBlock("");
-    setSelectedNetver("");
-    setSelectedRevision("");
-  };
+  // Handlers that reset dependent values (dispatch to Redux)
+  const handleProjectChange = useCallback((value: string) => {
+    dispatch(setFCSelectedProject(value));
+  }, [dispatch]);
 
-  const handleBlockChange = (value: string) => {
-    setSelectedBlock(value);
-    setSelectedNetver("");
-    setSelectedRevision("");
-  };
+  const handleBlockChange = useCallback((value: string) => {
+    dispatch(setFCSelectedBlock(value));
+  }, [dispatch]);
 
-  const handleNetverChange = (value: string) => {
-    setSelectedNetver(value);
-    setSelectedRevision("");
-  };
+  const handleNetverChange = useCallback((value: string) => {
+    dispatch(setFCSelectedNetver(value));
+  }, [dispatch]);
 
-  const handleRevisionChange = (value: string) => {
-    setSelectedRevision(value);
-  };
+  const handleRevisionChange = useCallback((value: string) => {
+    dispatch(setFCSelectedRevision(value));
+  }, [dispatch]);
 
   // Build dropdown configs
   const dropdownConfigs = useMemo<DropdownConfig[]>(
@@ -172,8 +181,8 @@ const FCCheckToolPage = () => {
     if (!isFormComplete) return;
 
     setIsLoading(true);
-    setError(null);
-    setHtmlContent("");
+    dispatch(setFCError(null));
+    dispatch(setFCHtmlContent(""));
 
     try {
       const html = await getCheckTool({
@@ -183,9 +192,9 @@ const FCCheckToolPage = () => {
         revision: selectedRevision,
         eco_num: "",
       });
-      setHtmlContent(html);
+      dispatch(setFCHtmlContent(html));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      dispatch(setFCError(err instanceof Error ? err.message : "An error occurred"));
     } finally {
       setIsLoading(false);
     }
