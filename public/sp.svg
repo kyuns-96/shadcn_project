@@ -7,11 +7,9 @@
   </defs>
   
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Fredoka:wght@600&family=Quicksand:wght@700&display=swap');
-    
     .clean-rounded-text {
-      /* 1. 폰트: 더 둥글둥글한 폰트들을 순서대로 찾습니다. */
-      font-family: 'Poppins', 'Poppins', 'Fredoka', 'Quicksand', 'Arial Rounded MT Bold', 'Varela Round', 'Century Gothic', sans-serif;
+      /* 1. 폰트: 시스템 둥근 폰트들 */
+      font-family: 'Quicksand', 'Ubuntu', 'Noto Sans', sans-serif;
       font-weight: bold;
       font-size: 130px;
       
@@ -37,6 +35,9 @@
       paint-order: stroke fill;
     }
   </style>
+  
+  <!-- 흰색 배경 라운드 정사각형 -->
+  <rect x="25" y="5" width="200" height="190" rx="25" ry="25" fill="white" />
   
   <text x="125" y="100" class="clean-rounded-text">SP</text>
 </svg>
