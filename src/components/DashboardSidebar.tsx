@@ -114,21 +114,21 @@ const DashboardSidebar = () => {
         <Sidebar>
           <SidebarContent>
             <SidebarGroup>
-              <div className="px-2 py-4 flex items-center justify-center">
+              <div className="px-2 py-4 flex items-center justify-start">
                 <svg
                   width="100%"
-                  height="60"
-                  viewBox="0 0 300 60"
+                  height="70"
+                  viewBox="0 0 300 70"
                   className="max-w-xs"
                 >
                   <text
-                    x="50%"
+                    x="10"
                     y="50%"
-                    textAnchor="middle"
+                    textAnchor="start"
                     dominantBaseline="middle"
                     className="fill-gray-900 dark:fill-white"
                     style={{
-                      fontSize: "18px",
+                      fontSize: "28px",
                       fontFamily: "'Roboto Flex', sans-serif",
                       fontWeight: "600",
                       letterSpacing: "-0.5px",
