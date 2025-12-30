@@ -114,7 +114,15 @@ const DashboardSidebar = () => {
         <Sidebar>
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel>Pages</SidebarGroupLabel>
+              <div className="px-2 py-4 flex items-center justify-center">
+                <img
+                  src="/logo.png"
+                  alt="Logo"
+                  className="h-12 w-12 object-cover rounded"
+                />
+              </div>
+            </SidebarGroup>
+            <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {NAVIGATION_PAGES.map((page) => (
