@@ -115,11 +115,9 @@ const DashboardSidebar = () => {
           <SidebarContent>
             <SidebarGroup>
               <div className="px-2 py-4 flex items-center justify-center">
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="h-12 w-12 object-cover rounded"
-                />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  LOGO
+                </h1>
               </div>
             </SidebarGroup>
             <SidebarGroup>
