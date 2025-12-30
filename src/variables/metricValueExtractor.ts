@@ -3,11 +3,11 @@
  *
  * @purpose
  * 데이터셋에서 특정 메트릭 값을 추출하는 유틸리티 함수입니다.
- * 행 그룹과 라벨을 기반으로 해당하는 데이터 값을 반환합니다.
+ * 메트릭 키에 해당하는 경로를 정의하고, 중첩된 객체에서 자동으로 값을 추출합니다.
  *
  * @structure
- * 1. METRIC_EXTRACTORS: 메트릭 키별 값 추출 함수 맵
- * 2. extractMetricValue: 메인 추출 함수
+ * 1. METRIC_EXTRACTORS: "Group!Label" -> "경로.문자열" 형태로 정의
+ * 2. extractMetricValue: 메인 추출 함수 (경로 자동 파싱)
  *
  * @dependencies
  * - 없음 (순수 유틸리티 함수)
@@ -16,19 +16,27 @@
 /** 데이터셋 타입 정의 */
 type DatasetRecord = Record<string, unknown>;
 
-/** 메트릭 추출 함수 타입 */
-type MetricExtractor = (dataset: DatasetRecord) => unknown;
+/** 공통 경로 정의 */
+const BASE_PATHS = {
+  order: "api.order.data",
+  product: "api.product.data",
+};
 
 /**
- * 메트릭 키별 값 추출 함수 맵
- * 형식: "Group!Header" -> 추출 함수
+ * 메트릭 키별 경로 매핑
+ * 형식: "Group!Label" -> "path.to.value"
+ *
+ * @example
+ * "Order!TotalAmount": "api.order.data.totalAmount"
  */
-const METRIC_EXTRACTORS: Record<string, MetricExtractor> = {
-  /* 예시: "Group!Header": (dataset) => dataset["group"]?.headerMetric */
-  "User!Count": (dataset) =>
-    (dataset["user"] as Record<string, unknown> | undefined)?.count,
-  "Sales!Total": (dataset) =>
-    (dataset["sales"] as Record<string, unknown> | undefined)?.total,
+const METRIC_EXTRACTORS: Record<string, string> = {
+  "User!Name": "user.name",
+  "User!Email": "user.email",
+  "Order!TotalAmount": `${BASE_PATHS.order}.totalAmount`,
+  "Order!ItemCount": `${BASE_PATHS.order}.itemCount`,
+  "Order!Status": `${BASE_PATHS.order}.status`,
+  "Product!Price": `${BASE_PATHS.product}.price`,
+  "Product!Stock": `${BASE_PATHS.product}.stock`,
 };
 
 /**
@@ -39,12 +47,20 @@ const METRIC_EXTRACTORS: Record<string, MetricExtractor> = {
  * @returns 추출된 값 또는 undefined
  *
  * @example
- * const value = extractMetricValue("User!Count", dataset);
+ * const value = extractMetricValue("User!Name", dataset);
+ * const value = extractMetricValue("Order!TotalAmount", dataset);
  */
 export const extractMetricValue = (
   metricKey: string,
   dataset: DatasetRecord = {}
 ): unknown => {
-  const extractor = METRIC_EXTRACTORS[metricKey];
-  return extractor ? extractor(dataset) : undefined;
+  const path = METRIC_EXTRACTORS[metricKey];
+  if (!path) return undefined;
+
+  return path.split(".").reduce((current, key) => {
+    if (typeof current === "object" && current !== null) {
+      return (current as Record<string, unknown>)[key];
+    }
+    return undefined;
+  }, dataset as unknown);
 };
