@@ -22,6 +22,7 @@ import {
   GitCompareArrowsIcon,
   ClockIcon,
   ZapIcon,
+  House,
 } from "lucide-react";
 
 import {
@@ -29,7 +30,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -49,7 +49,9 @@ import {
   QORComparePage,
   TimingPage,
   PowerPage,
+  LandingPage,
 } from "@/pages";
+import { Button } from "@/components/ui/button";
 import { useURLSync } from "@/hooks/useURLSync";
 
 /** 네비게이션 페이지 정의 */
@@ -95,6 +97,8 @@ const DashboardSidebar = () => {
   /** 현재 페이지에 따라 적절한 컴포넌트 렌더링 */
   const renderCurrentPage = () => {
     switch (currentPage) {
+      case "landing":
+        return <LandingPage />;
       case "fc-check-tool":
         return <FCCheckToolPage />;
       case "qor-compare":
@@ -104,7 +108,7 @@ const DashboardSidebar = () => {
       case "power":
         return <PowerPage />;
       default:
-        return <QORComparePage />;
+        return <LandingPage />;
     }
   };
 
@@ -163,6 +167,15 @@ const DashboardSidebar = () => {
           <header className="bg-card sticky top-0 z-50 flex h-13.75 items-center justify-between gap-6 border-b px-4 py-2 sm:px-6">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="[&_svg]:!size-5" />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange("landing")}
+                title="홈으로 이동"
+              >
+                <House className="h-[1.2rem] w-[1.2rem]" />
+                <span className="sr-only">홈으로 이동</span>
+              </Button>
               <ModeToggle />
             </div>
           </header>

@@ -1,13 +1,13 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-export type PageType = "fc-check-tool" | "qor-compare" | "timing" | "power";
+export type PageType = "landing" | "fc-check-tool" | "qor-compare" | "timing" | "power";
 
 interface PageState {
   currentPage: PageType;
 }
 
 const initialState: PageState = {
-  currentPage: "qor-compare",
+  currentPage: "landing",
 };
 
 const pageSlice = createSlice({
