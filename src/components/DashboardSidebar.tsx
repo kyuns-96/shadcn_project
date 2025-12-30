@@ -114,10 +114,10 @@ const DashboardSidebar = () => {
         <Sidebar>
           <SidebarContent>
             <SidebarGroup>
-              <div className="px-2 py-4 flex items-center justify-start">
+              <div className="px-2.5 py-5 flex items-center justify-start">
                 <svg
                   width="100%"
-                  height="70"
+                  height="84"
                   viewBox="0 0 300 70"
                   className="max-w-xs"
                 >
