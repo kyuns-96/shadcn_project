@@ -115,7 +115,7 @@ const DashboardSidebar = () => {
           <SidebarContent>
             <SidebarGroup>
               <div className="px-2 py-4 flex items-center justify-center">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate">
                   LOGO
                 </h1>
               </div>
