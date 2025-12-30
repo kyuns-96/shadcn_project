@@ -1,5 +1,5 @@
 /**
- * @file getFunction.ts
+ * @file fetchFunctionList.ts
  *
  * @purpose
  * 사용 가능한 API 함수 목록을 서버에서 가져옴니다.
@@ -31,6 +31,3 @@ export async function fetchFunctionList(): Promise<unknown> {
 
   return response.json();
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getFunction = fetchFunctionList;

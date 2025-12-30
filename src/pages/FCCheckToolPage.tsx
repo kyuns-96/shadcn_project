@@ -12,7 +12,7 @@ import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDr
 import type { DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { getCheckTool } from "@/api/getCheckTool";
+import { fetchCheckToolResult } from "@/api/fetchCheckToolResult";
 import {
   setFCSelectedProject,
   setFCSelectedBlock,
@@ -207,7 +207,7 @@ const FCCheckToolPage = () => {
     dispatch(setFCHtmlContent(""));
 
     try {
-      const html = await getCheckTool({
+      const html = await fetchCheckToolResult({
         project: selectedProject,
         block: selectedBlock,
         netver: selectedNetver,

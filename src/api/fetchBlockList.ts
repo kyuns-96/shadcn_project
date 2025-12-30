@@ -1,5 +1,5 @@
 /**
- * @file getBlock.ts
+ * @file fetchBlockList.ts
  *
  * @purpose
  * 특정 프로젝트에 속한 블록 목록을 서버에서 가져오는 API 함수입니다.
@@ -40,6 +40,3 @@ export async function fetchBlockList(projectName: string): Promise<string[]> {
   const data: BlockListResponse = await response.json();
   return data.block_list || [];
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getBlock = fetchBlockList;

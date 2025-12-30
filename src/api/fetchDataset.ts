@@ -1,5 +1,5 @@
 /**
- * @file getDataset.ts
+ * @file fetchDataset.ts
  *
  * @purpose
  * 데이터셋을 서버에서 조회하는 API 함수입니다.
@@ -62,6 +62,3 @@ export async function fetchDataset(
 
   return response.json();
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getDataset = fetchDataset;

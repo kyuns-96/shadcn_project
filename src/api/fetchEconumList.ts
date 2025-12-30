@@ -1,5 +1,5 @@
 /**
- * @file getEconum.ts
+ * @file fetchEconumList.ts
  *
  * @purpose
  * 특정 필터 조건에 해당하는 ECO 번호 목록을 서버에서 가져옴니다.
@@ -53,6 +53,3 @@ export async function fetchEconumList(
   const data: EconumListResponse = await response.json();
   return data.econum_list || [];
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getEconum = fetchEconumList;

@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { getDataset } from "@/api/getDataset";
+import { fetchDataset as fetchDatasetAPI } from "@/api/fetchDataset";
 import type { RootState } from "@/store";
-import { getFunction } from "@/api/getFunction";
+import { fetchFunctionList } from "@/api/fetchFunctionList";
 
 type Dataset = Record<string, any>;
 
@@ -23,7 +23,7 @@ export const fetchDataset = createAsyncThunk<
     } = selected ?? {};
 
     // Retrieve function list
-    const funcListRaw = await getFunction();
+    const funcListRaw = await fetchFunctionList();
     const funcList = Object.entries(
       funcListRaw as Record<string, { method: string; path: string }[]>
     )
@@ -34,7 +34,7 @@ export const fetchDataset = createAsyncThunk<
 
     const result: Record<string, any> = {};
     for (const fn of funcList) {
-      const data = await getDataset(
+      const data = await fetchDatasetAPI(
         selectedProject || "ASDF",
         selectedBlock || "GGGGG",
         selectedNetver || "ZXCV",

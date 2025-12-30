@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getNetver } from "@/api/getNetver";
+import { fetchNetverList as fetchNetverListAPI } from "@/api/fetchNetverList";
 
 type NetverList = string[];
 
@@ -12,7 +12,7 @@ export const fetchNetverList = createAsyncThunk<
     return [];
   }
   try {
-    const data = await getNetver(projectName, blockName);
+    const data = await fetchNetverListAPI(projectName, blockName);
     return Array.isArray(data) ? data : [];
   } catch (error: any) {
     return rejectWithValue(error.message);

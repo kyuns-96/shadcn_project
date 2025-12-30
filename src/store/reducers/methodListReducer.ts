@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getMethodList } from "@/api/getMethodList";
+import { fetchMethodList as fetchMethodListAPI } from "@/api/fetchMethodList";
 
 type MethodList = string[];
 
@@ -9,7 +9,7 @@ export const fetchMethodList = createAsyncThunk<
   { rejectValue: string }
 >("methodList/fetch", async (_, { rejectWithValue }) => {
   try {
-    const data = await getMethodList();
+    const data = await fetchMethodListAPI();
     return Array.isArray(data) ? data : [];
   } catch (error: any) {
     return rejectWithValue(error.message);

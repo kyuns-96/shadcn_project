@@ -1,5 +1,5 @@
 /**
- * @file getProject.ts
+ * @file fetchProjectList.ts
  *
  * @purpose
  * 프로젝트 목록을 서버에서 가져오는 API 함수입니다.
@@ -36,6 +36,3 @@ export async function fetchProjectList(): Promise<ProjectListResponse> {
 
   return response.json();
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getProject = fetchProjectList;

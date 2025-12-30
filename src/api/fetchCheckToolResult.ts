@@ -1,5 +1,5 @@
 /**
- * @file getCheckTool.ts
+ * @file fetchCheckToolResult.ts
  *
  * @purpose
  * FC Check Tool의 HTML 결과를 서버에서 가져옴니다.
@@ -62,6 +62,3 @@ export async function fetchCheckToolResult(
   const data: CheckToolResponse = await response.json();
   return data.check_tool_data?.html?.html_data || "";
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getCheckTool = fetchCheckToolResult;

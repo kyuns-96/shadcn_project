@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getProject } from "@/api/getProject";
+import { fetchProjectList as fetchProjectListAPI } from "@/api/fetchProjectList";
 
 type ProjectList = unknown[];
 
@@ -9,7 +9,7 @@ export const fetchProjectList = createAsyncThunk<
   { rejectValue: string }
 >("projectList/fetch", async (_, { rejectWithValue }) => {
   try {
-    const data = (await getProject()) as { project_list: ProjectList };
+    const data = (await fetchProjectListAPI()) as { project_list: ProjectList };
     return data.project_list;
   } catch (error: any) {
     return rejectWithValue(error.message);

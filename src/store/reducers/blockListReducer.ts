@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getBlock } from "@/api/getBlock";
+import { fetchBlockList as fetchBlockListAPI } from "@/api/fetchBlockList";
 
 type BlockList = string[];
 
@@ -12,7 +12,7 @@ export const fetchBlockList = createAsyncThunk<
     return [];
   }
   try {
-    const data = await getBlock(projectName);
+    const data = await fetchBlockListAPI(projectName);
     return Array.isArray(data) ? data : [];
   } catch (error: any) {
     return rejectWithValue(error.message);

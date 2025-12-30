@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getEconum } from "@/api/getEconum";
+import { fetchEconumList as fetchEconumListAPI } from "@/api/fetchEconumList";
 
 type EconumList = string[];
 
@@ -22,7 +22,7 @@ export const fetchEconumList = createAsyncThunk<
       return [];
     }
     try {
-      const data = await getEconum(
+      const data = await fetchEconumListAPI(
         projectName,
         blockName,
         netverName,

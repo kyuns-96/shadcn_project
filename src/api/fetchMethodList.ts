@@ -1,5 +1,5 @@
 /**
- * @file getMethodList.ts
+ * @file fetchMethodList.ts
  *
  * @purpose
  * 사용 가능한 메서드 목록을 서버에서 가져옴니다.
@@ -37,6 +37,3 @@ export async function fetchMethodList(): Promise<string[]> {
   const data: MethodListResponse = await response.json();
   return data.method_list || [];
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getMethodList = fetchMethodList;

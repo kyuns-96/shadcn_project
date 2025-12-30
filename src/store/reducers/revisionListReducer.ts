@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getRevision } from "@/api/getRevision";
+import { fetchRevisionList as fetchRevisionListAPI } from "@/api/fetchRevisionList";
 
 type RevisionList = string[];
 
@@ -18,7 +18,7 @@ export const fetchRevisionList = createAsyncThunk<
       return [];
     }
     try {
-      const data = await getRevision(projectName, blockName, netverName);
+      const data = await fetchRevisionListAPI(projectName, blockName, netverName);
       return Array.isArray(data) ? data : [];
     } catch (error: any) {
       return rejectWithValue(error.message);

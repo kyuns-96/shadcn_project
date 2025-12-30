@@ -1,5 +1,5 @@
 /**
- * @file getRevision.ts
+ * @file fetchRevisionList.ts
  *
  * @purpose
  * 특정 프로젝트/블록/넷버전에 해당하는 리비전 목록을 서버에서 가져옴니다.
@@ -50,6 +50,3 @@ export async function fetchRevisionList(
   const data: RevisionListResponse = await response.json();
   return data.revision_list || [];
 }
-
-// 기존 함수명과의 호환성을 위한 alias
-export const getRevision = fetchRevisionList;
