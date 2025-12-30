@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Roboto Flex";
+  src: url("/fonts/RobotoFlex-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import "tailwindcss";
 @import "tw-animate-css";
 

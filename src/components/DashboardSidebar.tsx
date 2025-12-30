@@ -115,9 +115,28 @@ const DashboardSidebar = () => {
           <SidebarContent>
             <SidebarGroup>
               <div className="px-2 py-4 flex items-center justify-center">
-                <h1 className="text-lg font-bold text-gray-900 dark:text-white truncate">
-                  LOGO
-                </h1>
+                <svg
+                  width="100%"
+                  height="60"
+                  viewBox="0 0 300 60"
+                  className="max-w-xs"
+                >
+                  <text
+                    x="50%"
+                    y="50%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="fill-gray-900 dark:fill-white"
+                    style={{
+                      fontSize: "18px",
+                      fontFamily: "'Roboto Flex', sans-serif",
+                      fontWeight: "600",
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
+                    Subutai Playground
+                  </text>
+                </svg>
               </div>
             </SidebarGroup>
             <SidebarGroup>
