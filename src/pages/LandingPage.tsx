@@ -93,7 +93,7 @@ const LandingPage = () => {
         {/* 헤더 섹션 */}
         <div className="text-center">
           {/* 임시 이미지 */}
-          <div className="mt-8 w-full max-w-2xl">
+          <div className="mt-8 w-full max-w-lg">
             <img
               src="/light_mode_subutai.png"
               alt="Subutai Playground"
