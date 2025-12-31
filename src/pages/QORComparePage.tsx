@@ -82,12 +82,12 @@ const QORComparePage = () => {
         {/* Table Information Section */}
         <AccordionItem
           value="item-2"
-          className="border rounded-md flex-1 flex flex-col"
+          className="border rounded-md flex-1 flex flex-col overflow-hidden data-[state=closed]:flex-none"
         >
           <AccordionTrigger className="px-4">
             Table Information
           </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col">
+          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col overflow-hidden">
             <AgGridMatrixTable />
           </AccordionContent>
         </AccordionItem>

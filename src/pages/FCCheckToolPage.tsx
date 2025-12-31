@@ -280,12 +280,12 @@ const FCCheckToolPage = () => {
         {/* Table Information Section */}
         <AccordionItem
           value="item-2"
-          className="border rounded-md flex-1 flex flex-col"
+          className="border rounded-md flex-1 flex flex-col overflow-hidden data-[state=closed]:flex-none"
         >
           <AccordionTrigger className="px-4">
             Check Tool Result
           </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col">
+          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col overflow-hidden">
             {htmlContent ? (
               <div className="flex-1 flex flex-col gap-2">
                 <div className="flex justify-start">
