@@ -120,56 +120,85 @@ function convertTtfToWoff2(ttfPath: string, debug: boolean): string | null {
 
     // TTF가 더 최신이면 다시 변환
     if (ttfStat.mtime <= woff2Stat.mtime) {
-      if (debug) console.log(`   [skip] ${path.basename(woff2Path)} already exists`);
+      if (debug)
+        console.log(`   [skip] ${path.basename(woff2Path)} already exists`);
       return woff2Path;
     }
   }
 
+  // 경로를 안전하게 이스케이프
+  const safeTtfPath = ttfPath.replace(/\\/g, "/").replace(/'/g, "\\'");
+  const safeWoff2Path = woff2Path.replace(/\\/g, "/").replace(/'/g, "\\'");
+
+  // 임시 Python 스크립트 파일 생성 (따옴표 문제 회피)
+  const tempScriptPath = path.join(path.dirname(ttfPath), "_convert_temp.py");
+  const pythonScript = `
+import sys
+from fontTools.ttLib import TTFont
+
+try:
+    font = TTFont('${safeTtfPath}')
+    font.flavor = 'woff2'
+    font.save('${safeWoff2Path}')
+    print('OK')
+except Exception as e:
+    print(f'ERROR: {e}', file=sys.stderr)
+    sys.exit(1)
+`;
+
   try {
-    // Python fonttools 사용
-    const pythonScript = `
-from fontTools.ttLib import TTFont
-from fontTools.ttLib.woff2 import compress
+    fs.writeFileSync(tempScriptPath, pythonScript, "utf-8");
 
-font = TTFont("${ttfPath.replace(/\\/g, "/")}")
-compress("${ttfPath.replace(/\\/g, "/")}", "${woff2Path.replace(/\\/g, "/")}")
-print("OK")
-`;
-
-    const result = execSync(`python3 -c '${pythonScript}'`, {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-
-    if (result.trim() === "OK") {
-      if (debug) console.log(`   [convert] ${path.basename(ttfPath)} → ${path.basename(woff2Path)}`);
-      return woff2Path;
-    }
-  } catch (error) {
-    // python3 실패시 python 시도
+    // python3 시도
     try {
-      const pythonScript = `
-from fontTools.ttLib import TTFont
-from fontTools.ttLib.woff2 import compress
-
-font = TTFont("${ttfPath.replace(/\\/g, "/")}")
-compress("${ttfPath.replace(/\\/g, "/")}", "${woff2Path.replace(/\\/g, "/")}")
-print("OK")
-`;
-
-      const result = execSync(`python -c '${pythonScript}'`, {
+      const result = execSync(`python3 "${tempScriptPath}"`, {
         encoding: "utf-8",
         stdio: ["pipe", "pipe", "pipe"],
       });
 
       if (result.trim() === "OK") {
-        if (debug) console.log(`   [convert] ${path.basename(ttfPath)} → ${path.basename(woff2Path)}`);
+        if (debug)
+          console.log(
+            `   [convert] ${path.basename(ttfPath)} → ${path.basename(
+              woff2Path
+            )}`
+          );
+        fs.unlinkSync(tempScriptPath);
         return woff2Path;
       }
-    } catch (innerError) {
-      console.warn(`   [warn] Failed to convert ${path.basename(ttfPath)}: fonttools not installed?`);
-      console.warn(`          Run: pip install fonttools brotli`);
-      return null;
+    } catch (py3Error: any) {
+      // python3 실패 시 python 시도
+      try {
+        const result = execSync(`python "${tempScriptPath}"`, {
+          encoding: "utf-8",
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+
+        if (result.trim() === "OK") {
+          if (debug)
+            console.log(
+              `   [convert] ${path.basename(ttfPath)} → ${path.basename(
+                woff2Path
+              )}`
+            );
+          fs.unlinkSync(tempScriptPath);
+          return woff2Path;
+        }
+      } catch (pyError: any) {
+        const errorMsg =
+          pyError.stderr?.toString() || pyError.message || "Unknown error";
+        console.warn(`   [warn] Failed to convert ${path.basename(ttfPath)}`);
+        console.warn(`          Error: ${errorMsg.trim()}`);
+      }
+    }
+  } catch (fsError: any) {
+    console.warn(`   [warn] Failed to create temp script: ${fsError.message}`);
+  } finally {
+    // 임시 파일 정리
+    if (fs.existsSync(tempScriptPath)) {
+      try {
+        fs.unlinkSync(tempScriptPath);
+      } catch {}
     }
   }
 
@@ -186,7 +215,10 @@ function convertAllTtfInFolder(folderPath: string, debug: boolean): void {
 
   if (ttfFiles.length === 0) return;
 
-  if (debug) console.log(`\n   Converting TTF to WOFF2 in ${path.basename(folderPath)}/`);
+  if (debug)
+    console.log(
+      `\n   Converting TTF to WOFF2 in ${path.basename(folderPath)}/`
+    );
 
   for (const ttfFile of ttfFiles) {
     const ttfPath = path.join(folderPath, ttfFile);
@@ -278,9 +310,9 @@ function scanFontFiles(dirPath: string, preferWoff2: boolean): string[] {
     return [];
   }
 
-  const allFiles = fs.readdirSync(dirPath).filter((file) =>
-    /\.(ttf|otf|woff2?)$/i.test(file)
-  );
+  const allFiles = fs
+    .readdirSync(dirPath)
+    .filter((file) => /\.(ttf|otf|woff2?)$/i.test(file));
 
   if (!preferWoff2) {
     return allFiles;
@@ -362,11 +394,15 @@ function generateWeightStats(
  * 
  * Korean (200-700):
  *   Normal (font-stretch: normal): ${koreanNormal.join(", ") || "none"}
- *   Condensed (font-stretch: condensed): ${koreanCondensed.join(", ") || "none"}
+ *   Condensed (font-stretch: condensed): ${
+   koreanCondensed.join(", ") || "none"
+ }
  * 
  * English (200-800):
  *   Normal (font-stretch: normal): ${englishNormal.join(", ") || "none"}
- *   Condensed (font-stretch: condensed): ${englishCondensed.join(", ") || "none"}
+ *   Condensed (font-stretch: condensed): ${
+   englishCondensed.join(", ") || "none"
+ }
  */`;
 }
 
@@ -481,7 +517,11 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
           );
           koreanFonts.push({ ...fontInfo, format });
 
-          log(`  ✓ ${file} → weight: ${weight}${hasCSuffix ? " (Condensed)" : ""} [${format}]`);
+          log(
+            `  ✓ ${file} → weight: ${weight}${
+              hasCSuffix ? " (Condensed)" : ""
+            } [${format}]`
+          );
         }
       }
 
@@ -531,7 +571,11 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
           );
           englishFonts.push({ ...fontInfo, format });
 
-          log(`  ✓ ${file} → weight: ${weight}${hasCSuffix ? " (Condensed)" : ""} [${format}]`);
+          log(
+            `  ✓ ${file} → weight: ${weight}${
+              hasCSuffix ? " (Condensed)" : ""
+            } [${format}]`
+          );
         }
       }
 
