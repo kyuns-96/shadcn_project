@@ -92,19 +92,6 @@ const LandingPage = () => {
       <div className="flex flex-col items-center gap-12">
         {/* 헤더 섹션 */}
         <div className="text-center">
-          {/* 임시 이미지 */}
-          <div className="mt-8 w-full max-w-lg">
-            <img
-              src="/light_mode_subutai.png"
-              alt="Subutai Playground"
-              className="w-full h-auto object-cover rounded-lg shadow-md dark:hidden"
-            />
-            <img
-              src="/dark_mode_subutai.png"
-              alt="Subutai Playground"
-              className="hidden w-full h-auto object-cover rounded-lg shadow-md dark:block"
-            />
-          </div>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Subutai Playground
           </h1>
