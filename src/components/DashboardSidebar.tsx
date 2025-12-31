@@ -22,7 +22,6 @@ import {
   GitCompareArrowsIcon,
   ClockIcon,
   ZapIcon,
-  House,
 } from "lucide-react";
 
 import {
@@ -51,7 +50,6 @@ import {
   PowerPage,
   LandingPage,
 } from "@/pages";
-import { Button } from "@/components/ui/button";
 import { useURLSync } from "@/hooks/useURLSync";
 
 /** 네비게이션 페이지 정의 */
@@ -118,7 +116,11 @@ const DashboardSidebar = () => {
         <Sidebar>
           <SidebarContent>
             <SidebarGroup>
-              <div className="px-2.5 py-5 flex items-center justify-start">
+              <button
+                onClick={() => handlePageChange("landing")}
+                className="px-2.5 py-5 flex items-center justify-start w-full cursor-pointer hover:opacity-80 transition-opacity"
+                title="Subutai Playground - 홈으로 이동"
+              >
                 <svg
                   width="100%"
                   height="84"
@@ -141,7 +143,7 @@ const DashboardSidebar = () => {
                     Subutai Playground
                   </text>
                 </svg>
-              </div>
+              </button>
             </SidebarGroup>
             <SidebarGroup>
               <SidebarGroupContent>
@@ -167,15 +169,6 @@ const DashboardSidebar = () => {
           <header className="bg-card sticky top-0 z-50 flex h-13.75 items-center justify-between gap-6 border-b px-4 py-2 sm:px-6">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="[&_svg]:!size-5" />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handlePageChange("landing")}
-                title="홈으로 이동"
-              >
-                <House className="h-[1.2rem] w-[1.2rem]" />
-                <span className="sr-only">홈으로 이동</span>
-              </Button>
               <ModeToggle />
             </div>
           </header>

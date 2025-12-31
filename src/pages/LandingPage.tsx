@@ -22,11 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import {
-  useAppDispatch,
-  setCurrentPage,
-  type PageType,
-} from "@/store";
+import { useAppDispatch, setCurrentPage, type PageType } from "@/store";
 
 /** 카드 설정 타입 */
 interface CardConfig {
@@ -44,7 +40,7 @@ const CARD_CONFIG: CardConfig[] = [
   {
     id: "fc-check-tool",
     title: "FC Check Tool",
-    description: "검증 및 체크리스트 관리",
+    description: "FC ",
     icon: CheckCircle2,
     iconColor: "text-emerald-500 dark:text-emerald-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
@@ -99,9 +95,15 @@ const LandingPage = () => {
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Subutai Playground
           </h1>
-          <p className="mt-3 text-lg text-slate-600 dark:text-slate-400">
-            원하는 도구를 선택하세요
-          </p>
+          
+          {/* 임시 이미지 */}
+          <div className="mt-8 w-full max-w-2xl">
+            <img
+              src="https://via.placeholder.com/600x800"
+              alt="Subutai Playground"
+              className="w-full h-auto object-cover rounded-lg shadow-md"
+            />
+          </div>
         </div>
 
         {/* 카드 그리드 */}
