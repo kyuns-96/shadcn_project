@@ -231,7 +231,7 @@ const ColumnMetadataTable = () => {
               <TableCell className="w-[105px]">{column.ECO_NUM || "-"}</TableCell>
               <TableCell>
                 {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
-                  <div className="w-[180px]">
+                  <div className="w-[250px]">
                     <FilterDropdownCombobox
                       dropdownConfigs={[getScenarioDropdownConfig(column)]}
                     />
