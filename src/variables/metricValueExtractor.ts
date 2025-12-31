@@ -53,6 +53,57 @@ const METRIC_EXTRACTORS: Record<string, string> = {
   // "Power!DynamicPower": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.dynamic_power`,
 };
 
+/**
+ * 메트릭 값 변환 함수 타입
+ */
+type MetricTransformer = (value: unknown) => unknown;
+
+/**
+ * 메트릭 키별 값 변환 함수 매핑
+ * 특정 메트릭에 대해 값을 변환할 때 사용 (예: 100 곱하기, 소수점 자리수 조정 등)
+ *
+ * @example
+ * "Power!TotalPower": (v) => typeof v === "number" ? v * 100 : v
+ */
+const METRIC_TRANSFORMERS: Record<string, MetricTransformer> = {
+  // Power 관련 메트릭에 100을 곱함 (예시)
+  // "Power!TotalPower": (v) => (typeof v === "number" ? v * 100 : v),
+  // "Power!LeakagePower": (v) => (typeof v === "number" ? v * 100 : v),
+  // "Power!DynamicPower": (v) => (typeof v === "number" ? v * 100 : v),
+};
+
+/**
+ * 특정 그룹의 모든 메트릭에 동일한 변환 적용
+ * 그룹 이름 (예: "Power")을 키로 사용
+ */
+const GROUP_TRANSFORMERS: Record<string, MetricTransformer> = {
+  // Power 그룹의 모든 메트릭에 100을 곱함
+  Power: (v) => (typeof v === "number" ? v * 100 : v),
+};
+
+/**
+ * 메트릭 값에 변환 함수를 적용합니다.
+ *
+ * @param metricKey - 메트릭 키 (형식: "Group!Label")
+ * @param value - 변환할 값
+ * @returns 변환된 값
+ */
+const applyTransform = (metricKey: string, value: unknown): unknown => {
+  // 1. 메트릭별 변환 함수 확인
+  if (METRIC_TRANSFORMERS[metricKey]) {
+    return METRIC_TRANSFORMERS[metricKey](value);
+  }
+
+  // 2. 그룹별 변환 함수 확인 (metricKey에서 그룹 추출: "Group!Label" -> "Group")
+  const groupName = metricKey.split("!")[0];
+  if (groupName && GROUP_TRANSFORMERS[groupName]) {
+    return GROUP_TRANSFORMERS[groupName](value);
+  }
+
+  // 변환 없이 원본 반환
+  return value;
+};
+
 /** 시나리오 플레이스홀더 */
 const SCENARIO_PLACEHOLDER = "${SCENARIO}";
 
@@ -149,12 +200,14 @@ export const extractScenarioMetric = (
  * @param path - 플레이스홀더가 포함된 경로 (예: "get_ptpxpower.ptpxpower_data.${SCENARIO}.metric")
  * @param scenarioName - 시나리오 이름 (점이 포함될 수 있음)
  * @param dataset - 데이터셋 객체
+ * @param metricKey - 메트릭 키 (변환 적용을 위해 필요)
  * @returns 추출된 값 또는 undefined
  */
 const extractWithScenario = (
   path: string,
   scenarioName: string,
-  dataset: DatasetRecord
+  dataset: DatasetRecord,
+  metricKey: string
 ): unknown => {
   // 경로를 ${SCENARIO}를 기준으로 분리
   const [beforeScenario, afterScenario] = path.split(SCENARIO_PLACEHOLDER);
@@ -176,7 +229,13 @@ const extractWithScenario = (
   });
 
   // extractScenarioMetric 사용하여 추출
-  return extractScenarioMetric(basePath, scenarioName, metricPath, dataset);
+  const rawValue = extractScenarioMetric(basePath, scenarioName, metricPath, dataset);
+
+  // 변환 적용
+  const transformedValue = applyTransform(metricKey, rawValue);
+  console.log("[extractWithScenario] Transform applied:", { rawValue, transformedValue });
+
+  return transformedValue;
 };
 
 /**
@@ -221,20 +280,22 @@ export const extractMetricValue = (
   // 시나리오 플레이스홀더가 있고 시나리오 이름이 제공된 경우
   // 특별 처리하여 시나리오 이름의 점을 보존
   if (scenarioName && hasScenarioPlaceholder(basePath)) {
-    return extractWithScenario(basePath, scenarioName, dataset);
+    return extractWithScenario(basePath, scenarioName, dataset, metricKey);
   }
 
   // 일반 경로 처리 (시나리오 플레이스홀더 없음)
   const path = basePath;
   console.log("[extractMetricValue] Using simple path:", path);
 
-  const result = path.split(".").reduce((current, key) => {
+  const rawResult = path.split(".").reduce((current, key) => {
     if (typeof current === "object" && current !== null) {
       return (current as Record<string, unknown>)[key];
     }
     return undefined;
   }, dataset as unknown);
 
-  console.log("[extractMetricValue] Result:", result);
+  // 변환 적용
+  const result = applyTransform(metricKey, rawResult);
+  console.log("[extractMetricValue] Result:", { rawResult, result });
   return result;
 };
