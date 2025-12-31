@@ -32,7 +32,7 @@ const AccordionOutline = ({
         <AccordionItem
           key={item.value}
           value={item.value}
-          className="rounded-md border border-b"
+          className="rounded-md border border-b last:border-b"
         >
           <AccordionTrigger className="px-5">{item.title}</AccordionTrigger>
           <AccordionContent className="px-5">{item.content}</AccordionContent>
