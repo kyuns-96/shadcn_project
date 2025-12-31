@@ -40,7 +40,7 @@ const CARD_CONFIG: CardConfig[] = [
   {
     id: "fc-check-tool",
     title: "FC Check Tool",
-    description: "FC ",
+    description: "합성 체크리스트 관리",
     icon: CheckCircle2,
     iconColor: "text-emerald-500 dark:text-emerald-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
@@ -49,7 +49,7 @@ const CARD_CONFIG: CardConfig[] = [
   {
     id: "qor-compare",
     title: "QOR Compare",
-    description: "데이터 비교 및 분석",
+    description: "레이아웃 결과 비교분석",
     icon: GitCompareArrows,
     iconColor: "text-blue-500 dark:text-blue-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
@@ -58,7 +58,7 @@ const CARD_CONFIG: CardConfig[] = [
   {
     id: "timing",
     title: "Timing",
-    description: "타이밍 분석 도구",
+    description: "타이밍 상세 분석",
     icon: Clock,
     iconColor: "text-amber-500 dark:text-amber-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
@@ -67,7 +67,7 @@ const CARD_CONFIG: CardConfig[] = [
   {
     id: "power",
     title: "Power",
-    description: "전력 분석 도구",
+    description: "파워 상세 분석",
     icon: Zap,
     iconColor: "text-rose-500 dark:text-rose-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
