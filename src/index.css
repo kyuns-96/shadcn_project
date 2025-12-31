@@ -2,6 +2,19 @@
 @import "tw-animate-css";
 
 /* ============================================
+ * Global Font Rendering Optimization
+ * ============================================ */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-feature-settings: "kern" 1;
+}
+
+/* ============================================
  * Font Face Declarations
  * Roboto (English) & Noto Sans KR (Korean)
  * ============================================ */
@@ -161,16 +174,12 @@
   }
   html {
     /* 기본 폰트 크기를 약간 키움 (16px → 17px) */
-    font-size: 106.25%;
-    /* 텍스트 렌더링 개선 */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    font-size: 100%;
   }
   body {
     @apply bg-background text-foreground;
     /* 기본 폰트 두께를 약간 늘림 */
-    font-weight: 480;
+    font-weight: 400;
   }
 }
 

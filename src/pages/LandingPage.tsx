@@ -106,6 +106,7 @@ const LandingPage = () => {
                 key={card.id}
                 onClick={() => handleCardClick(card.id)}
                 className={`
+                  group
                   aspect-square w-48
                   flex flex-col items-center justify-center gap-4
                   rounded-2xl border border-slate-200 dark:border-slate-700
@@ -120,11 +121,11 @@ const LandingPage = () => {
                   className={`h-16 w-16 ${card.iconColor}`}
                   strokeWidth={1.5}
                 />
-                <div className="text-center px-4">
-                  <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+                <div className="text-center px-4 transition-colors duration-300">
+                  <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-slate-50 transition-colors duration-300">
                     {card.title}
                   </h2>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors duration-300">
                     {card.description}
                   </p>
                 </div>
