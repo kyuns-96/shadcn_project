@@ -448,10 +448,6 @@ ${weightStats}
   --font-weight-min-english: ${minEnglish};
   --font-weight-max-english: ${maxEnglish};
 }
-
-html, body {
-  font-family: var(--font-family);
-}
 `;
 
       // 최종 CSS 생성

@@ -11,6 +11,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* 
+   * CustomFont를 Tailwind의 기본 sans-serif 폰트로 설정
+   * auto-fonts.css에서 @font-face가 생성됨
+   */
+  --font-sans: "CustomFont", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -121,10 +128,6 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-  }
-  html {
-    /* Unicode Range 방식: 하나의 font-family로 한글/영어 자동 분리 */
-    font-family: var(--font-family);
   }
   body {
     @apply bg-background text-foreground;
