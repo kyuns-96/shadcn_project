@@ -233,27 +233,29 @@ const FCCheckToolPage = () => {
         value: "item-1",
         content: (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap gap-2 items-end">
-              {dropdownConfigs.map((config, index) => (
-                <FilterDropdownCombobox
-                  key={index}
-                  dropdownConfigs={[config]}
-                />
-              ))}
-              <Button
-                onClick={handleOkClick}
-                disabled={!isFormComplete || isLoading}
-                className="h-9"
-              >
-                {isLoading ? (
-                  <>
-                    <Spinner className="mr-2 h-4 w-4" />
-                    Loading...
-                  </>
-                ) : (
-                  "OK"
-                )}
-              </Button>
+            <div className="overflow-x-auto">
+              <div className="flex gap-2 min-w-fit items-end">
+                {dropdownConfigs.map((config, index) => (
+                  <FilterDropdownCombobox
+                    key={index}
+                    dropdownConfigs={[config]}
+                  />
+                ))}
+                <Button
+                  onClick={handleOkClick}
+                  disabled={!isFormComplete || isLoading}
+                  className="h-9"
+                >
+                  {isLoading ? (
+                    <>
+                      <Spinner className="mr-2 h-4 w-4" />
+                      Loading...
+                    </>
+                  ) : (
+                    "OK"
+                  )}
+                </Button>
+              </div>
             </div>
             {error && (
               <div className="p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
