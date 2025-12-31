@@ -121,7 +121,8 @@ const DatasetColumnAddButton = () => {
   };
 
   return (
-    <div className="w-auto">
+    <div className="w-auto space-y-2">
+      <div className="h-5" />
       <Button 
         className="group w-full h-9" 
         onClick={handleAddDatasetColumn}
@@ -130,6 +131,7 @@ const DatasetColumnAddButton = () => {
         Add
         <ArrowRightIcon className="transition-transform duration-200 group-hover:translate-x-0.5" />
       </Button>
+      <div className="min-h-[1.25rem]" />
     </div>
   );
 };

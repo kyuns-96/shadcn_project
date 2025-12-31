@@ -57,11 +57,9 @@ const DoeNameInput = () => {
         onChange={handleInputChange}
         aria-invalid={!!errorMessage}
       />
-      {errorMessage && (
-        <div className="text-sm text-destructive">
-          {errorMessage}
-        </div>
-      )}
+      <div className="text-sm text-destructive min-h-[1.25rem]">
+        {errorMessage || '\u00A0'}
+      </div>
     </div>
   );
 };
