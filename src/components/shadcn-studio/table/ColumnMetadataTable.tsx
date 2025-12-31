@@ -22,8 +22,8 @@
 
 "use client";
 
-import { useCallback } from "react";
-import { Trash2Icon } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Trash2Icon, CopyIcon, CheckIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -59,6 +59,7 @@ const EMPTY_VALUE_PLACEHOLDER = "-";
  */
 const ColumnMetadataTable = () => {
   const dispatch = useAppDispatch();
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Redux에서 컬럼 및 행 헤더, Power Scenario 선택 상태, 데이터셋 조회
   const { columnHeaders, rowHeaders } = useAppSelector((state) => state.matrix);
@@ -136,6 +137,39 @@ const ColumnMetadataTable = () => {
     [columnPowerScenarios, handleScenarioChange]
   );
 
+  /**
+   * 테이블 데이터를 TSV 형식으로 복사 (엑셀용)
+   */
+  const handleCopyTable = useCallback(async () => {
+    // 헤더 행
+    const headers = ["Label", "PROJECT", "BLOCK", "NET_VER", "REVISION", "ECO_NUM", "Power Scenario"];
+    const headerLine = headers.join("\t");
+
+    // 데이터 행들
+    const dataLines = columnHeaders.map((column) =>
+      [
+        column.label,
+        column.PROJECT_NAME || "-",
+        column.BLOCK || "-",
+        column.NET_VER || "-",
+        column.REVISION || "-",
+        column.ECO_NUM || "-",
+        columnPowerScenarios[column.id] || column.POWER_SCENARIO || "-",
+      ].join("\t")
+    );
+
+    // 전체 텍스트 (헤더 + 데이터)
+    const tsvText = [headerLine, ...dataLines].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(tsvText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy table data:", error);
+    }
+  }, [columnHeaders, columnPowerScenarios]);
+
   // 컬럼이 없으면 안내 메시지 표시
   if (columnHeaders.length === 0) {
     return (
@@ -146,16 +180,42 @@ const ColumnMetadataTable = () => {
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopyTable}
+          className="relative disabled:opacity-100"
+          disabled={isCopied}
+        >
+          <span
+            className={`transition-all ${
+              isCopied ? "scale-100 opacity-100" : "scale-0 opacity-0"
+            }`}
+          >
+            <CheckIcon className="h-4 w-4 stroke-green-600 dark:stroke-green-400" />
+          </span>
+          <span
+            className={`absolute left-3 transition-all ${
+              isCopied ? "scale-0 opacity-0" : "scale-100 opacity-100"
+            }`}
+          >
+            <CopyIcon className="h-4 w-4" />
+          </span>
+          <span className="ml-2">{isCopied ? "Copied!" : "Copy"}</span>
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[80px]">Label</TableHead>
-            <TableHead className="w-[80px]">Project</TableHead>
-            <TableHead className="w-[112px]">Block</TableHead>
-            <TableHead className="w-[120px]">Net Version</TableHead>
-            <TableHead className="w-[200px] truncate">Revision</TableHead>
-            <TableHead className="w-[120px]">Eco Number</TableHead>
+            <TableHead className="w-[80px]">PROJECT</TableHead>
+            <TableHead className="w-[112px]">BLOCK</TableHead>
+            <TableHead className="w-[120px]">NET_VER</TableHead>
+            <TableHead className="w-[200px] truncate">REVISION</TableHead>
+            <TableHead className="w-[120px]">ECO_NUM</TableHead>
             <TableHead className="w-[200px]">Power Scenario</TableHead>
             <TableHead className="w-[60px] text-center">Delete</TableHead>
           </TableRow>
@@ -196,6 +256,7 @@ const ColumnMetadataTable = () => {
           ))}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 };
