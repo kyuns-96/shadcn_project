@@ -128,9 +128,6 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    /* GPU 가속으로 렌더링 품질 향상 */
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
   }
   html {
     /* 기본 폰트 크기를 약간 키움 (16px → 17px) */
@@ -139,21 +136,11 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    /* 가변 폰트 광학 크기 조정 - 줌아웃 시 선명도 개선 */
-    font-optical-sizing: auto;
-    /* 서브픽셀 렌더링 힌트 */
-    font-feature-settings: "kern" 1, "liga" 1;
   }
   body {
     @apply bg-background text-foreground;
-    /* 기본 폰트 두께를 약간 늘림 - 줌아웃 시 더 선명 */
+    /* 기본 폰트 두께를 약간 늘림 */
     font-weight: 480;
-    /* 글자 간격 미세 조정 - 줌아웃 시 뭉침 방지 */
-    letter-spacing: 0.01em;
-    /* 텍스트 미세 외곽선으로 선명도 강화 */
-    -webkit-text-stroke: 0.2px currentColor;
-    /* GPU 렌더링 레이어 생성 */
-    transform: translateZ(0);
   }
 }
 

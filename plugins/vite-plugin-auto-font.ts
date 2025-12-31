@@ -2,6 +2,7 @@
  * Vite Plugin: Auto Font Generator
  *
  * 폰트 폴더를 스캔하여 자동으로 @font-face CSS를 생성합니다.
+ * TTF 파일을 WOFF2로 자동 변환합니다 (fonttools 사용).
  * 파일명에서 weight를 자동 추출하고, unicode-range로 한글/영어 자동 분리합니다.
  *
  * 지원 폰트:
@@ -10,12 +11,16 @@
  *
  * 파일명 패턴:
  * - Prefix200Suffix.ttf (숫자가 중간에)
- * - Prefix200CSuffix.ttf (C 접미사 포함)
+ * - Prefix200CSuffix.ttf (C 접미사 = Condensed)
+ *
+ * 필수 Python 패키지:
+ * - pip install fonttools brotli
  */
 
 import type { Plugin } from "vite";
 import * as fs from "fs";
 import * as path from "path";
+import { execSync } from "child_process";
 
 // ============================================
 // CONFIGURATION
@@ -61,6 +66,12 @@ export interface AutoFontOptions {
   outputPath?: string;
 
   /**
+   * TTF를 WOFF2로 자동 변환
+   * @default true
+   */
+  convertToWoff2?: boolean;
+
+  /**
    * 디버그 모드
    * @default false
    */
@@ -88,6 +99,99 @@ interface FontInfo {
   file: string;
   weight: number;
   hasCSuffix: boolean;
+  format: "woff2" | "truetype" | "opentype";
+}
+
+// ============================================
+// TTF TO WOFF2 CONVERSION
+// ============================================
+
+/**
+ * Python fonttools를 사용하여 TTF를 WOFF2로 변환
+ * pip install fonttools brotli 필요
+ */
+function convertTtfToWoff2(ttfPath: string, debug: boolean): string | null {
+  const woff2Path = ttfPath.replace(/\.ttf$/i, ".woff2");
+
+  // 이미 woff2 파일이 있으면 변환 스킵
+  if (fs.existsSync(woff2Path)) {
+    const ttfStat = fs.statSync(ttfPath);
+    const woff2Stat = fs.statSync(woff2Path);
+
+    // TTF가 더 최신이면 다시 변환
+    if (ttfStat.mtime <= woff2Stat.mtime) {
+      if (debug) console.log(`   [skip] ${path.basename(woff2Path)} already exists`);
+      return woff2Path;
+    }
+  }
+
+  try {
+    // Python fonttools 사용
+    const pythonScript = `
+from fontTools.ttLib import TTFont
+from fontTools.ttLib.woff2 import compress
+
+font = TTFont("${ttfPath.replace(/\\/g, "/")}")
+compress("${ttfPath.replace(/\\/g, "/")}", "${woff2Path.replace(/\\/g, "/")}")
+print("OK")
+`;
+
+    const result = execSync(`python3 -c '${pythonScript}'`, {
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    if (result.trim() === "OK") {
+      if (debug) console.log(`   [convert] ${path.basename(ttfPath)} → ${path.basename(woff2Path)}`);
+      return woff2Path;
+    }
+  } catch (error) {
+    // python3 실패시 python 시도
+    try {
+      const pythonScript = `
+from fontTools.ttLib import TTFont
+from fontTools.ttLib.woff2 import compress
+
+font = TTFont("${ttfPath.replace(/\\/g, "/")}")
+compress("${ttfPath.replace(/\\/g, "/")}", "${woff2Path.replace(/\\/g, "/")}")
+print("OK")
+`;
+
+      const result = execSync(`python -c '${pythonScript}'`, {
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+
+      if (result.trim() === "OK") {
+        if (debug) console.log(`   [convert] ${path.basename(ttfPath)} → ${path.basename(woff2Path)}`);
+        return woff2Path;
+      }
+    } catch (innerError) {
+      console.warn(`   [warn] Failed to convert ${path.basename(ttfPath)}: fonttools not installed?`);
+      console.warn(`          Run: pip install fonttools brotli`);
+      return null;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * 폴더 내 모든 TTF 파일을 WOFF2로 변환
+ */
+function convertAllTtfInFolder(folderPath: string, debug: boolean): void {
+  if (!fs.existsSync(folderPath)) return;
+
+  const ttfFiles = fs.readdirSync(folderPath).filter((f) => /\.ttf$/i.test(f));
+
+  if (ttfFiles.length === 0) return;
+
+  if (debug) console.log(`\n   Converting TTF to WOFF2 in ${path.basename(folderPath)}/`);
+
+  for (const ttfFile of ttfFiles) {
+    const ttfPath = path.join(folderPath, ttfFile);
+    convertTtfToWoff2(ttfPath, debug);
+  }
 }
 
 // ============================================
@@ -104,7 +208,7 @@ interface FontInfo {
  * - 200.ttf → weight: 200, hasCSuffix: false
  * - 200C.ttf → weight: 200, hasCSuffix: true
  */
-function extractFontInfo(filename: string): FontInfo | null {
+function extractFontInfo(filename: string): Omit<FontInfo, "format"> | null {
   // 확장자 제거
   const nameWithoutExt = filename.replace(/\.(ttf|otf|woff2?)$/i, "");
 
@@ -167,16 +271,34 @@ function isWeightInRange(
 }
 
 /**
- * 디렉토리 내 폰트 파일 스캔
+ * 디렉토리 내 폰트 파일 스캔 (WOFF2 우선)
  */
-function scanFontFiles(dirPath: string): string[] {
+function scanFontFiles(dirPath: string, preferWoff2: boolean): string[] {
   if (!fs.existsSync(dirPath)) {
     return [];
   }
 
-  return fs
-    .readdirSync(dirPath)
-    .filter((file) => /\.(ttf|otf|woff2?)$/i.test(file));
+  const allFiles = fs.readdirSync(dirPath).filter((file) =>
+    /\.(ttf|otf|woff2?)$/i.test(file)
+  );
+
+  if (!preferWoff2) {
+    return allFiles;
+  }
+
+  // WOFF2 파일이 있으면 해당 TTF/OTF 제외
+  const woff2Files = allFiles.filter((f) => /\.woff2$/i.test(f));
+  const woff2Basenames = woff2Files.map((f) =>
+    f.replace(/\.woff2$/i, "").toLowerCase()
+  );
+
+  return allFiles.filter((file) => {
+    if (/\.woff2$/i.test(file)) return true;
+
+    const basename = file.replace(/\.(ttf|otf|woff)$/i, "").toLowerCase();
+    // 같은 이름의 WOFF2가 있으면 제외
+    return !woff2Basenames.includes(basename);
+  });
 }
 
 /**
@@ -190,16 +312,9 @@ function generateFontFaceCSS(
   fontPath: string,
   weight: number,
   isCondensed: boolean,
+  format: string,
   unicodeRange?: string
 ): string {
-  const format = fontPath.endsWith(".woff2")
-    ? "woff2"
-    : fontPath.endsWith(".woff")
-    ? "woff"
-    : fontPath.endsWith(".otf")
-    ? "opentype"
-    : "truetype";
-
   let css = `@font-face {
   font-family: "${fontFamily}";
   src: url("${fontPath}") format("${format}");
@@ -247,16 +362,21 @@ function generateWeightStats(
  * 
  * Korean (200-700):
  *   Normal (font-stretch: normal): ${koreanNormal.join(", ") || "none"}
- *   Condensed (font-stretch: condensed): ${
-   koreanCondensed.join(", ") || "none"
- }
+ *   Condensed (font-stretch: condensed): ${koreanCondensed.join(", ") || "none"}
  * 
  * English (200-800):
  *   Normal (font-stretch: normal): ${englishNormal.join(", ") || "none"}
- *   Condensed (font-stretch: condensed): ${
-   englishCondensed.join(", ") || "none"
- }
+ *   Condensed (font-stretch: condensed): ${englishCondensed.join(", ") || "none"}
  */`;
+}
+
+/**
+ * 파일 확장자에서 포맷 결정
+ */
+function getFormatFromExtension(filename: string): FontInfo["format"] {
+  if (/\.woff2$/i.test(filename)) return "woff2";
+  if (/\.otf$/i.test(filename)) return "opentype";
+  return "truetype";
 }
 
 // ============================================
@@ -273,6 +393,7 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
     },
     useUnicodeRange = true,
     outputPath = "src/styles/auto-fonts.css",
+    convertToWoff2 = true,
     debug = false,
   } = options;
 
@@ -294,6 +415,21 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
         return;
       }
 
+      // TTF → WOFF2 변환
+      if (convertToWoff2) {
+        console.log("\n🔄 [auto-font] Converting TTF to WOFF2...");
+
+        if (languages.korean) {
+          const koreanPath = path.join(fontBasePath, languages.korean.folder);
+          convertAllTtfInFolder(koreanPath, debug);
+        }
+
+        if (languages.english) {
+          const englishPath = path.join(fontBasePath, languages.english.folder);
+          convertAllTtfInFolder(englishPath, debug);
+        }
+      }
+
       const cssRules: string[] = [];
       const koreanFonts: FontInfo[] = [];
       const englishFonts: FontInfo[] = [];
@@ -303,7 +439,7 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
       if (languages.korean) {
         const { folder, minWeight, maxWeight } = languages.korean;
         const koreanPath = path.join(fontBasePath, folder);
-        const files = scanFontFiles(koreanPath);
+        const files = scanFontFiles(koreanPath, convertToWoff2);
 
         log(`Found ${files.length} Korean font files in ${folder}/`);
 
@@ -327,6 +463,7 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
             continue;
           }
 
+          const format = getFormatFromExtension(file);
           const fontPath = `/${fontDir}/${folder}/${file}`;
           const unicodeRange = useUnicodeRange
             ? UNICODE_RANGES.korean
@@ -338,12 +475,13 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
               fontPath,
               weight,
               hasCSuffix,
+              format,
               unicodeRange
             )
           );
-          koreanFonts.push(fontInfo);
+          koreanFonts.push({ ...fontInfo, format });
 
-          log(`  ✓ ${file} → weight: ${weight}${hasCSuffix ? " (C)" : ""}`);
+          log(`  ✓ ${file} → weight: ${weight}${hasCSuffix ? " (Condensed)" : ""} [${format}]`);
         }
       }
 
@@ -351,7 +489,7 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
       if (languages.english) {
         const { folder, minWeight, maxWeight } = languages.english;
         const englishPath = path.join(fontBasePath, folder);
-        const files = scanFontFiles(englishPath);
+        const files = scanFontFiles(englishPath, convertToWoff2);
 
         log(`Found ${files.length} English font files in ${folder}/`);
 
@@ -375,6 +513,7 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
             continue;
           }
 
+          const format = getFormatFromExtension(file);
           const fontPath = `/${fontDir}/${folder}/${file}`;
           const unicodeRange = useUnicodeRange
             ? UNICODE_RANGES.english
@@ -386,12 +525,13 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
               fontPath,
               weight,
               hasCSuffix,
+              format,
               unicodeRange
             )
           );
-          englishFonts.push(fontInfo);
+          englishFonts.push({ ...fontInfo, format });
 
-          log(`  ✓ ${file} → weight: ${weight}${hasCSuffix ? " (C)" : ""}`);
+          log(`  ✓ ${file} → weight: ${weight}${hasCSuffix ? " (Condensed)" : ""} [${format}]`);
         }
       }
 
@@ -424,6 +564,11 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
       const maxEnglish =
         englishWeights.length > 0 ? Math.max(...englishWeights) : 800;
 
+      const woff2Count = [...koreanFonts, ...englishFonts].filter(
+        (f) => f.format === "woff2"
+      ).length;
+      const totalCount = koreanFonts.length + englishFonts.length;
+
       const cssVariables = `
 /* ============================================
  * Auto-generated Font CSS
@@ -432,16 +577,16 @@ export default function autoFontPlugin(options: AutoFontOptions = {}): Plugin {
  * 
  * Korean: ${languages.korean?.minWeight || 200}~${
         languages.korean?.maxWeight || 700
-      } (+ C variants)
+      } (+ Condensed variants)
  * English: ${languages.english?.minWeight || 200}~${
         languages.english?.maxWeight || 800
-      } (+ C variants)
+      } (+ Condensed variants)
+ * 
+ * Format: ${woff2Count}/${totalCount} files are WOFF2
  * ============================================ */
 ${weightStats}
 
 :root {
-  --font-family: "${fontFamily}", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  
   /* Available weight ranges */
   --font-weight-min-korean: ${minKorean};
   --font-weight-max-korean: ${maxKorean};
@@ -473,19 +618,24 @@ ${weightStats}
       console.log(
         `   English: ${englishFonts.length} fonts (weight ${languages.english?.minWeight}-${languages.english?.maxWeight})`
       );
+      console.log(`   Format: ${woff2Count}/${totalCount} WOFF2`);
       console.log(`   Output: ${outputPath}`);
 
       if (debug) {
         console.log("\n   Korean fonts:");
         koreanFonts.forEach((f) => {
           console.log(
-            `     - ${f.file} (weight: ${f.weight}${f.hasCSuffix ? ", C" : ""})`
+            `     - ${f.file} (weight: ${f.weight}${
+              f.hasCSuffix ? ", Condensed" : ""
+            }) [${f.format}]`
           );
         });
         console.log("\n   English fonts:");
         englishFonts.forEach((f) => {
           console.log(
-            `     - ${f.file} (weight: ${f.weight}${f.hasCSuffix ? ", C" : ""})`
+            `     - ${f.file} (weight: ${f.weight}${
+              f.hasCSuffix ? ", Condensed" : ""
+            }) [${f.format}]`
           );
         });
       }
