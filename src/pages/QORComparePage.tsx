@@ -54,12 +54,18 @@ const QORComparePage = () => {
         title: "Select Netlist Version",
         value: "item-1",
         content: (
-          <div className="flex flex-wrap gap-2">
-            {filterDropdownConfigs.map((config, index) => (
-              <FilterDropdownCombobox key={index} dropdownConfigs={[config]} />
-            ))}
-            <DoeNameInput />
-            <DatasetColumnAddButton />
+          <div className="flex flex-col gap-4">
+            <div className="overflow-x-auto">
+              <div className="flex gap-2 min-w-fit">
+                {filterDropdownConfigs.map((config, index) => (
+                  <FilterDropdownCombobox key={index} dropdownConfigs={[config]} />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 items-end">
+              <DoeNameInput />
+              <DatasetColumnAddButton />
+            </div>
           </div>
         ),
       },

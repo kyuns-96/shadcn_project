@@ -15,8 +15,8 @@
  * - @/components/ui/label: 라벨 UI
  */
 
-import { useId } from "react";
-import { useAppDispatch } from "@/store";
+import { useId, useState } from "react";
+import { useAppDispatch, useAppSelector } from "@/store";
 import { setDoeName } from "@/store/reducers/selectedReducer";
 
 import { Input } from "@/components/ui/input";
@@ -30,9 +30,21 @@ import { Label } from "@/components/ui/label";
 const DoeNameInput = () => {
   const inputId = useId();
   const dispatch = useAppDispatch();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  const columnHeaders = useAppSelector((state) => state.matrix.columnHeaders);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch(setDoeName(event.target.value));
+    const value = event.target.value;
+    dispatch(setDoeName(value));
+    
+    // Validate for duplicates (trim for validation only)
+    const trimmedValue = value.trim();
+    if (trimmedValue && columnHeaders.some(col => col.label === trimmedValue)) {
+      setErrorMessage("이미 존재하는 DoE 이름입니다");
+    } else {
+      setErrorMessage(null);
+    }
   };
 
   return (
@@ -43,7 +55,13 @@ const DoeNameInput = () => {
         type="text"
         placeholder="DoE Name"
         onChange={handleInputChange}
+        aria-invalid={!!errorMessage}
       />
+      {errorMessage && (
+        <div className="text-sm text-destructive">
+          {errorMessage}
+        </div>
+      )}
     </div>
   );
 };

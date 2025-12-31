@@ -61,7 +61,12 @@ const DatasetColumnAddButton = () => {
     selectedRevision,
     selectedEconum,
   } = useAppSelector((state) => state.selected);
-  const { rowHeaders } = useAppSelector((state) => state.matrix);
+  const { rowHeaders, columnHeaders } = useAppSelector((state) => state.matrix);
+  
+  // Check if button should be disabled (empty or duplicate)
+  const trimmedDoeName = doeName.trim();
+  const isDuplicate = columnHeaders.some(col => col.label === trimmedDoeName);
+  const isDisabled = !trimmedDoeName || isDuplicate;
 
   /**
    * 새 데이터셋 컬럼을 추가하고 데이터를 로드합니다.
@@ -116,9 +121,12 @@ const DatasetColumnAddButton = () => {
   };
 
   return (
-    <div className="w-auto space-y-2">
-      <div className="h-5" />
-      <Button className="group w-full" onClick={handleAddDatasetColumn}>
+    <div className="w-auto">
+      <Button 
+        className="group w-full h-9" 
+        onClick={handleAddDatasetColumn}
+        disabled={isDisabled}
+      >
         Add
         <ArrowRightIcon className="transition-transform duration-200 group-hover:translate-x-0.5" />
       </Button>
