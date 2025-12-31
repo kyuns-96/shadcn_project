@@ -28,6 +28,12 @@ import { useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { initializeDefaultMatrixRows } from "@/variables/defaultMatrixTemplate";
 import { useRestoreColumnData } from "@/hooks/useURLSync";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 
 const QORComparePage = () => {
   const filterDropdownConfigs = useFilterDropdownConfigs();
@@ -48,16 +54,45 @@ const QORComparePage = () => {
   useRestoreColumnData();
 
   return (
-    <>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {filterDropdownConfigs.map((config, index) => (
-          <FilterDropdownCombobox key={index} dropdownConfigs={[config]} />
-        ))}
-        <DoeNameInput />
-        <DatasetColumnAddButton />
-      </div>
-      <AgGridMatrixTable />
-    </>
+    <div className="flex flex-col h-full">
+      <Accordion
+        type="multiple"
+        defaultValue={["item-1", "item-2"]}
+        className="flex flex-col h-full gap-4"
+      >
+        {/* Select Netlist Version */}
+        <AccordionItem value="item-1" className="border rounded-md">
+          <AccordionTrigger className="px-4">
+            Select Netlist Version
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="flex flex-wrap gap-2">
+              {filterDropdownConfigs.map((config, index) => (
+                <FilterDropdownCombobox
+                  key={index}
+                  dropdownConfigs={[config]}
+                />
+              ))}
+              <DoeNameInput />
+              <DatasetColumnAddButton />
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Table Information Section */}
+        <AccordionItem
+          value="item-2"
+          className="border rounded-md flex-1 flex flex-col"
+        >
+          <AccordionTrigger className="px-4">
+            Table Information
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col">
+            <AgGridMatrixTable />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </div>
   );
 };
 

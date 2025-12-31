@@ -12,6 +12,12 @@ import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDr
 import type { DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
 import { fetchCheckToolResult } from "@/api/fetchCheckToolResult";
 import {
   setFCSelectedProject,
@@ -227,92 +233,123 @@ const FCCheckToolPage = () => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Comboboxes and OK Button */}
-      <div className="flex flex-wrap gap-2 mb-4 items-end">
-        {dropdownConfigs.map((config, index) => (
-          <FilterDropdownCombobox key={index} dropdownConfigs={[config]} />
-        ))}
-        <Button
-          onClick={handleOkClick}
-          disabled={!isFormComplete || isLoading}
-          className="h-9"
+      <Accordion
+        type="multiple"
+        defaultValue={["item-1", "item-2"]}
+        className="flex flex-col h-full gap-4"
+      >
+        {/* Select Netlist Version Section */}
+        <AccordionItem value="item-1" className="border rounded-md">
+          <AccordionTrigger className="px-4">
+            Select Netlist Version
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 flex flex-col gap-4">
+            {/* Comboboxes and OK Button */}
+            <div className="flex flex-wrap gap-2 items-end">
+              {dropdownConfigs.map((config, index) => (
+                <FilterDropdownCombobox
+                  key={index}
+                  dropdownConfigs={[config]}
+                />
+              ))}
+              <Button
+                onClick={handleOkClick}
+                disabled={!isFormComplete || isLoading}
+                className="h-9"
+              >
+                {isLoading ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    Loading...
+                  </>
+                ) : (
+                  "OK"
+                )}
+              </Button>
+            </div>
+
+            {/* Error Display */}
+            {error && (
+              <div className="p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
+                {error}
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Table Information Section */}
+        <AccordionItem
+          value="item-2"
+          className="border rounded-md flex-1 flex flex-col"
         >
-          {isLoading ? (
-            <>
-              <Spinner className="mr-2 h-4 w-4" />
-              Loading...
-            </>
-          ) : (
-            "OK"
-          )}
-        </Button>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
-          {error}
-        </div>
-      )}
-
-      {/* HTML Content Display */}
-      {htmlContent && (
-        <div className="flex-1 flex flex-col">
-          <div className="flex justify-start mb-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopyToClipboard}
-              className="gap-2"
-            >
-              {isCopied ? (
-                <>
-                  <Check className="h-4 w-4" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  Copy HTML
-                </>
-              )}
-            </Button>
-          </div>
-          <div
-            className="flex-1 border rounded-md p-4 bg-card overflow-auto text-foreground
-              [&_[style*='color:black']]:!text-foreground
-              [&_[style*='color:_black']]:!text-foreground
-              [&_[style*='color:#000000']]:!text-foreground
-              [&_[style*='color:_#000000']]:!text-foreground
-              [&_[style*='color:#000']]:!text-foreground
-              [&_[style*='color:_#000']]:!text-foreground
-              [&_[style*='color:rgb(0,0,0)']]:!text-foreground
-              [&_[style*='color:rgb(0,_0,_0)']]:!text-foreground
-              [&_[color='black']]:!text-foreground
-              [&_[color='#000000']]:!text-foreground
-              [&_[color='#000']]:!text-foreground
-              [&_font[color='black']]:!text-foreground
-              [&_font[color='#000000']]:!text-foreground
-              [&_font[color='#000']]:!text-foreground
-              [&_table]:border-collapse [&_table]:w-auto
-              [&_th]:p-2 [&_th]:text-left
-              [&_td]:p-2
-              [&_tr:hover]:bg-muted/50
-              [&_a]:underline
-              [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-auto
-              [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded
-              [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4
-              [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3
-              [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-2
-              [&_p]:mb-2
-              [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
-              [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
-              [&_hr]:border-border [&_hr]:my-4"
-            ref={htmlContainerRef}
-            dangerouslySetInnerHTML={{ __html: htmlContent }}
-          />
-        </div>
-      )}
+          <AccordionTrigger className="px-4">
+            Check Tool Result
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col">
+            {htmlContent ? (
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="flex justify-start">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopyToClipboard}
+                    className="gap-2"
+                  >
+                    {isCopied ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy HTML
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div
+                  className="flex-1 border rounded-md p-4 bg-card overflow-auto text-foreground
+                    [&_[style*='color:black']]:!text-foreground
+                    [&_[style*='color:_black']]:!text-foreground
+                    [&_[style*='color:#000000']]:!text-foreground
+                    [&_[style*='color:_#000000']]:!text-foreground
+                    [&_[style*='color:#000']]:!text-foreground
+                    [&_[style*='color:_#000']]:!text-foreground
+                    [&_[style*='color:rgb(0,0,0)']]:!text-foreground
+                    [&_[style*='color:rgb(0,_0,_0)']]:!text-foreground
+                    [&_[color='black']]:!text-foreground
+                    [&_[color='#000000']]:!text-foreground
+                    [&_[color='#000']]:!text-foreground
+                    [&_font[color='black']]:!text-foreground
+                    [&_font[color='#000000']]:!text-foreground
+                    [&_font[color='#000']]:!text-foreground
+                    [&_table]:border-collapse [&_table]:w-auto
+                    [&_th]:p-2 [&_th]:text-left
+                    [&_td]:p-2
+                    [&_tr:hover]:bg-muted/50
+                    [&_a]:underline
+                    [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded [&_pre]:overflow-auto
+                    [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded
+                    [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-4
+                    [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-3
+                    [&_h3]:text-lg [&_h3]:font-medium [&_h3]:mb-2
+                    [&_p]:mb-2
+                    [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
+                    [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
+                    [&_hr]:border-border [&_hr]:my-4"
+                  ref={htmlContainerRef}
+                  dangerouslySetInnerHTML={{ __html: htmlContent }}
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-32 text-muted-foreground">
+                No data to display
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 };
