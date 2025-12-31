@@ -77,8 +77,14 @@ const METRIC_TRANSFORMERS: Record<string, MetricTransformer> = {
  * 그룹 이름 (예: "Power")을 키로 사용
  */
 const GROUP_TRANSFORMERS: Record<string, MetricTransformer> = {
-  // Power 그룹의 모든 메트릭에 100을 곱함
-  Power: (v) => (typeof v === "number" ? v * 100 : v),
+  // Power 그룹의 모든 메트릭: W -> mW 변환 (1000 곱함) 후 소수점 3자리로 포맷
+  "Power(mW)": (v) => {
+    if (typeof v === "number") {
+      const mW = v * 1000; // W to mW
+      return Number(mW.toFixed(3)); // 소수점 3자리
+    }
+    return v;
+  },
 };
 
 /**
@@ -229,11 +235,19 @@ const extractWithScenario = (
   });
 
   // extractScenarioMetric 사용하여 추출
-  const rawValue = extractScenarioMetric(basePath, scenarioName, metricPath, dataset);
+  const rawValue = extractScenarioMetric(
+    basePath,
+    scenarioName,
+    metricPath,
+    dataset
+  );
 
   // 변환 적용
   const transformedValue = applyTransform(metricKey, rawValue);
-  console.log("[extractWithScenario] Transform applied:", { rawValue, transformedValue });
+  console.log("[extractWithScenario] Transform applied:", {
+    rawValue,
+    transformedValue,
+  });
 
   return transformedValue;
 };
