@@ -210,25 +210,25 @@ const ColumnMetadataTable = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">Label</TableHead>
+            <TableHead className="w-[65px]">Label</TableHead>
             <TableHead className="w-[80px]">PROJECT</TableHead>
-            <TableHead className="w-[112px]">BLOCK</TableHead>
+            <TableHead className="w-[95px]">BLOCK</TableHead>
             <TableHead className="w-[120px]">NET_VER</TableHead>
-            <TableHead className="w-[200px] truncate">REVISION</TableHead>
-            <TableHead className="w-[120px]">ECO_NUM</TableHead>
-            <TableHead className="w-[200px]">Power Scenario</TableHead>
+            <TableHead className="w-[170px] truncate">REVISION</TableHead>
+            <TableHead className="w-[105px]">ECO_NUM</TableHead>
+            <TableHead className="w-[277px]">Power Scenario</TableHead>
             <TableHead className="w-[60px] text-center">Delete</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {columnHeaders.map((column) => (
             <TableRow key={column.id}>
-              <TableCell className="font-medium w-[80px]">{column.label}</TableCell>
+              <TableCell className="font-medium w-[65px]">{column.label}</TableCell>
               <TableCell className="w-[80px]">{column.PROJECT_NAME || "-"}</TableCell>
-              <TableCell className="w-[112px]">{column.BLOCK || "-"}</TableCell>
+              <TableCell className="w-[95px]">{column.BLOCK || "-"}</TableCell>
               <TableCell className="w-[120px]">{column.NET_VER || "-"}</TableCell>
-              <TableCell className="w-[200px] truncate">{column.REVISION || "-"}</TableCell>
-              <TableCell className="w-[120px]">{column.ECO_NUM || "-"}</TableCell>
+              <TableCell className="w-[170px] truncate">{column.REVISION || "-"}</TableCell>
+              <TableCell className="w-[105px]">{column.ECO_NUM || "-"}</TableCell>
               <TableCell>
                 {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
                   <div className="w-[180px]">
