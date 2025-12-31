@@ -136,11 +136,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* 가변 폰트 광학 크기 조정 - 줌아웃 시 선명도 개선 */
+    font-optical-sizing: auto;
+    /* 서브픽셀 렌더링 힌트 */
+    font-feature-settings: "kern" 1, "liga" 1;
   }
   body {
     @apply bg-background text-foreground;
-    /* 기본 폰트 두께를 약간 늘림 (400 → 450) */
-    font-weight: 450;
+    /* 기본 폰트 두께를 약간 늘림 - 줌아웃 시 더 선명 */
+    font-weight: 480;
+    /* 글자 간격 미세 조정 - 줌아웃 시 뭉침 방지 */
+    letter-spacing: 0.01em;
   }
 }
 
