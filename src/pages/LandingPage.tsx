@@ -44,7 +44,7 @@ const CARD_CONFIG: CardConfig[] = [
     icon: CheckCircle2,
     iconColor: "text-emerald-500 dark:text-emerald-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
-    hoverBgColor: "hover:bg-emerald-50 dark:hover:bg-slate-800",
+    hoverBgColor: "hover:bg-emerald-50 dark:hover:bg-emerald-950",
   },
   {
     id: "qor-compare",
@@ -53,7 +53,7 @@ const CARD_CONFIG: CardConfig[] = [
     icon: GitCompareArrows,
     iconColor: "text-blue-500 dark:text-blue-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
-    hoverBgColor: "hover:bg-blue-50 dark:hover:bg-slate-800",
+    hoverBgColor: "hover:bg-blue-50 dark:hover:bg-blue-950",
   },
   {
     id: "timing",
@@ -62,7 +62,7 @@ const CARD_CONFIG: CardConfig[] = [
     icon: Clock,
     iconColor: "text-amber-500 dark:text-amber-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
-    hoverBgColor: "hover:bg-amber-50 dark:hover:bg-slate-800",
+    hoverBgColor: "hover:bg-amber-50 dark:hover:bg-amber-950",
   },
   {
     id: "power",
@@ -71,7 +71,7 @@ const CARD_CONFIG: CardConfig[] = [
     icon: Zap,
     iconColor: "text-rose-500 dark:text-rose-400",
     bgColor: "bg-slate-50 dark:bg-slate-900",
-    hoverBgColor: "hover:bg-rose-50 dark:hover:bg-slate-800",
+    hoverBgColor: "hover:bg-rose-50 dark:hover:bg-rose-950",
   },
 ];
 
