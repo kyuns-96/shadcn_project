@@ -150,12 +150,12 @@ const ColumnMetadataTable = () => {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[120px]">Label</TableHead>
-            <TableHead className="w-[100px]">Project</TableHead>
-            <TableHead className="w-[100px]">Block</TableHead>
-            <TableHead className="w-[100px]">Net Version</TableHead>
-            <TableHead className="w-[100px]">Revision</TableHead>
-            <TableHead className="w-[100px]">Eco Number</TableHead>
+            <TableHead className="w-[80px]">Label</TableHead>
+            <TableHead className="w-[80px]">Project</TableHead>
+            <TableHead className="w-[112px]">Block</TableHead>
+            <TableHead className="w-[120px]">Net Version</TableHead>
+            <TableHead className="w-[200px] truncate">Revision</TableHead>
+            <TableHead className="w-[120px]">Eco Number</TableHead>
             <TableHead className="w-[200px]">Power Scenario</TableHead>
             <TableHead className="w-[60px] text-center">Delete</TableHead>
           </TableRow>
@@ -163,12 +163,12 @@ const ColumnMetadataTable = () => {
         <TableBody>
           {columnHeaders.map((column) => (
             <TableRow key={column.id}>
-              <TableCell className="font-medium">{column.label}</TableCell>
-              <TableCell>{column.PROJECT_NAME || "-"}</TableCell>
-              <TableCell>{column.BLOCK || "-"}</TableCell>
-              <TableCell>{column.NET_VER || "-"}</TableCell>
-              <TableCell>{column.REVISION || "-"}</TableCell>
-              <TableCell>{column.ECO_NUM || "-"}</TableCell>
+              <TableCell className="font-medium w-[80px]">{column.label}</TableCell>
+              <TableCell className="w-[80px]">{column.PROJECT_NAME || "-"}</TableCell>
+              <TableCell className="w-[112px]">{column.BLOCK || "-"}</TableCell>
+              <TableCell className="w-[120px]">{column.NET_VER || "-"}</TableCell>
+              <TableCell className="w-[200px] truncate">{column.REVISION || "-"}</TableCell>
+              <TableCell className="w-[120px]">{column.ECO_NUM || "-"}</TableCell>
               <TableCell>
                 {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
                   <div className="w-[180px]">
