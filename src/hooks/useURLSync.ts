@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import type { RootState, AppDispatch } from "@/store";
 import { setCurrentPage, type PageType } from "@/store/reducers/pageReducer";
-import { restoreFromURL, setDoeName } from "@/store/reducers/selectedReducer";
+import {
+  restoreFromURL,
+  setDoeName,
+  setColumnPowerScenario,
+} from "@/store/reducers/selectedReducer";
 import {
   setFCSelectedProject,
   setFCSelectedBlock,
@@ -46,6 +50,8 @@ interface ColumnMeta {
   NET_VER?: string;
   REVISION?: string;
   ECO_NUM?: string;
+  POWER_SCENARIO?: string;
+  AVAILABLE_SCENARIOS?: string[];
 }
 
 /**
@@ -140,6 +146,8 @@ export function useURLSync() {
             NET_VER: col.NET_VER,
             REVISION: col.REVISION,
             ECO_NUM: col.ECO_NUM,
+            POWER_SCENARIO: col.POWER_SCENARIO,
+            AVAILABLE_SCENARIOS: col.AVAILABLE_SCENARIOS,
           }));
 
           dispatch(restoreColumnsFromURL(storedColumns));
@@ -192,6 +200,8 @@ export function useURLSync() {
           NET_VER: col.NET_VER,
           REVISION: col.REVISION,
           ECO_NUM: col.ECO_NUM,
+          POWER_SCENARIO: col.POWER_SCENARIO,
+          AVAILABLE_SCENARIOS: col.AVAILABLE_SCENARIOS,
         }));
         const encoded = encodeColumns(columnMeta);
         if (encoded) {
@@ -285,10 +295,23 @@ export function useRestoreColumnData() {
             string,
             unknown
           >;
+
+          // Restore Power Scenario selection if it exists
+          const scenarioName = col.POWER_SCENARIO || "";
+          if (scenarioName) {
+            dispatch(
+              setColumnPowerScenario({
+                columnId: col.id,
+                scenario: scenarioName,
+              })
+            );
+          }
+
           // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
           currentRowHeaders.forEach((row) => {
             const metricKey = `${row.rowGroup}!${row.label}`;
-            let value = extractMetricValue(metricKey, data);
+            // Pass scenario name for proper metric extraction
+            let value = extractMetricValue(metricKey, data, scenarioName);
             if (value === undefined) {
               value = "-";
             }

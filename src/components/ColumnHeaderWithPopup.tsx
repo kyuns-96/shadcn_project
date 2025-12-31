@@ -19,6 +19,8 @@ export interface ColumnMetadata {
   NET_VER?: string;
   REVISION?: string;
   ECO_NUM?: string;
+  POWER_SCENARIO?: string;
+  AVAILABLE_SCENARIOS?: string[];
   [key: string]: unknown;
 }
 
@@ -44,6 +46,7 @@ export default function ColumnHeaderWithPopup(
       { key: "NET_VER", label: "Net Version" },
       { key: "REVISION", label: "Revision" },
       { key: "ECO_NUM", label: "Eco Number" },
+      { key: "POWER_SCENARIO", label: "Power Scenario" },
     ];
 
     const hasMetadata = metadataFields.some((field) => metadata[field.key]);

@@ -7,6 +7,8 @@ export interface SelectedState {
   selectedRevision: string | null;
   selectedEconum: string | null;
   doeName: string;
+  /** 컬럼별 선택된 Power Scenario 매핑 (columnId -> scenarioName) */
+  columnPowerScenarios: Record<string, string>;
 }
 
 // Payload type for restoring state from URL
@@ -25,6 +27,7 @@ const initialState: SelectedState = {
   selectedRevision: null,
   selectedEconum: null,
   doeName: "",
+  columnPowerScenarios: {},
 };
 
 const selectedSlice = createSlice({
@@ -68,6 +71,18 @@ const selectedSlice = createSlice({
       state.selectedRevision = action.payload.selectedRevision;
       state.selectedEconum = action.payload.selectedEconum;
     },
+    // Set Power Scenario for a specific column
+    setColumnPowerScenario: (
+      state,
+      action: PayloadAction<{ columnId: string; scenario: string }>
+    ) => {
+      const { columnId, scenario } = action.payload;
+      state.columnPowerScenarios[columnId] = scenario;
+    },
+    // Remove Power Scenario mapping when column is deleted
+    clearColumnPowerScenario: (state, action: PayloadAction<string>) => {
+      delete state.columnPowerScenarios[action.payload];
+    },
   },
 });
 
@@ -79,6 +94,8 @@ export const {
   setSelectedEconum,
   setDoeName,
   restoreFromURL,
+  setColumnPowerScenario,
+  clearColumnPowerScenario,
 } = selectedSlice.actions;
 
 export default selectedSlice.reducer;

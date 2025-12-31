@@ -10,6 +10,8 @@ export interface ColumnHeader {
   NET_VER?: string;
   REVISION?: string;
   ECO_NUM?: string;
+  POWER_SCENARIO?: string;
+  AVAILABLE_SCENARIOS?: string[];
   _needsDataFetch?: boolean; // Flag for URL restoration
   [key: string]: unknown;
 }
@@ -198,6 +200,8 @@ const matrixSlice = createSlice({
           NET_VER?: string;
           REVISION?: string;
           ECO_NUM?: string;
+          POWER_SCENARIO?: string;
+          AVAILABLE_SCENARIOS?: string[];
         };
       }>
     ) => {
@@ -239,6 +243,30 @@ const matrixSlice = createSlice({
         (row) => !idsToDelete.has(row.id)
       );
     },
+    removeColumn: (state, action: PayloadAction<string>) => {
+      const columnId = action.payload;
+      // Remove from column headers
+      state.columnHeaders = state.columnHeaders.filter(
+        (col) => col.id !== columnId
+      );
+      // Remove column data from all rows
+      state.rowHeaders.forEach((row) => {
+        delete row.data[columnId];
+      });
+    },
+    updateColumnScenario: (
+      state,
+      action: PayloadAction<{ columnId: string; scenario: string; availableScenarios?: string[] }>
+    ) => {
+      const { columnId, scenario, availableScenarios } = action.payload;
+      const column = state.columnHeaders.find((col) => col.id === columnId);
+      if (column) {
+        column.POWER_SCENARIO = scenario;
+        if (availableScenarios) {
+          column.AVAILABLE_SCENARIOS = availableScenarios;
+        }
+      }
+    },
   },
 });
 
@@ -255,5 +283,7 @@ export const {
   addColumn,
   updateCell,
   deleteRows,
+  removeColumn,
+  updateColumnScenario,
 } = matrixSlice.actions;
 export default matrixSlice.reducer;

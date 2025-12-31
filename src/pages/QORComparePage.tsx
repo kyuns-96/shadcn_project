@@ -5,11 +5,13 @@
  * QOR(Quality of Results) 비교 페이지입니다.
  * 필터 드롭다운, DoE 입력, 데이터 추가 버튼과
  * 매트릭스 테이블로 구성됩니다.
+ * Power Scenario 선택 및 컬럼 관리 기능을 포함합니다.
  *
  * @structure
  * 1. 필터 드롭다운 영역: 프로젝트/블록/넷버전 등 선택
  * 2. DoE 입력 및 추가 버튼
- * 3. AG Grid 매트릭스 테이블
+ * 3. Column Power Scenario 관리 테이블
+ * 4. AG Grid 매트릭스 테이블
  *
  * @dependencies
  * - @/components/ag-grid-matrix-table: 테이블 컴포넌트
@@ -24,6 +26,7 @@ import DatasetColumnAddButton from "@/components/shadcn-studio/button/DatasetCol
 import useFilterDropdownConfigs from "@/variables/useFilterDropdownConfigs";
 import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import DoeNameInput from "@/components/shadcn-studio/input/DoeNameInput";
+import ColumnMetadataTable from "@/components/shadcn-studio/table/ColumnMetadataTable";
 import { useEffect, useRef, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { initializeDefaultMatrixRows } from "@/variables/defaultMatrixTemplate";
@@ -73,8 +76,13 @@ const QORComparePage = () => {
         ),
       },
       {
-        title: "Table Information",
+        title: "Column Power Scenario",
         value: "item-2",
+        content: <ColumnMetadataTable />,
+      },
+      {
+        title: "Table Information",
+        value: "item-3",
         content: (
           <div className="flex-1 flex flex-col overflow-hidden min-h-[400px]">
             <AgGridMatrixTable />
@@ -89,7 +97,7 @@ const QORComparePage = () => {
     <div className="flex flex-col h-full">
       <AccordionOutline
         items={accordionItems}
-        defaultValue={["item-1", "item-2"]}
+        defaultValue={["item-1", "item-2", "item-3"]}
         className="flex flex-col h-full gap-2"
       />
     </div>
