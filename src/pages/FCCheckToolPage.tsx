@@ -12,12 +12,7 @@ import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDr
 import type { DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import AccordionOutline from "@/components/shadcn-studio/accordion/accordion-09";
 import { fetchCheckToolResult } from "@/api/fetchCheckToolResult";
 import {
   setFCSelectedProject,
@@ -231,20 +226,13 @@ const FCCheckToolPage = () => {
     }
   };
 
-  return (
-    <div className="flex flex-col h-full">
-      <Accordion
-        type="multiple"
-        defaultValue={["item-1", "item-2"]}
-        className="flex flex-col h-full gap-4"
-      >
-        {/* Select Netlist Version Section */}
-        <AccordionItem value="item-1" className="border border-b rounded-md">
-          <AccordionTrigger className="px-4">
-            Select Netlist Version
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4 flex flex-col gap-4">
-            {/* Comboboxes and OK Button */}
+  const accordionItems = useMemo(
+    () => [
+      {
+        title: "Select Netlist Version",
+        value: "item-1",
+        content: (
+          <div className="flex flex-col gap-4">
             <div className="flex flex-wrap gap-2 items-end">
               {dropdownConfigs.map((config, index) => (
                 <FilterDropdownCombobox
@@ -267,27 +255,21 @@ const FCCheckToolPage = () => {
                 )}
               </Button>
             </div>
-
-            {/* Error Display */}
             {error && (
               <div className="p-4 bg-destructive/10 border border-destructive rounded-md text-destructive">
                 {error}
               </div>
             )}
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* Table Information Section */}
-        <AccordionItem
-          value="item-2"
-          className="border border-b rounded-md flex-1 flex flex-col overflow-hidden data-[state=closed]:flex-none"
-        >
-          <AccordionTrigger className="px-4">
-            Check Tool Result
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col overflow-hidden">
+          </div>
+        ),
+      },
+      {
+        title: "Check Tool Result",
+        value: "item-2",
+        content: (
+          <div className="flex-1 flex flex-col gap-2 overflow-hidden min-h-[400px]">
             {htmlContent ? (
-              <div className="flex-1 flex flex-col gap-2">
+              <>
                 <div className="flex justify-start">
                   <Button
                     variant="outline"
@@ -341,15 +323,35 @@ const FCCheckToolPage = () => {
                   ref={htmlContainerRef}
                   dangerouslySetInnerHTML={{ __html: htmlContent }}
                 />
-              </div>
+              </>
             ) : (
               <div className="flex items-center justify-center h-32 text-muted-foreground">
                 No data to display
               </div>
             )}
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          </div>
+        ),
+      },
+    ],
+    [
+      dropdownConfigs,
+      isFormComplete,
+      isLoading,
+      error,
+      htmlContent,
+      isCopied,
+      handleOkClick,
+      handleCopyToClipboard,
+    ]
+  );
+
+  return (
+    <div className="flex flex-col h-full">
+      <AccordionOutline
+        items={accordionItems}
+        defaultValue={["item-1", "item-2"]}
+        className="flex flex-col h-full gap-2"
+      />
     </div>
   );
 };

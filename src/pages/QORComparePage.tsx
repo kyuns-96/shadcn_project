@@ -24,16 +24,11 @@ import DatasetColumnAddButton from "@/components/shadcn-studio/button/DatasetCol
 import useFilterDropdownConfigs from "@/variables/useFilterDropdownConfigs";
 import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import DoeNameInput from "@/components/shadcn-studio/input/DoeNameInput";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { initializeDefaultMatrixRows } from "@/variables/defaultMatrixTemplate";
 import { useRestoreColumnData } from "@/hooks/useURLSync";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import AccordionOutline from "@/components/shadcn-studio/accordion/accordion-09";
 
 const QORComparePage = () => {
   const filterDropdownConfigs = useFilterDropdownConfigs();
@@ -53,45 +48,41 @@ const QORComparePage = () => {
   // Restore column data from URL when template rows are ready
   useRestoreColumnData();
 
+  const accordionItems = useMemo(
+    () => [
+      {
+        title: "Select Netlist Version",
+        value: "item-1",
+        content: (
+          <div className="flex flex-wrap gap-2">
+            {filterDropdownConfigs.map((config, index) => (
+              <FilterDropdownCombobox key={index} dropdownConfigs={[config]} />
+            ))}
+            <DoeNameInput />
+            <DatasetColumnAddButton />
+          </div>
+        ),
+      },
+      {
+        title: "Table Information",
+        value: "item-2",
+        content: (
+          <div className="flex-1 flex flex-col overflow-hidden min-h-[400px]">
+            <AgGridMatrixTable />
+          </div>
+        ),
+      },
+    ],
+    [filterDropdownConfigs]
+  );
+
   return (
     <div className="flex flex-col h-full">
-      <Accordion
-        type="multiple"
+      <AccordionOutline
+        items={accordionItems}
         defaultValue={["item-1", "item-2"]}
-        className="flex flex-col h-full gap-4"
-      >
-        {/* Select Netlist Version */}
-        <AccordionItem value="item-1" className="border border-b rounded-md">
-          <AccordionTrigger className="px-4">
-            Select Netlist Version
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            <div className="flex flex-wrap gap-2">
-              {filterDropdownConfigs.map((config, index) => (
-                <FilterDropdownCombobox
-                  key={index}
-                  dropdownConfigs={[config]}
-                />
-              ))}
-              <DoeNameInput />
-              <DatasetColumnAddButton />
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        {/* Table Information Section */}
-        <AccordionItem
-          value="item-2"
-          className="border border-b rounded-md flex-1 flex flex-col overflow-hidden data-[state=closed]:flex-none"
-        >
-          <AccordionTrigger className="px-4">
-            Table Information
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4 flex-1 flex flex-col overflow-hidden">
-            <AgGridMatrixTable />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+        className="flex flex-col h-full gap-2"
+      />
     </div>
   );
 };
