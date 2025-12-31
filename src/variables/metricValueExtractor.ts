@@ -89,17 +89,33 @@ export const extractMetricValue = (
   scenarioName?: string
 ): unknown => {
   const basePath = METRIC_EXTRACTORS[metricKey];
-  if (!basePath) return undefined;
+  
+  // Debug logging
+  console.log("[extractMetricValue] Input:", {
+    metricKey,
+    scenarioName,
+    basePath,
+    datasetKeys: Object.keys(dataset),
+  });
+
+  if (!basePath) {
+    console.warn("[extractMetricValue] No path found for metricKey:", metricKey);
+    return undefined;
+  }
 
   // 시나리오 플레이스홀더 대체
   const path = resolvScenarioPath(basePath, scenarioName);
+  console.log("[extractMetricValue] Resolved path:", path);
 
-  return path.split(".").reduce((current, key) => {
+  const result = path.split(".").reduce((current, key) => {
     if (typeof current === "object" && current !== null) {
       return (current as Record<string, unknown>)[key];
     }
     return undefined;
   }, dataset as unknown);
+
+  console.log("[extractMetricValue] Result:", result);
+  return result;
 };
 
 /**

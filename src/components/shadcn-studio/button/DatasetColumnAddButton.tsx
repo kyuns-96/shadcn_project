@@ -113,14 +113,22 @@ const DatasetColumnAddButton = () => {
           unknown
         >;
 
+        console.log("[DatasetColumnAddButton] fetchDataset fulfilled:", {
+          doeName,
+          datasetKeys: Object.keys(datasetPayload),
+          datasetPayload,
+        });
+
         // 3. Power Scenario 목록 추출
         const availableScenarios = extractAvailableScenarios(datasetPayload);
+        console.log("[DatasetColumnAddButton] Available scenarios:", availableScenarios);
 
         // 4. 기본 시나리오 결정
         const defaultScenario = getDefaultScenario(
           selectedProject,
           availableScenarios
         );
+        console.log("[DatasetColumnAddButton] Default scenario:", defaultScenario);
 
         // 5. 컬럼 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
         dispatch(
@@ -149,6 +157,14 @@ const DatasetColumnAddButton = () => {
           const metricValue =
             extractMetricValue(metricKey, datasetPayload, defaultScenario) ??
             EMPTY_VALUE_PLACEHOLDER;
+
+          console.log("[DatasetColumnAddButton] updateCell:", {
+            rowId: rowHeader.id,
+            columnId,
+            metricKey,
+            metricValue,
+            defaultScenario,
+          });
 
           dispatch(
             updateCell({

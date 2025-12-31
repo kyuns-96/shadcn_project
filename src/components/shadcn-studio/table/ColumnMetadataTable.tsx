@@ -74,6 +74,12 @@ const ColumnMetadataTable = () => {
    */
   const handleScenarioChange = useCallback(
     (columnId: string, columnLabel: string, newScenario: string) => {
+      console.log("[ColumnMetadataTable] handleScenarioChange:", {
+        columnId,
+        columnLabel,
+        newScenario,
+      });
+
       // 1. Redux 상태 업데이트
       dispatch(setColumnPowerScenario({ columnId, scenario: newScenario }));
       dispatch(updateColumnScenario({ columnId, scenario: newScenario }));
@@ -84,12 +90,25 @@ const ColumnMetadataTable = () => {
         unknown
       >;
 
+      console.log("[ColumnMetadataTable] Dataset for column:", {
+        columnLabel,
+        datasetKeys: Object.keys(datasetPayload),
+        datasetPayload,
+      });
+
       // 3. 각 행의 셀 값 다시 추출
       rowHeaders.forEach((rowHeader) => {
         const metricKey = `${rowHeader.rowGroup}!${rowHeader.label}`;
         const metricValue =
           extractMetricValue(metricKey, datasetPayload, newScenario) ??
           EMPTY_VALUE_PLACEHOLDER;
+
+        console.log("[ColumnMetadataTable] updateCell:", {
+          rowId: rowHeader.id,
+          columnId,
+          metricKey,
+          metricValue,
+        });
 
         dispatch(
           updateCell({
