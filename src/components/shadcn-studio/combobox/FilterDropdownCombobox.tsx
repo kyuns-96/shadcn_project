@@ -86,7 +86,7 @@ const FilterDropdownCombobox: FC<FilterDropdownComboboxProps> = ({
   const dropdownItems = data.map((itemValue) => ({ value: itemValue }));
 
   return (
-    <div className="w-40 space-y-2">
+    <div className="w-48 space-y-2">
       <Label htmlFor={id}>{displayLabel}</Label>
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>

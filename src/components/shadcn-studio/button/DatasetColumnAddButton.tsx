@@ -62,10 +62,10 @@ const DatasetColumnAddButton = () => {
     selectedEconum,
   } = useAppSelector((state) => state.selected);
   const { rowHeaders, columnHeaders } = useAppSelector((state) => state.matrix);
-  
+
   // Check if button should be disabled (empty or duplicate)
   const trimmedDoeName = doeName.trim();
-  const isDuplicate = columnHeaders.some(col => col.label === trimmedDoeName);
+  const isDuplicate = columnHeaders.some((col) => col.label === trimmedDoeName);
   const isDisabled = !trimmedDoeName || isDuplicate;
 
   /**
@@ -123,8 +123,8 @@ const DatasetColumnAddButton = () => {
   return (
     <div className="w-auto space-y-2">
       <div className="h-5" />
-      <Button 
-        className="group w-full h-9" 
+      <Button
+        className="group w-full h-9"
         onClick={handleAddDatasetColumn}
         disabled={isDisabled}
       >

@@ -58,7 +58,10 @@ const QORComparePage = () => {
             <div className="overflow-x-auto">
               <div className="flex gap-2 min-w-fit">
                 {filterDropdownConfigs.map((config, index) => (
-                  <FilterDropdownCombobox key={index} dropdownConfigs={[config]} />
+                  <FilterDropdownCombobox
+                    key={index}
+                    dropdownConfigs={[config]}
+                  />
                 ))}
               </div>
             </div>
