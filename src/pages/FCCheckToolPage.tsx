@@ -239,7 +239,7 @@ const FCCheckToolPage = () => {
         className="flex flex-col h-full gap-4"
       >
         {/* Select Netlist Version Section */}
-        <AccordionItem value="item-1" className="border rounded-md">
+        <AccordionItem value="item-1" className="border border-b rounded-md">
           <AccordionTrigger className="px-4">
             Select Netlist Version
           </AccordionTrigger>
@@ -280,7 +280,7 @@ const FCCheckToolPage = () => {
         {/* Table Information Section */}
         <AccordionItem
           value="item-2"
-          className="border rounded-md flex-1 flex flex-col overflow-hidden data-[state=closed]:flex-none"
+          className="border border-b rounded-md flex-1 flex flex-col overflow-hidden data-[state=closed]:flex-none"
         >
           <AccordionTrigger className="px-4">
             Check Tool Result
