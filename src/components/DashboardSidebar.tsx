@@ -132,10 +132,9 @@ const DashboardSidebar = () => {
                     y="50%"
                     textAnchor="start"
                     dominantBaseline="middle"
-                    className="fill-gray-900 dark:fill-white"
+                    className="fill-gray-900 dark:fill-white font-sans"
                     style={{
                       fontSize: "28px",
-                      fontFamily: "'Roboto Flex', sans-serif",
                       fontWeight: "600",
                       letterSpacing: "-0.5px",
                     }}
