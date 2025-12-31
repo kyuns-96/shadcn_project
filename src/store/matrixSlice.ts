@@ -256,7 +256,11 @@ const matrixSlice = createSlice({
     },
     updateColumnScenario: (
       state,
-      action: PayloadAction<{ columnId: string; scenario: string; availableScenarios?: string[] }>
+      action: PayloadAction<{
+        columnId: string;
+        scenario: string;
+        availableScenarios?: string[];
+      }>
     ) => {
       const { columnId, scenario, availableScenarios } = action.payload;
       const column = state.columnHeaders.find((col) => col.id === columnId);

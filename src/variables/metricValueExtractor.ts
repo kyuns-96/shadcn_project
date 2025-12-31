@@ -5,10 +5,12 @@
  * 데이터셋에서 특정 메트릭 값을 추출하는 유틸리티 함수입니다.
  * 메트릭 키에 해당하는 경로를 정의하고, 중첩된 객체에서 자동으로 값을 추출합니다.
  * Power Scenario를 지원하여 시나리오별 메트릭 값을 추출할 수 있습니다.
+ * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
  *
  * @structure
  * 1. METRIC_EXTRACTORS: "Group!Label" -> "경로.문자열" 형태로 정의
- * 2. extractMetricValue: 메인 추출 함수 (경로 자동 파싱, 시나리오 지원)
+ * 2. extractScenarioMetric: 시나리오 기반 메트릭 추출 (점 포함 시나리오 지원)
+ * 3. extractMetricValue: 메인 추출 함수 (경로 자동 파싱, 시나리오 지원)
  *
  * @dependencies
  * - 없음 (순수 유틸리티 함수)
@@ -55,75 +57,19 @@ const METRIC_EXTRACTORS: Record<string, string> = {
 const SCENARIO_PLACEHOLDER = "${SCENARIO}";
 
 /**
- * 경로 문자열에서 시나리오 플레이스홀더를 실제 시나리오 이름으로 대체합니다.
- *
- * @param path - 원본 경로 문자열
- * @param scenarioName - 대체할 시나리오 이름
- * @returns 시나리오가 대체된 경로 문자열
+ * 경로에서 시나리오 플레이스홀더가 있는지 확인합니다.
  */
-const resolvScenarioPath = (path: string, scenarioName?: string): string => {
-  if (!scenarioName || !path.includes(SCENARIO_PLACEHOLDER)) {
-    return path;
-  }
-  return path.replace(SCENARIO_PLACEHOLDER, scenarioName);
-};
-
-/**
- * 데이터셋에서 특정 메트릭 값을 추출합니다.
- *
- * @param metricKey - 메트릭 키 (형식: "Group!Label")
- * @param dataset - 데이터셋 객체
- * @param scenarioName - Power Scenario 이름 (선택적, ${SCENARIO} 플레이스홀더 대체용)
- * @returns 추출된 값 또는 undefined
- *
- * @example
- * // 일반 메트릭 추출
- * const value = extractMetricValue("User!Name", dataset);
- *
- * // Power Scenario 메트릭 추출
- * const powerValue = extractMetricValue("Power!TotalPower", dataset, "tt_0p85v_25c");
- */
-export const extractMetricValue = (
-  metricKey: string,
-  dataset: DatasetRecord = {},
-  scenarioName?: string
-): unknown => {
-  const basePath = METRIC_EXTRACTORS[metricKey];
-  
-  // Debug logging
-  console.log("[extractMetricValue] Input:", {
-    metricKey,
-    scenarioName,
-    basePath,
-    datasetKeys: Object.keys(dataset),
-  });
-
-  if (!basePath) {
-    console.warn("[extractMetricValue] No path found for metricKey:", metricKey);
-    return undefined;
-  }
-
-  // 시나리오 플레이스홀더 대체
-  const path = resolvScenarioPath(basePath, scenarioName);
-  console.log("[extractMetricValue] Resolved path:", path);
-
-  const result = path.split(".").reduce((current, key) => {
-    if (typeof current === "object" && current !== null) {
-      return (current as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, dataset as unknown);
-
-  console.log("[extractMetricValue] Result:", result);
-  return result;
+const hasScenarioPlaceholder = (path: string): boolean => {
+  return path.includes(SCENARIO_PLACEHOLDER);
 };
 
 /**
  * Power Scenario 기반의 동적 경로에서 메트릭 값을 추출합니다.
+ * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
  * METRIC_EXTRACTORS에 정의되지 않은 동적 경로도 지원합니다.
  *
  * @param basePath - 기본 경로 (예: "get_ptpxpower.ptpxpower_data")
- * @param scenarioName - 시나리오 이름
+ * @param scenarioName - 시나리오 이름 (점이 포함될 수 있음, 예: "tt_0.85v_25c")
  * @param metricPath - 시나리오 하위 메트릭 경로 (예: "total_power")
  * @param dataset - 데이터셋 객체
  * @returns 추출된 값 또는 undefined
@@ -131,7 +77,7 @@ export const extractMetricValue = (
  * @example
  * const value = extractScenarioMetric(
  *   "get_ptpxpower.ptpxpower_data",
- *   "tt_0p85v_25c",
+ *   "tt_0.85v_25c",  // 점이 포함된 시나리오 이름
  *   "total_power",
  *   dataset
  * );
@@ -144,12 +90,151 @@ export const extractScenarioMetric = (
 ): unknown => {
   if (!scenarioName) return undefined;
 
-  const fullPath = `${basePath}.${scenarioName}.${metricPath}`;
+  console.log("[extractScenarioMetric] Input:", {
+    basePath,
+    scenarioName,
+    metricPath,
+  });
 
-  return fullPath.split(".").reduce((current, key) => {
+  // 1. basePath로 ptpxpower_data까지 탐색 (점으로 split)
+  let current: unknown = dataset;
+  for (const key of basePath.split(".")) {
+    if (typeof current === "object" && current !== null) {
+      current = (current as Record<string, unknown>)[key];
+    } else {
+      console.warn(
+        "[extractScenarioMetric] Failed to navigate basePath at:",
+        key
+      );
+      return undefined;
+    }
+  }
+
+  // 2. 시나리오 이름으로 직접 접근 (점으로 split하지 않음)
+  if (typeof current === "object" && current !== null) {
+    current = (current as Record<string, unknown>)[scenarioName];
+  } else {
+    console.warn("[extractScenarioMetric] ptpxpower_data is not an object");
+    return undefined;
+  }
+
+  if (current === undefined) {
+    console.warn("[extractScenarioMetric] Scenario not found:", scenarioName);
+    return undefined;
+  }
+
+  // 3. metricPath로 나머지 탐색 (점으로 split)
+  if (metricPath) {
+    for (const key of metricPath.split(".")) {
+      if (typeof current === "object" && current !== null) {
+        current = (current as Record<string, unknown>)[key];
+      } else {
+        console.warn(
+          "[extractScenarioMetric] Failed to navigate metricPath at:",
+          key
+        );
+        return undefined;
+      }
+    }
+  }
+
+  console.log("[extractScenarioMetric] Result:", current);
+  return current;
+};
+
+/**
+ * 시나리오 플레이스홀더가 있는 경로에서 값을 추출합니다.
+ * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
+ *
+ * @param path - 플레이스홀더가 포함된 경로 (예: "get_ptpxpower.ptpxpower_data.${SCENARIO}.metric")
+ * @param scenarioName - 시나리오 이름 (점이 포함될 수 있음)
+ * @param dataset - 데이터셋 객체
+ * @returns 추출된 값 또는 undefined
+ */
+const extractWithScenario = (
+  path: string,
+  scenarioName: string,
+  dataset: DatasetRecord
+): unknown => {
+  // 경로를 ${SCENARIO}를 기준으로 분리
+  const [beforeScenario, afterScenario] = path.split(SCENARIO_PLACEHOLDER);
+
+  // beforeScenario에서 마지막 점 제거 (예: "get_ptpxpower.ptpxpower_data." -> "get_ptpxpower.ptpxpower_data")
+  const basePath = beforeScenario.endsWith(".")
+    ? beforeScenario.slice(0, -1)
+    : beforeScenario;
+
+  // afterScenario에서 첫 번째 점 제거 (예: ".metric" -> "metric")
+  const metricPath = afterScenario.startsWith(".")
+    ? afterScenario.slice(1)
+    : afterScenario;
+
+  console.log("[extractWithScenario] Parsed paths:", {
+    basePath,
+    scenarioName,
+    metricPath,
+  });
+
+  // extractScenarioMetric 사용하여 추출
+  return extractScenarioMetric(basePath, scenarioName, metricPath, dataset);
+};
+
+/**
+ * 데이터셋에서 특정 메트릭 값을 추출합니다.
+ * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
+ *
+ * @param metricKey - 메트릭 키 (형식: "Group!Label")
+ * @param dataset - 데이터셋 객체
+ * @param scenarioName - Power Scenario 이름 (선택적, ${SCENARIO} 플레이스홀더 대체용)
+ * @returns 추출된 값 또는 undefined
+ *
+ * @example
+ * // 일반 메트릭 추출
+ * const value = extractMetricValue("User!Name", dataset);
+ *
+ * // Power Scenario 메트릭 추출 (시나리오 이름에 점 포함 가능)
+ * const powerValue = extractMetricValue("Power!TotalPower", dataset, "tt_0.85v_25c");
+ */
+export const extractMetricValue = (
+  metricKey: string,
+  dataset: DatasetRecord = {},
+  scenarioName?: string
+): unknown => {
+  const basePath = METRIC_EXTRACTORS[metricKey];
+
+  // Debug logging
+  console.log("[extractMetricValue] Input:", {
+    metricKey,
+    scenarioName,
+    basePath,
+    datasetKeys: Object.keys(dataset),
+  });
+
+  if (!basePath) {
+    console.warn(
+      "[extractMetricValue] No path found for metricKey:",
+      metricKey
+    );
+    return undefined;
+  }
+
+  // 시나리오 플레이스홀더가 있고 시나리오 이름이 제공된 경우
+  // 특별 처리하여 시나리오 이름의 점을 보존
+  if (scenarioName && hasScenarioPlaceholder(basePath)) {
+    return extractWithScenario(basePath, scenarioName, dataset);
+  }
+
+  // 일반 경로 처리 (시나리오 플레이스홀더 없음)
+  const path = basePath;
+  console.log("[extractMetricValue] Using simple path:", path);
+
+  const result = path.split(".").reduce((current, key) => {
     if (typeof current === "object" && current !== null) {
       return (current as Record<string, unknown>)[key];
     }
     return undefined;
   }, dataset as unknown);
+
+  console.log("[extractMetricValue] Result:", result);
+  return result;
 };

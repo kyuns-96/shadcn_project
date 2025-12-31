@@ -26,7 +26,11 @@
 import { ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { addColumn, updateCell, updateColumnScenario } from "@/store/matrixSlice";
+import {
+  addColumn,
+  updateCell,
+  updateColumnScenario,
+} from "@/store/matrixSlice";
 import { setColumnPowerScenario } from "@/store/reducers/selectedReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
@@ -121,14 +125,20 @@ const DatasetColumnAddButton = () => {
 
         // 3. Power Scenario 목록 추출
         const availableScenarios = extractAvailableScenarios(datasetPayload);
-        console.log("[DatasetColumnAddButton] Available scenarios:", availableScenarios);
+        console.log(
+          "[DatasetColumnAddButton] Available scenarios:",
+          availableScenarios
+        );
 
         // 4. 기본 시나리오 결정
         const defaultScenario = getDefaultScenario(
           selectedProject,
           availableScenarios
         );
-        console.log("[DatasetColumnAddButton] Default scenario:", defaultScenario);
+        console.log(
+          "[DatasetColumnAddButton] Default scenario:",
+          defaultScenario
+        );
 
         // 5. 컬럼 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
         dispatch(

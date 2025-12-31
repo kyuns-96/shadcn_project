@@ -83,7 +83,10 @@ export const extractAvailableScenarios = (
 
     return scenarios;
   } catch (error) {
-    console.error("[powerScenarioExtractor] Error extracting scenarios:", error);
+    console.error(
+      "[powerScenarioExtractor] Error extracting scenarios:",
+      error
+    );
     return [];
   }
 };

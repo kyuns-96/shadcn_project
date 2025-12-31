@@ -161,7 +161,15 @@ const ColumnMetadataTable = () => {
    */
   const handleCopyTable = useCallback(async () => {
     // 헤더 행
-    const headers = ["Label", "PROJECT", "BLOCK", "NET_VER", "REVISION", "ECO_NUM", "Power Scenario"];
+    const headers = [
+      "Label",
+      "PROJECT",
+      "BLOCK",
+      "NET_VER",
+      "REVISION",
+      "ECO_NUM",
+      "Power Scenario",
+    ];
     const headerLine = headers.join("\t");
 
     // 데이터 행들
@@ -193,7 +201,8 @@ const ColumnMetadataTable = () => {
   if (columnHeaders.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        추가된 컬럼이 없습니다. "Select Netlist Version"에서 컬럼을 추가해주세요.
+        추가된 컬럼이 없습니다. "Select Netlist Version"에서 컬럼을
+        추가해주세요.
       </div>
     );
   }
@@ -226,55 +235,67 @@ const ColumnMetadataTable = () => {
         </Button>
       </div>
       <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[65px]">Label</TableHead>
-            <TableHead className="w-[80px]">PROJECT</TableHead>
-            <TableHead className="w-[95px]">BLOCK</TableHead>
-            <TableHead className="w-[120px]">NET_VER</TableHead>
-            <TableHead className="w-[170px] truncate">REVISION</TableHead>
-            <TableHead className="w-[105px]">ECO_NUM</TableHead>
-            <TableHead className="w-[277px]">Power Scenario</TableHead>
-            <TableHead className="w-[60px] text-center">Delete</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {columnHeaders.map((column) => (
-            <TableRow key={column.id}>
-              <TableCell className="font-medium w-[65px]">{column.label}</TableCell>
-              <TableCell className="w-[80px]">{column.PROJECT_NAME || "-"}</TableCell>
-              <TableCell className="w-[95px]">{column.BLOCK || "-"}</TableCell>
-              <TableCell className="w-[120px]">{column.NET_VER || "-"}</TableCell>
-              <TableCell className="w-[170px] truncate">{column.REVISION || "-"}</TableCell>
-              <TableCell className="w-[105px]">{column.ECO_NUM || "-"}</TableCell>
-              <TableCell>
-                {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
-                  <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
-                    <FilterDropdownCombobox
-                      dropdownConfigs={[getScenarioDropdownConfig(column)]}
-                    />
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground text-sm">
-                    No scenarios
-                  </span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDeleteColumn(column.id)}
-                >
-                  <Trash2Icon className="h-4 w-4" />
-                </Button>
-              </TableCell>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[65px]">Label</TableHead>
+              <TableHead className="w-[80px]">PROJECT</TableHead>
+              <TableHead className="w-[95px]">BLOCK</TableHead>
+              <TableHead className="w-[120px]">NET_VER</TableHead>
+              <TableHead className="w-[170px] truncate">REVISION</TableHead>
+              <TableHead className="w-[105px]">ECO_NUM</TableHead>
+              <TableHead className="w-[277px]">Power Scenario</TableHead>
+              <TableHead className="w-[60px] text-center">Delete</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {columnHeaders.map((column) => (
+              <TableRow key={column.id}>
+                <TableCell className="font-medium w-[65px]">
+                  {column.label}
+                </TableCell>
+                <TableCell className="w-[80px]">
+                  {column.PROJECT_NAME || "-"}
+                </TableCell>
+                <TableCell className="w-[95px]">
+                  {column.BLOCK || "-"}
+                </TableCell>
+                <TableCell className="w-[120px]">
+                  {column.NET_VER || "-"}
+                </TableCell>
+                <TableCell className="w-[170px] truncate">
+                  {column.REVISION || "-"}
+                </TableCell>
+                <TableCell className="w-[105px]">
+                  {column.ECO_NUM || "-"}
+                </TableCell>
+                <TableCell>
+                  {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
+                    <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
+                      <FilterDropdownCombobox
+                        dropdownConfigs={[getScenarioDropdownConfig(column)]}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">
+                      No scenarios
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDeleteColumn(column.id)}
+                  >
+                    <Trash2Icon className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
