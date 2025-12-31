@@ -134,8 +134,8 @@ const DashboardSidebar = () => {
                     dominantBaseline="middle"
                     className="fill-gray-900 dark:fill-white font-sans"
                     style={{
-                      fontSize: "28px",
-                      fontWeight: "600",
+                      fontSize: "30px",
+                      fontWeight: "650",
                       letterSpacing: "-0.5px",
                     }}
                   >

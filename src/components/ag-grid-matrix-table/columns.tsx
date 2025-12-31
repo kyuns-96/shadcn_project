@@ -61,7 +61,7 @@ export function buildColumnDefs(args: {
           justifyContent: "flex-start",
           paddingLeft: "12px",
           backgroundColor: "var(--ag-header-background-color)",
-          fontWeight: "500",
+          fontWeight: "550",
           borderRight: "1px solid var(--ag-border-color)",
           cursor: "grab",
           whiteSpace: "pre-line",
@@ -81,7 +81,7 @@ export function buildColumnDefs(args: {
         justifyContent: "flex-start",
         paddingLeft: "12px",
         backgroundColor: "var(--ag-header-background-color)",
-        fontWeight: "600",
+        fontWeight: "650",
         borderRight: "1px solid var(--ag-border-color)",
         cursor: "grab",
         whiteSpace: "pre-line",
@@ -101,7 +101,7 @@ export function buildColumnDefs(args: {
       !params.data?.rowGroup
         ? ({ display: "none" } as any)
         : ({
-            fontWeight: 500,
+            fontWeight: 550,
             backgroundColor: "var(--ag-header-background-color)",
             borderRight: "1px solid var(--ag-border-color)",
             cursor: "grab",

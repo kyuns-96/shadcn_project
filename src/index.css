@@ -129,8 +129,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* 기본 폰트 크기를 약간 키움 (16px → 17px) */
+    font-size: 106.25%;
+  }
   body {
     @apply bg-background text-foreground;
+    /* 기본 폰트 두께를 약간 늘림 (400 → 450) */
+    font-weight: 450;
   }
 }
 
