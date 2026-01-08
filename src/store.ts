@@ -35,6 +35,7 @@ import methodListReducer from "@/store/reducers/methodListReducer";
 import datasetReducer from "@/store/reducers/datasetReducer";
 import pageReducer from "@/store/reducers/pageReducer";
 import fcCheckToolReducer from "@/store/reducers/fcCheckToolReducer";
+import powerMatrixReducer from "@/store/reducers/powerMatrixReducer";
 
 // Type 및 Action exports
 export type { SelectedState } from "@/store/reducers/selectedReducer";
@@ -44,6 +45,7 @@ export { setCurrentPage } from "@/store/reducers/pageReducer";
 /** 모든 리듀서를 결합한 루트 리듀서 */
 const rootReducer = combineReducers({
   matrix: matrixSlice,
+  powerMatrix: powerMatrixReducer,
   projectList: projectListReducer,
   blockList: blockListReducer,
   netverList: netverListReducer,

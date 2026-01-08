@@ -47,10 +47,74 @@ const METRIC_EXTRACTORS: Record<string, string> = {
   "Order!Status": `${BASE_PATHS.order}.status`,
   "Product!Price": `${BASE_PATHS.product}.price`,
   "Product!Stock": `${BASE_PATHS.product}.stock`,
-  // Power Scenario 관련 메트릭 예시 (실제 메트릭에 맞게 수정 필요)
-  // "Power!TotalPower": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total_power`,
-  // "Power!LeakagePower": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.leakage_power`,
-  // "Power!DynamicPower": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.dynamic_power`,
+
+  // ============================================================
+  // Power Page Metrics (10 rows × 4 columns = 40 metrics)
+  // Format: "Power(mW)!{RowName}_{ColumnName}"
+  // Path: ${BASE_PATHS.ptpxpower}.${SCENARIO}.{row_key}.{column_key}
+  //
+  // [MODIFY HERE] Update the paths below to match your actual data structure
+  // ============================================================
+
+  // Clock Network row
+  "Power(mW)!clock_network_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.internal`,
+  "Power(mW)!clock_network_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.switching`,
+  "Power(mW)!clock_network_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.leakage`,
+  "Power(mW)!clock_network_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.total`,
+
+  // Register row
+  "Power(mW)!register_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.internal`,
+  "Power(mW)!register_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.switching`,
+  "Power(mW)!register_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.leakage`,
+  "Power(mW)!register_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.total`,
+
+  // Combinational row
+  "Power(mW)!combinational_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.internal`,
+  "Power(mW)!combinational_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.switching`,
+  "Power(mW)!combinational_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.leakage`,
+  "Power(mW)!combinational_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.total`,
+
+  // Sequential row
+  "Power(mW)!sequential_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.internal`,
+  "Power(mW)!sequential_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.switching`,
+  "Power(mW)!sequential_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.leakage`,
+  "Power(mW)!sequential_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.total`,
+
+  // Memory row
+  "Power(mW)!memory_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.internal`,
+  "Power(mW)!memory_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.switching`,
+  "Power(mW)!memory_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.leakage`,
+  "Power(mW)!memory_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.total`,
+
+  // IO Pad row
+  "Power(mW)!io_pad_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.internal`,
+  "Power(mW)!io_pad_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.switching`,
+  "Power(mW)!io_pad_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.leakage`,
+  "Power(mW)!io_pad_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.total`,
+
+  // Black Box row
+  "Power(mW)!black_box_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.internal`,
+  "Power(mW)!black_box_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.switching`,
+  "Power(mW)!black_box_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.leakage`,
+  "Power(mW)!black_box_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.total`,
+
+  // Decap row
+  "Power(mW)!decap_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.internal`,
+  "Power(mW)!decap_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.switching`,
+  "Power(mW)!decap_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.leakage`,
+  "Power(mW)!decap_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.total`,
+
+  // Power Switch row
+  "Power(mW)!power_switch_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.internal`,
+  "Power(mW)!power_switch_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.switching`,
+  "Power(mW)!power_switch_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.leakage`,
+  "Power(mW)!power_switch_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.total`,
+
+  // Total row (separate metric values, not aggregated)
+  "Power(mW)!total_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.internal`,
+  "Power(mW)!total_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.switching`,
+  "Power(mW)!total_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.leakage`,
+  "Power(mW)!total_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.total`,
 };
 
 /**
