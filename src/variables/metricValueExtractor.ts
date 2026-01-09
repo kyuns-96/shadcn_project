@@ -353,7 +353,13 @@ export const extractMetricValue = (
     scenarioName,
     basePath,
   });
-  console.log("2. Dataset structure:", {
+  
+  // 추가: METRIC_EXTRACTORS에서 사용 가능한 키 확인
+  const availableKeys = Object.keys(METRIC_EXTRACTORS).filter(k => k.includes("clock_network"));
+  console.log("2. Available power keys in METRIC_EXTRACTORS:", availableKeys);
+  console.log("   (showing sample keys that contain 'clock_network')");
+  
+  console.log("3. Dataset structure:", {
     datasetKeys: Object.keys(dataset),
     datasetSize: Object.keys(dataset).length,
     sample: Object.entries(dataset)
@@ -365,6 +371,9 @@ export const extractMetricValue = (
     console.warn(
       "[extractMetricValue] ❌ FAILED: No path found for metricKey:",
       metricKey
+    );
+    console.warn(
+      "   Looking for this exact key in METRIC_EXTRACTORS but not found!"
     );
     console.log("============================================");
     return undefined;
