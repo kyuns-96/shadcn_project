@@ -73,13 +73,17 @@ const PowerDatasetColumnAddButton = () => {
     selectedRevision,
     selectedEconum,
   } = useAppSelector((state) => state.selected);
-  const { rowHeaders, doeGroups } = useAppSelector(
+  const { rowHeaders } = useAppSelector(
     (state) => state.powerMatrix
   );
+  const doeRegistry = useAppSelector((state) => state.doeRegistry);
 
   // Check if button should be disabled (empty or duplicate)
+  // [WHY] doeRegistry에서 중복 확인 - 두 페이지의 DoE를 모두 체크
   const trimmedDoeName = doeName.trim();
-  const isDuplicate = doeGroups.some((doe) => doe.label === trimmedDoeName);
+  const isDuplicate = doeRegistry.allIds.some(
+    (id) => doeRegistry.byId[id].label === trimmedDoeName
+  );
   const isDisabled = !trimmedDoeName || isDuplicate;
 
   /**

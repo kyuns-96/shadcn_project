@@ -37,10 +37,7 @@ import FilterDropdownCombobox, {
   type DropdownConfig,
 } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
-import {
-  removeColumn,
-  updateCell,
-} from "@/store/matrixSlice";
+import { removeColumn, updateCell } from "@/store/matrixSlice";
 import { removeDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import {
   setColumnPowerScenario,
@@ -62,17 +59,19 @@ const ColumnMetadataTable = () => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Redux에서 컬럼 및 행 헤더, Power Scenario 선택 상태, 데이터셋 조회
-  const { columnHeaders, rowHeaders } = useAppSelector((state) => state.matrix);
+  const { rowHeaders } = useAppSelector((state) => state.matrix);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const columnPowerScenarios = useAppSelector(
     (state) => state.selected.columnPowerScenarios
   );
   const dataset = useAppSelector((state) => state.dataset);
 
-  // doeRegistry에서 메타데이터를 가져와서 enriched columnHeaders 생성
-  const enrichedColumnHeaders = columnHeaders.map((col) => ({
-    ...col,
-    ...doeRegistry.byId[col.id],
+  // [WHY] doeRegistry의 모든 DoE를 columnHeaders로 사용
+  // 이렇게 하면 PowerPage에서 추가한 DoE도 QoRComparePage의 ColumnMetadataTable에 표시됨
+  const enrichedColumnHeaders = doeRegistry.allIds.map((doeId) => ({
+    ...doeRegistry.byId[doeId],
+    id: doeId,
+    accessorKey: doeId,
   }));
 
   /**

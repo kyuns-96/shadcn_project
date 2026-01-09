@@ -64,16 +64,17 @@ const PowerColumnMetadataTable = () => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Redux에서 DoE 그룹 및 행 헤더, 데이터셋 조회
-  const { doeGroups, rowHeaders } = useAppSelector(
+  const { rowHeaders } = useAppSelector(
     (state) => state.powerMatrix
   );
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const dataset = useAppSelector((state) => state.dataset);
 
-  // doeRegistry에서 메타데이터를 가져와서 enriched doeGroups 생성
-  const enrichedDoeGroups = doeGroups.map((doe) => ({
-    ...doe,
-    ...doeRegistry.byId[doe.id],
+  // [WHY] doeRegistry의 모든 DoE를 enrichedDoeGroups로 사용
+  // 이렇게 하면 QoRComparePage에서 추가한 DoE도 PowerPage의 PowerColumnMetadataTable에 표시됨
+  const enrichedDoeGroups = doeRegistry.allIds.map((doeId) => ({
+    ...doeRegistry.byId[doeId],
+    id: doeId,
   }));
 
   /**

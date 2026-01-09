@@ -240,7 +240,15 @@ export function useURLSync() {
     // Update URL without triggering a page reload
     const newURL = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", newURL);
-  }, [currentPage, columnHeaders, doeRegistry, fcProject, fcBlock, fcNetver, fcRevision]);
+  }, [
+    currentPage,
+    columnHeaders,
+    doeRegistry,
+    fcProject,
+    fcBlock,
+    fcNetver,
+    fcRevision,
+  ]);
 }
 
 /**

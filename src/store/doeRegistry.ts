@@ -201,13 +201,17 @@ export default doeRegistrySlice.reducer;
 /**
  * ID로 DoE를 조회합니다.
  */
-export const selectDoEById = (state: { doeRegistry: DoERegistryState }, doeId: string) =>
-  state.doeRegistry.byId[doeId];
+export const selectDoEById = (
+  state: { doeRegistry: DoERegistryState },
+  doeId: string
+) => state.doeRegistry.byId[doeId];
 
 /**
  * 모든 DoE를 조회합니다.
  */
-export const selectAllDoEs = (state: { doeRegistry: DoERegistryState }): DoEEntry[] => {
+export const selectAllDoEs = (state: {
+  doeRegistry: DoERegistryState;
+}): DoEEntry[] => {
   const { byId, allIds } = state.doeRegistry;
   return allIds.map((id) => byId[id]);
 };
@@ -215,7 +219,10 @@ export const selectAllDoEs = (state: { doeRegistry: DoERegistryState }): DoEEntr
 /**
  * 이름으로 DoE를 조회합니다.
  */
-export const selectDoEByName = (state: { doeRegistry: DoERegistryState }, label: string) => {
+export const selectDoEByName = (
+  state: { doeRegistry: DoERegistryState },
+  label: string
+) => {
   const { byId } = state.doeRegistry;
   return Object.values(byId).find((doe) => doe.label === label);
 };
@@ -223,7 +230,10 @@ export const selectDoEByName = (state: { doeRegistry: DoERegistryState }, label:
 /**
  * DoE 존재 여부를 확인합니다 (이름으로).
  */
-export const selectDoEExistsByName = (state: { doeRegistry: DoERegistryState }, label: string) => {
+export const selectDoEExistsByName = (
+  state: { doeRegistry: DoERegistryState },
+  label: string
+) => {
   const { byId } = state.doeRegistry;
   return Object.values(byId).some((doe) => doe.label === label);
 };
@@ -231,7 +241,9 @@ export const selectDoEExistsByName = (state: { doeRegistry: DoERegistryState }, 
 /**
  * 모든 DoE 이름을 배열로 반환합니다.
  */
-export const selectAllDoELabels = (state: { doeRegistry: DoERegistryState }): string[] => {
+export const selectAllDoELabels = (state: {
+  doeRegistry: DoERegistryState;
+}): string[] => {
   const { byId, allIds } = state.doeRegistry;
   return allIds.map((id) => byId[id].label);
 };

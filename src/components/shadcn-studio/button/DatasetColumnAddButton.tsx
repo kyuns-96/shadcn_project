@@ -26,10 +26,7 @@
 import { ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/store";
-import {
-  addColumn,
-  updateCell,
-} from "@/store/matrixSlice";
+import { addColumn, updateCell } from "@/store/matrixSlice";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import { setColumnPowerScenario } from "@/store/reducers/selectedReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
@@ -72,11 +69,15 @@ const DatasetColumnAddButton = () => {
     selectedRevision,
     selectedEconum,
   } = useAppSelector((state) => state.selected);
-  const { rowHeaders, columnHeaders } = useAppSelector((state) => state.matrix);
+  const { rowHeaders } = useAppSelector((state) => state.matrix);
+  const doeRegistry = useAppSelector((state) => state.doeRegistry);
 
   // Check if button should be disabled (empty or duplicate)
+  // [WHY] doeRegistry에서 중복 확인 - 두 페이지의 DoE를 모두 체크
   const trimmedDoeName = doeName.trim();
-  const isDuplicate = columnHeaders.some((col) => col.label === trimmedDoeName);
+  const isDuplicate = doeRegistry.allIds.some(
+    (id) => doeRegistry.byId[id].label === trimmedDoeName
+  );
   const isDisabled = !trimmedDoeName || isDuplicate;
 
   /**
