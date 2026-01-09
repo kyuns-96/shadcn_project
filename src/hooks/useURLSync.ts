@@ -529,7 +529,10 @@ export function useRestoreDoeGroupData() {
           currentRowHeaders.forEach((row) => {
             columnNames.forEach((colName) => {
               const columnId = `${group.id}_${colName}`;
-              const metricKey = `${colName}!${row.label}`;
+              // [WHY] PowerPage uses specific metric key format: "Power(mW)!{rowKey}_{columnName}"
+              // row.rowKey is the actual key used in the data (e.g., "clock_network")
+              // NOT row.label which is the display name (e.g., "Clock Network")
+              const metricKey = `Power(mW)!${(row as any).rowKey}_${colName}`;
               let value = extractMetricValue(metricKey, datasetPayload, scenarioName);
               if (value === undefined) {
                 value = "-";
