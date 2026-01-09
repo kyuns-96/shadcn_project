@@ -197,15 +197,6 @@ const PowerDatasetColumnAddButton = () => {
           POWER_COLUMN_NAMES.forEach((columnName) => {
             const metricKey = getMetricKey(rowHeader.rowKey, columnName);
             const columnId = `${doeId}_${columnName}`;
-            
-            // DEBUG: 메트릭 키 생성 확인
-            console.log("[PowerDatasetColumnAddButton] Metric key generated:", {
-              rowKey: rowHeader.rowKey,
-              columnName,
-              metricKey,
-              columnId,
-            });
-            
             const metricValue =
               extractMetricValue(metricKey, datasetPayload, defaultScenario) ??
               EMPTY_VALUE_PLACEHOLDER;
