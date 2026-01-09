@@ -153,6 +153,7 @@ const PowerDatasetColumnAddButton = () => {
         console.log("[PowerDatasetColumnAddButton] fetchDataset fulfilled:", {
           doeName,
           datasetKeys: Object.keys(datasetPayload),
+          datasetPayload: JSON.stringify(datasetPayload).substring(0, 500), // 처음 500글자만 로그
         });
 
         // 3. Power Scenario 목록 추출
