@@ -29,7 +29,7 @@ import {
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
-import { addColumn } from "@/store/matrixSlice";
+import { addColumn, updateCell } from "@/store/matrixSlice";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
 import { getDefaultPowerScenario } from "@/variables/defaultPowerScenarioMappingForPower";
@@ -76,6 +76,9 @@ const PowerDatasetColumnAddButton = () => {
   } = useAppSelector((state) => state.selected);
   const { rowHeaders } = useAppSelector(
     (state) => state.powerMatrix
+  );
+  const matrixRowHeaders = useAppSelector(
+    (state) => state.matrix.rowHeaders
   );
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
 
@@ -199,6 +202,7 @@ const PowerDatasetColumnAddButton = () => {
               defaultScenario,
             });
 
+            // [WHY] powerMatrix와 matrix 모두에 업데이트하여 양쪽 페이지에서 데이터가 보이도록 함
             dispatch(
               updatePowerCell({
                 rowId: rowHeader.id,
@@ -207,6 +211,36 @@ const PowerDatasetColumnAddButton = () => {
               })
             );
           });
+        });
+
+        // [WHY] QoRComparePage의 rowHeaders에도 같은 데이터로 업데이트
+        // PowerPage와 QoRComparePage의 rowHeaders 구조가 다르므로 (PowerRowKey vs rowGroup)
+        // columnId는 그대로 사용하되 rowId만 매칭시킴
+        matrixRowHeaders.forEach((matrixRow) => {
+          // PowerPage의 rowHeaders와 일치하는 row를 찾음 (label이 같은 것)
+          const matchingPowerRow = rowHeaders.find(
+            (r) => r.label === matrixRow.label
+          );
+          if (matchingPowerRow) {
+            POWER_COLUMN_NAMES.forEach((columnName) => {
+              const metricKey = getMetricKey(
+                matchingPowerRow.rowKey,
+                columnName
+              );
+              const columnId = `${doeId}_${columnName}`;
+              const metricValue =
+                extractMetricValue(metricKey, datasetPayload, defaultScenario) ??
+                EMPTY_VALUE_PLACEHOLDER;
+
+              dispatch(
+                updateCell({
+                  rowId: matrixRow.id,
+                  columnId,
+                  value: metricValue,
+                })
+              );
+            });
+          }
         });
       }
     });
