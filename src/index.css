@@ -290,6 +290,16 @@ body {
   text-align: center !important;
 }
 
+/* More specific targeting for DoE group header text */
+.ag-theme-quartz .ag-header-cell.doe-group-header .ag-header-cell-label {
+  justify-content: center !important;
+}
+
+.ag-theme-quartz .ag-header-cell.doe-group-header {
+  justify-content: center !important;
+}
+}
+
 .ag-theme-quartz .doe-group-header .ag-header-group-cell-label {
   justify-content: center !important;
 }

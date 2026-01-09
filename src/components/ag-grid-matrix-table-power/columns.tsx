@@ -20,6 +20,7 @@ import type {
   ColDef,
   ColGroupDef,
   ICellRendererParams,
+  IHeaderParams,
 } from "ag-grid-community";
 import { Spinner } from "@/components/ui/spinner";
 import type { PowerRowData, DoeColumnGroup } from "./types";
@@ -27,6 +28,17 @@ import type { TextAlignOption } from "./constants";
 import { POWER_TABLE_CONFIG } from "./constants";
 import { POWER_COLUMN_NAMES } from "@/variables/defaultPowerMatrixTemplate";
 import ColumnHeaderWithPopup from "@/components/ColumnHeaderWithPopup";
+
+/**
+ * DoE 그룹 헤더 렌더러 - 중앙정렬
+ */
+function DoeGroupHeader(props: IHeaderParams) {
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <span>{props.displayName}</span>
+    </div>
+  );
+}
 
 /**
  * Power 테이블의 컬럼 정의를 생성합니다.
@@ -111,6 +123,7 @@ export function buildPowerColumnDefs(args: {
       return {
         headerName: doeGroup.label,
         headerClass: "doe-group-header",
+        headerComponent: DoeGroupHeader,
         marryChildren: true,
         children: childColumns,
       };
