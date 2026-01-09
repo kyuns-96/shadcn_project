@@ -40,14 +40,7 @@ const PowerPage = () => {
   useEffect(() => {
     // Only initialize template rows if the store is empty and not yet initialized
     // This prevents re-initializing when navigating back from another page
-    console.log(
-      "[PowerPage] useEffect - rowHeaders:",
-      rowHeaders,
-      "isInitialized:",
-      isInitialized.current
-    );
     if (!isInitialized.current && rowHeaders.length === 0) {
-      console.log("[PowerPage] Initializing power matrix rows...");
       initializePowerMatrixRows(dispatch);
       isInitialized.current = true;
     }
