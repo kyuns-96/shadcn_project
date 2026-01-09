@@ -18,13 +18,15 @@ import {
   restoreColumnsFromURL,
   markColumnFetched,
 } from "@/store/matrixSlice";
-import { setDoEs } from "@/store/doeRegistry";
+import { setDoEs, updateDoEMetadata } from "@/store/doeRegistry";
 import {
   updatePowerCell,
   markDoeFetched,
 } from "@/store/reducers/powerMatrixReducer";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
+import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
+import { getDefaultScenario } from "@/variables/defaultPowerScenarioMapping";
 
 // URL parameter keys
 const URL_PARAMS = {
@@ -472,7 +474,35 @@ export function useRestoreDoeGroupData() {
             unknown
           >;
 
-          const scenarioName = metadata.POWER_SCENARIO;
+          // [WHY] If POWER_SCENARIO is missing (DoE added from QoRComparePage),
+          // extract available scenarios and set default scenario
+          let scenarioName = metadata.POWER_SCENARIO;
+          if (!scenarioName) {
+            console.log("[useRestoreDoeGroupData] No POWER_SCENARIO found, extracting from data");
+            const availableScenarios = extractAvailableScenarios(datasetPayload);
+            scenarioName = getDefaultScenario(
+              metadata.PROJECT_NAME as string,
+              availableScenarios
+            );
+            console.log("[useRestoreDoeGroupData] Setting default scenario:", scenarioName);
+            
+            // Update doeRegistry with the scenario information
+            dispatch(
+              updateDoEMetadata({
+                doeId: group.id,
+                POWER_SCENARIO: scenarioName,
+                AVAILABLE_SCENARIOS: availableScenarios,
+              })
+            );
+            
+            // Also update selected state
+            dispatch(
+              setColumnPowerScenario({
+                columnId: group.id,
+                scenario: scenarioName,
+              })
+            );
+          }
 
           // The 4 power metric columns: Internal, Switching, Leakage, Total
           const columnNames = ["Internal", "Switching", "Leakage", "Total"];
