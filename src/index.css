@@ -275,6 +275,16 @@ body {
   justify-content: center;
 }
 
+/* Center align grouped headers (DoE group headers) */
+.ag-theme-quartz .ag-header-group-cell {
+  justify-content: center !important;
+}
+
+.ag-theme-quartz .ag-header-group-cell-label {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
 /* Group border styles - visual separation between groups */
 /* Top border on first row of each group */
 .ag-theme-quartz .ag-row-group-first .ag-cell {
