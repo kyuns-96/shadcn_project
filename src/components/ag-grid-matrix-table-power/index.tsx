@@ -47,9 +47,27 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 export default function AgGridPowerTable() {
   const gridRef = useRef<AgGridReact<PowerRowData>>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
-  const { doeGroups, rowHeaders } = useAppSelector(
-    (state) => state.powerMatrix
-  );
+  const { rowHeaders } = useAppSelector((state) => state.powerMatrix);
+  const powerDoeGroups = useAppSelector((state) => state.powerMatrix.doeGroups);
+  const doeRegistry = useAppSelector((state) => state.doeRegistry);
+
+  // [FIX] Enrich doeGroups with metadata from doeRegistry
+  // PowerDoeGroup만으로는 PROJECT_NAME 등의 메타데이터가 없어서 컬럼 헤더 생성 시 문제 발생
+  const doeGroups = useMemo(() => {
+    return powerDoeGroups.map((doeGroup) => {
+      const metadata = doeRegistry.byId[doeGroup.id] || {};
+      return {
+        ...doeGroup,
+        PROJECT_NAME: metadata.PROJECT_NAME,
+        BLOCK: metadata.BLOCK,
+        NET_VER: metadata.NET_VER,
+        REVISION: metadata.REVISION,
+        ECO_NUM: metadata.ECO_NUM,
+        POWER_SCENARIO: metadata.POWER_SCENARIO,
+        AVAILABLE_SCENARIOS: metadata.AVAILABLE_SCENARIOS,
+      };
+    });
+  }, [powerDoeGroups, doeRegistry]);
 
   const [copied, setCopied] = useState(false);
   const [rowHeightOption, setRowHeightOption] =
