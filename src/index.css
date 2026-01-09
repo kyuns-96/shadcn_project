@@ -265,7 +265,12 @@ body {
   color: var(--foreground) !important;
 }
 
-/* Center align column headers */
+/* Center align all column headers */
+.ag-theme-quartz .ag-header-cell-text {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
 .ag-theme-quartz .ag-header-cell-center .ag-header-cell-label {
   justify-content: center;
 }

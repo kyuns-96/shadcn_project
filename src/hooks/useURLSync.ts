@@ -290,8 +290,6 @@ export function useRestoreColumnData() {
         col._needsDataFetch === true && !fetchedColumnsRef.current.has(col.id)
     );
 
-    console.log("[useRestoreColumnData] Columns to fetch:", columnsToFetch.map(c => ({ id: c.id, label: c.label, _needsDataFetch: c._needsDataFetch })));
-
     if (columnsToFetch.length === 0) return;
 
     isFetching.current = true;
@@ -303,7 +301,6 @@ export function useRestoreColumnData() {
     // Fetch data for each column sequentially
     const fetchAllColumns = async () => {
       for (const col of columnsToFetch) {
-        console.log("[useRestoreColumnData] Fetching data for column:", col.label);
         // [WHY] Mark column as being processed immediately to prevent duplicate fetches
         fetchedColumnsRef.current.add(col.id);
 
@@ -423,8 +420,6 @@ export function useRestoreDoeGroupData() {
         !fetchedGroupsRef.current.has(group.id)
     );
 
-    console.log("[useRestoreDoeGroupData] DoE groups to fetch:", groupsToFetch.map(g => ({ id: g.id, label: g.label, _needsDataFetch: g._needsDataFetch })));
-
     if (groupsToFetch.length === 0) return;
 
     isFetching.current = true;
@@ -436,7 +431,6 @@ export function useRestoreDoeGroupData() {
     // Fetch data for each DoE group sequentially
     const fetchAllGroups = async () => {
       for (const group of groupsToFetch) {
-        console.log("[useRestoreDoeGroupData] Fetching data for DoE group:", group.label);
         // [WHY] Mark group as being processed immediately to prevent duplicate fetches
         fetchedGroupsRef.current.add(group.id);
 
@@ -445,21 +439,12 @@ export function useRestoreDoeGroupData() {
 
         // Get metadata from doeRegistry
         const metadata = doeRegistry.byId[group.id];
-        console.log("[useRestoreDoeGroupData] Metadata for", group.id, ":", metadata);
         if (!metadata) {
           // Skip if metadata not found
-          console.error("[useRestoreDoeGroupData] No metadata found for DoE group:", group.id);
           continue;
         }
 
         // Set selection state for this DoE group
-        console.log("[useRestoreDoeGroupData] Setting selection state:", {
-          PROJECT_NAME: metadata.PROJECT_NAME,
-          BLOCK: metadata.BLOCK,
-          NET_VER: metadata.NET_VER,
-          REVISION: metadata.REVISION,
-          ECO_NUM: metadata.ECO_NUM,
-        });
         dispatch(
           restoreFromURL({
             selectedProject: (metadata.PROJECT_NAME as string) ?? null,
@@ -475,10 +460,7 @@ export function useRestoreDoeGroupData() {
         await new Promise((resolve) => setTimeout(resolve, 50));
 
         // Fetch and update cells
-        console.log("[useRestoreDoeGroupData] Dispatching fetchDataset for:", group.label);
         const action = await dispatch(fetchDataset());
-
-        console.log("[useRestoreDoeGroupData] fetchDataset result:", action);
 
         if (fetchDataset.fulfilled.match(action)) {
           const datasetPayload = (action.payload?.[group.label] ?? {}) as Record<
@@ -486,19 +468,15 @@ export function useRestoreDoeGroupData() {
             unknown
           >;
 
-          console.log("[useRestoreDoeGroupData] Dataset payload:", Object.keys(datasetPayload));
-
           // [WHY] If POWER_SCENARIO is missing (DoE added from QoRComparePage),
           // extract available scenarios and set default scenario
           let scenarioName = metadata.POWER_SCENARIO;
           if (!scenarioName) {
-            console.log("[useRestoreDoeGroupData] No POWER_SCENARIO found, extracting from data");
             const availableScenarios = extractAvailableScenarios(datasetPayload);
             scenarioName = getDefaultScenario(
               metadata.PROJECT_NAME as string,
               availableScenarios
             );
-            console.log("[useRestoreDoeGroupData] Setting default scenario:", scenarioName, "from", availableScenarios);
             
             // Update doeRegistry with the scenario information
             dispatch(
@@ -516,14 +494,10 @@ export function useRestoreDoeGroupData() {
                 scenario: scenarioName,
               })
             );
-          } else {
-            console.log("[useRestoreDoeGroupData] Using existing POWER_SCENARIO:", scenarioName);
           }
 
           // The 4 power metric columns: Internal, Switching, Leakage, Total
           const columnNames = ["Internal", "Switching", "Leakage", "Total"];
-
-          console.log("[useRestoreDoeGroupData] Updating", currentRowHeaders.length, "rows with", columnNames.length, "columns each");
 
           // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
           currentRowHeaders.forEach((row) => {
@@ -537,7 +511,6 @@ export function useRestoreDoeGroupData() {
               if (value === undefined) {
                 value = "-";
               }
-              console.log("[useRestoreDoeGroupData] Updating cell:", { rowId: row.id, columnId, metricKey, value });
               dispatch(
                 updatePowerCell({
                   rowId: row.id,
@@ -547,12 +520,9 @@ export function useRestoreDoeGroupData() {
               );
             });
           });
-        } else {
-          console.error("[useRestoreDoeGroupData] fetchDataset failed or rejected:", action);
         }
 
         // Mark this group as fetched
-        console.log("[useRestoreDoeGroupData] Marking DoE group as fetched:", group.id);
         dispatch(markDoeFetched(group.id));
       }
 

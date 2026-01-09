@@ -47,7 +47,7 @@ export function buildPowerColumnDefs(args: {
   // Row Header 컬럼 (왼쪽 고정)
   const rowHeaderCol: ColDef<PowerRowData> = {
     field: "rowHeader",
-    headerName: "Component",
+    headerName: "",
     width: POWER_TABLE_CONFIG.rowHeaderColumnWidth,
     pinned: "left",
     lockPosition: true,
@@ -56,6 +56,7 @@ export function buildPowerColumnDefs(args: {
       fontWeight: 550,
       backgroundColor: "var(--ag-header-background-color)",
       borderRight: "1px solid var(--ag-border-color)",
+      textAlign: "right",
     } as any,
   };
 
