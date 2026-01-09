@@ -29,8 +29,8 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import {
   addColumn,
   updateCell,
-  updateColumnScenario,
 } from "@/store/matrixSlice";
+import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import { setColumnPowerScenario } from "@/store/reducers/selectedReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
@@ -93,23 +93,29 @@ const DatasetColumnAddButton = () => {
     const columnId = generateUniqueColumnId();
     const columnLabel = doeName || columnId;
 
-    // 1. 로딩 상태의 새 컬럼 추가 (시나리오 정보는 fetch 후 업데이트)
+    // 1. 먼저 doeRegistry에 DoE를 추가 (메타데이터 포함)
+    dispatch(
+      addDoE({
+        id: columnId,
+        label: columnLabel,
+        PROJECT_NAME: selectedProject || undefined,
+        BLOCK: selectedBlock || undefined,
+        NET_VER: selectedNetver || undefined,
+        REVISION: selectedRevision || undefined,
+        ECO_NUM: selectedEconum || undefined,
+      })
+    );
+
+    // 2. matrix에 로딩 상태의 새 컬럼 추가 (메타데이터는 registry에서 참조)
     dispatch(
       addColumn({
         id: columnId,
         label: columnLabel,
         defaultValue: LOADING_PLACEHOLDER,
-        meta: {
-          PROJECT_NAME: selectedProject || undefined,
-          BLOCK: selectedBlock || undefined,
-          NET_VER: selectedNetver || undefined,
-          REVISION: selectedRevision || undefined,
-          ECO_NUM: selectedEconum || undefined,
-        },
       })
     );
 
-    // 2. 데이터셋 fetch 후 각 셀에 값 업데이트
+    // 3. 데이터셋 fetch 후 각 셀에 값 업데이트
     dispatch(fetchDataset()).then((action) => {
       if (fetchDataset.fulfilled.match(action)) {
         const datasetPayload = (action.payload?.[doeName] ?? {}) as Record<
@@ -140,16 +146,17 @@ const DatasetColumnAddButton = () => {
           defaultScenario
         );
 
-        // 5. 컬럼 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
+        // 4. doeRegistry의 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
+        // 이 변경이 모든 참조처(PowerPage, QoRComparePage)에 자동 반영됨
         dispatch(
-          updateColumnScenario({
-            columnId,
-            scenario: defaultScenario,
-            availableScenarios,
+          updateDoEMetadata({
+            doeId: columnId,
+            POWER_SCENARIO: defaultScenario,
+            AVAILABLE_SCENARIOS: availableScenarios,
           })
         );
 
-        // 6. Redux selected 상태에 시나리오 매핑 저장
+        // 5. Redux selected 상태에 시나리오 매핑 저장
         dispatch(
           setColumnPowerScenario({
             columnId,
@@ -157,11 +164,7 @@ const DatasetColumnAddButton = () => {
           })
         );
 
-        // 7. 컬럼의 AVAILABLE_SCENARIOS 업데이트를 위해 addColumn을 다시 호출하는 대신
-        //    직접 상태를 업데이트 (columnHeaders에서 해당 컬럼 찾아서 업데이트)
-        //    → 이는 updateColumnScenario와 함께 처리됨
-
-        // 8. 각 행의 셀에 메트릭 값 업데이트 (시나리오 적용)
+        // 6. 각 행의 셀에 메트릭 값 업데이트 (시나리오 적용)
         rowHeaders.forEach((rowHeader) => {
           const metricKey = `${rowHeader.rowGroup}!${rowHeader.label}`;
           const metricValue =

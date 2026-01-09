@@ -28,6 +28,7 @@ import {
   updatePowerCell,
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
+import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
 import { getDefaultPowerScenario } from "@/variables/defaultPowerScenarioMappingForPower";
@@ -95,23 +96,29 @@ const PowerDatasetColumnAddButton = () => {
     const doeId = generateUniqueDoeId();
     const doeLabel = doeName || doeId;
 
-    // 1. 로딩 상태의 새 DoE 그룹 추가 (4개 컬럼 포함)
+    // 1. 먼저 doeRegistry에 DoE를 추가 (메타데이터 포함)
+    dispatch(
+      addDoE({
+        id: doeId,
+        label: doeLabel,
+        PROJECT_NAME: selectedProject || undefined,
+        BLOCK: selectedBlock || undefined,
+        NET_VER: selectedNetver || undefined,
+        REVISION: selectedRevision || undefined,
+        ECO_NUM: selectedEconum || undefined,
+      })
+    );
+
+    // 2. powerMatrix에 로딩 상태의 새 DoE 그룹 추가 (4개 컬럼 포함, 메타데이터는 registry에서 참조)
     dispatch(
       addDoeGroup({
         id: doeId,
         label: doeLabel,
         defaultValue: LOADING_PLACEHOLDER,
-        meta: {
-          PROJECT_NAME: selectedProject || undefined,
-          BLOCK: selectedBlock || undefined,
-          NET_VER: selectedNetver || undefined,
-          REVISION: selectedRevision || undefined,
-          ECO_NUM: selectedEconum || undefined,
-        },
       })
     );
 
-    // 2. 데이터셋 fetch 후 각 셀에 값 업데이트
+    // 3. 데이터셋 fetch 후 각 셀에 값 업데이트
     dispatch(fetchDataset()).then((action) => {
       if (fetchDataset.fulfilled.match(action)) {
         const datasetPayload = (action.payload?.[doeName] ?? {}) as Record<
@@ -141,7 +148,17 @@ const PowerDatasetColumnAddButton = () => {
           defaultScenario
         );
 
-        // 5. DoE 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
+        // 5. doeRegistry의 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
+        // 이 변경이 모든 참조처(PowerPage, QoRComparePage)에 자동 반영됨
+        dispatch(
+          updateDoEMetadata({
+            doeId,
+            POWER_SCENARIO: defaultScenario,
+            AVAILABLE_SCENARIOS: availableScenarios,
+          })
+        );
+
+        // 6. powerMatrix의 DoE 시나리오도 업데이트 (역사적 호환성용)
         dispatch(
           updateDoeScenario({
             doeId,

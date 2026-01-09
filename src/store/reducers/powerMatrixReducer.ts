@@ -22,24 +22,10 @@ import type { PowerRowKey } from "@/variables/defaultPowerMatrixTemplate";
 
 /** DoE 그룹 헤더 타입 */
 export interface PowerDoeGroup {
-  /** DoE 고유 ID (예: "doe1703849234567") */
+  /** DoE 고유 ID (예: "doe1703849234567") - doeRegistry 참조용 */
   id: string;
   /** DoE 표시 이름 (예: "DoE-001") */
   label: string;
-  /** 프로젝트 이름 */
-  PROJECT_NAME?: string;
-  /** 블록 이름 */
-  BLOCK?: string;
-  /** 넷 버전 */
-  NET_VER?: string;
-  /** 리비전 */
-  REVISION?: string;
-  /** ECO 번호 */
-  ECO_NUM?: string;
-  /** 선택된 Power Scenario */
-  POWER_SCENARIO?: string;
-  /** 사용 가능한 시나리오 목록 */
-  AVAILABLE_SCENARIOS?: string[];
   /** URL 복원 시 데이터 fetch 필요 여부 */
   _needsDataFetch?: boolean;
 }
@@ -191,23 +177,19 @@ const powerMatrixSlice = createSlice({
 
     /**
      * DoE 그룹의 시나리오를 업데이트합니다.
+     * [WHY] 이제 시나리오는 doeRegistry에서 관리하므로 이 액션은 deprecated됨
+     * PowerColumnMetadataTable에서는 doeRegistry.updateDoEMetadata를 사용해야 함
      */
     updateDoeScenario: (
-      state,
-      action: PayloadAction<{
+      _state,
+      _action: PayloadAction<{
         doeId: string;
         scenario: string;
         availableScenarios?: string[];
       }>
     ) => {
-      const { doeId, scenario, availableScenarios } = action.payload;
-      const doeGroup = state.doeGroups.find((doe) => doe.id === doeId);
-      if (doeGroup) {
-        doeGroup.POWER_SCENARIO = scenario;
-        if (availableScenarios) {
-          doeGroup.AVAILABLE_SCENARIOS = availableScenarios;
-        }
-      }
+      // [WHY] Deprecated - scenarios are now managed in doeRegistry
+      // This is kept for backwards compatibility but no longer used
     },
 
     /**

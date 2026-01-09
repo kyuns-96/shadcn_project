@@ -43,6 +43,7 @@ import {
   updatePowerCell,
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
+import { updateDoEMetadata, removeDoE } from "@/store/doeRegistry";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
   POWER_COLUMN_NAMES,
@@ -66,7 +67,14 @@ const PowerColumnMetadataTable = () => {
   const { doeGroups, rowHeaders } = useAppSelector(
     (state) => state.powerMatrix
   );
+  const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const dataset = useAppSelector((state) => state.dataset);
+
+  // doeRegistry에서 메타데이터를 가져와서 enriched doeGroups 생성
+  const enrichedDoeGroups = doeGroups.map((doe) => ({
+    ...doe,
+    ...doeRegistry.byId[doe.id],
+  }));
 
   /**
    * Power Scenario 변경 핸들러
@@ -80,10 +88,18 @@ const PowerColumnMetadataTable = () => {
         newScenario,
       });
 
-      // 1. Redux 상태 업데이트
+      // 1. doeRegistry 메타데이터 업데이트 (모든 참조처에 자동 반영)
+      dispatch(
+        updateDoEMetadata({
+          doeId,
+          POWER_SCENARIO: newScenario,
+        })
+      );
+
+      // 2. powerMatrix 상태도 업데이트 (역사적 호환성용)
       dispatch(updateDoeScenario({ doeId, scenario: newScenario }));
 
-      // 2. 해당 DoE의 데이터셋 가져오기
+      // 3. 해당 DoE의 데이터셋 가져오기
       const datasetPayload = (dataset?.[doeLabel] ?? {}) as Record<
         string,
         unknown
@@ -94,7 +110,7 @@ const PowerColumnMetadataTable = () => {
         datasetKeys: Object.keys(datasetPayload),
       });
 
-      // 3. 각 행의 4개 컬럼 셀 값 다시 추출
+      // 4. 각 행의 4개 컬럼 셀 값 다시 추출
       rowHeaders.forEach((rowHeader) => {
         POWER_COLUMN_NAMES.forEach((columnName) => {
           const metricKey = getMetricKey(rowHeader.rowKey, columnName);
@@ -128,7 +144,10 @@ const PowerColumnMetadataTable = () => {
    */
   const handleDeleteDoeGroup = useCallback(
     (doeId: string) => {
+      // powerMatrix에서 삭제
       dispatch(removeDoeGroup(doeId));
+      // doeRegistry에서도 삭제 (모든 참조처에서 제거됨)
+      dispatch(removeDoE(doeId));
     },
     [dispatch]
   );
@@ -137,7 +156,7 @@ const PowerColumnMetadataTable = () => {
    * 각 DoE의 Power Scenario 드롭다운 설정 생성
    */
   const getScenarioDropdownConfig = useCallback(
-    (doeGroup: (typeof doeGroups)[0]): DropdownConfig => {
+    (doeGroup: (typeof enrichedDoeGroups)[0]): DropdownConfig => {
       const availableScenarios = doeGroup.AVAILABLE_SCENARIOS || [];
       const currentScenario = doeGroup.POWER_SCENARIO || "";
 
@@ -170,7 +189,7 @@ const PowerColumnMetadataTable = () => {
     const headerLine = headers.join("\t");
 
     // 데이터 행들
-    const dataLines = doeGroups.map((doeGroup) =>
+    const dataLines = enrichedDoeGroups.map((doeGroup) =>
       [
         doeGroup.label,
         doeGroup.PROJECT_NAME || "-",
@@ -192,10 +211,10 @@ const PowerColumnMetadataTable = () => {
     } catch (error) {
       console.error("Failed to copy table data:", error);
     }
-  }, [doeGroups]);
+  }, [enrichedDoeGroups]);
 
   // DoE가 없으면 안내 메시지 표시
-  if (doeGroups.length === 0) {
+  if (enrichedDoeGroups.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         추가된 DoE가 없습니다. "Select Netlist Version"에서 DoE를 추가해주세요.
@@ -245,7 +264,7 @@ const PowerColumnMetadataTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {doeGroups.map((doeGroup) => (
+            {enrichedDoeGroups.map((doeGroup) => (
               <TableRow key={doeGroup.id}>
                 <TableCell className="font-medium w-[100px]">
                   {doeGroup.label}

@@ -40,8 +40,8 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import {
   removeColumn,
   updateCell,
-  updateColumnScenario,
 } from "@/store/matrixSlice";
+import { removeDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import {
   setColumnPowerScenario,
   clearColumnPowerScenario,
@@ -63,10 +63,17 @@ const ColumnMetadataTable = () => {
 
   // Redux에서 컬럼 및 행 헤더, Power Scenario 선택 상태, 데이터셋 조회
   const { columnHeaders, rowHeaders } = useAppSelector((state) => state.matrix);
+  const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const columnPowerScenarios = useAppSelector(
     (state) => state.selected.columnPowerScenarios
   );
   const dataset = useAppSelector((state) => state.dataset);
+
+  // doeRegistry에서 메타데이터를 가져와서 enriched columnHeaders 생성
+  const enrichedColumnHeaders = columnHeaders.map((col) => ({
+    ...col,
+    ...doeRegistry.byId[col.id],
+  }));
 
   /**
    * Power Scenario 변경 핸들러
@@ -80,11 +87,18 @@ const ColumnMetadataTable = () => {
         newScenario,
       });
 
-      // 1. Redux 상태 업데이트
-      dispatch(setColumnPowerScenario({ columnId, scenario: newScenario }));
-      dispatch(updateColumnScenario({ columnId, scenario: newScenario }));
+      // 1. doeRegistry 메타데이터 업데이트 (모든 참조처에 자동 반영)
+      dispatch(
+        updateDoEMetadata({
+          doeId: columnId,
+          POWER_SCENARIO: newScenario,
+        })
+      );
 
-      // 2. 해당 컬럼의 데이터셋 가져오기
+      // 2. Redux selected 상태에도 업데이트 (역사적 호환성용)
+      dispatch(setColumnPowerScenario({ columnId, scenario: newScenario }));
+
+      // 3. 해당 컬럼의 데이터셋 가져오기
       const datasetPayload = (dataset?.[columnLabel] ?? {}) as Record<
         string,
         unknown
@@ -96,7 +110,7 @@ const ColumnMetadataTable = () => {
         datasetPayload,
       });
 
-      // 3. 각 행의 셀 값 다시 추출
+      // 4. 각 행의 셀 값 다시 추출
       rowHeaders.forEach((rowHeader) => {
         const metricKey = `${rowHeader.rowGroup}!${rowHeader.label}`;
         const metricValue =
@@ -127,8 +141,10 @@ const ColumnMetadataTable = () => {
    */
   const handleDeleteColumn = useCallback(
     (columnId: string) => {
-      // Redux에서 컬럼 제거
+      // matrix에서 컬럼 제거
       dispatch(removeColumn(columnId));
+      // doeRegistry에서도 삭제 (모든 참조처에서 제거됨)
+      dispatch(removeDoE(columnId));
       // Power Scenario 매핑도 제거
       dispatch(clearColumnPowerScenario(columnId));
     },
@@ -139,7 +155,7 @@ const ColumnMetadataTable = () => {
    * 각 컬럼의 Power Scenario 드롭다운 설정 생성
    */
   const getScenarioDropdownConfig = useCallback(
-    (column: (typeof columnHeaders)[0]): DropdownConfig => {
+    (column: (typeof enrichedColumnHeaders)[0]): DropdownConfig => {
       const availableScenarios = column.AVAILABLE_SCENARIOS || [];
       const currentScenario =
         columnPowerScenarios[column.id] || column.POWER_SCENARIO || "";
@@ -173,7 +189,7 @@ const ColumnMetadataTable = () => {
     const headerLine = headers.join("\t");
 
     // 데이터 행들
-    const dataLines = columnHeaders.map((column) =>
+    const dataLines = enrichedColumnHeaders.map((column) =>
       [
         column.label,
         column.PROJECT_NAME || "-",
@@ -195,10 +211,10 @@ const ColumnMetadataTable = () => {
     } catch (error) {
       console.error("Failed to copy table data:", error);
     }
-  }, [columnHeaders, columnPowerScenarios]);
+  }, [enrichedColumnHeaders, columnPowerScenarios]);
 
   // 컬럼이 없으면 안내 메시지 표시
-  if (columnHeaders.length === 0) {
+  if (enrichedColumnHeaders.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         추가된 컬럼이 없습니다. "Select Netlist Version"에서 컬럼을
@@ -249,7 +265,7 @@ const ColumnMetadataTable = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {columnHeaders.map((column) => (
+            {enrichedColumnHeaders.map((column) => (
               <TableRow key={column.id}>
                 <TableCell className="font-medium w-[65px]">
                   {column.label}

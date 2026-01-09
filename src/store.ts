@@ -25,6 +25,7 @@ import {
 
 // Slice 및 Reducer imports
 import matrixSlice from "@/store/matrixSlice";
+import doeRegistryReducer from "@/store/doeRegistry";
 import projectListReducer from "@/store/reducers/projectListReducer";
 import blockListReducer from "@/store/reducers/blockListReducer";
 import netverListReducer from "@/store/reducers/netverListReducer";
@@ -45,6 +46,7 @@ export { setCurrentPage } from "@/store/reducers/pageReducer";
 /** 모든 리듀서를 결합한 루트 리듀서 */
 const rootReducer = combineReducers({
   matrix: matrixSlice,
+  doeRegistry: doeRegistryReducer,
   powerMatrix: powerMatrixReducer,
   projectList: projectListReducer,
   blockList: blockListReducer,

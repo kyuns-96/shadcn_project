@@ -5,13 +5,6 @@ export interface ColumnHeader {
   id: string;
   label: string;
   accessorKey: string;
-  PROJECT_NAME?: string;
-  BLOCK?: string;
-  NET_VER?: string;
-  REVISION?: string;
-  ECO_NUM?: string;
-  POWER_SCENARIO?: string;
-  AVAILABLE_SCENARIOS?: string[];
   _needsDataFetch?: boolean; // Flag for URL restoration
   [key: string]: unknown;
 }
@@ -205,16 +198,16 @@ const matrixSlice = createSlice({
         };
       }>
     ) => {
-      const { label, defaultValue = "", meta } = action.payload;
+      const { label, defaultValue = "" } = action.payload;
       const id = action.payload.id || `col-${Date.now()}`;
       const accessorKey = action.payload.accessorKey || id;
 
-      // Add the new column header
+      // [WHY] Add new column header without metadata
+      // Metadata is now managed in doeRegistry, not here
       state.columnHeaders.push({
         id,
         label,
         accessorKey,
-        ...(meta || {}),
       });
 
       // Add default value for this column to all existing rows
@@ -255,21 +248,15 @@ const matrixSlice = createSlice({
       });
     },
     updateColumnScenario: (
-      state,
-      action: PayloadAction<{
+      _state,
+      _action: PayloadAction<{
         columnId: string;
         scenario: string;
         availableScenarios?: string[];
       }>
     ) => {
-      const { columnId, scenario, availableScenarios } = action.payload;
-      const column = state.columnHeaders.find((col) => col.id === columnId);
-      if (column) {
-        column.POWER_SCENARIO = scenario;
-        if (availableScenarios) {
-          column.AVAILABLE_SCENARIOS = availableScenarios;
-        }
-      }
+      // [WHY] Deprecated - scenarios now managed in doeRegistry
+      // This is kept for backwards compatibility but no longer used
     },
   },
 });
