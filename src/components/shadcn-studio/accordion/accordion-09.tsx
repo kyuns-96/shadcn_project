@@ -9,6 +9,8 @@ interface AccordionOutlineItem {
   title: string;
   content: React.ReactNode;
   value: string;
+  /** 특정 항목에 커스텀 content 클래스를 적용할 때 사용 */
+  contentClassName?: string;
 }
 
 interface AccordionOutlineProps {
@@ -35,7 +37,9 @@ const AccordionOutline = ({
           className="rounded-md border border-b last:border-b"
         >
           <AccordionTrigger className="px-5">{item.title}</AccordionTrigger>
-          <AccordionContent className="px-5">{item.content}</AccordionContent>
+          <AccordionContent className={item.contentClassName || "px-5"}>
+            {item.content}
+          </AccordionContent>
         </AccordionItem>
       ))}
     </Accordion>

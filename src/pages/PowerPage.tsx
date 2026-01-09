@@ -21,11 +21,18 @@
  */
 
 import AgGridPowerTable from "@/components/ag-grid-matrix-table-power";
-import { useEffect, useRef } from "react";
+import PowerDatasetColumnAddButton from "@/components/shadcn-studio/button/PowerDatasetColumnAddButton";
+import PowerColumnMetadataTable from "@/components/shadcn-studio/table/PowerColumnMetadataTable";
+import useFilterDropdownConfigs from "@/variables/useFilterDropdownConfigs";
+import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
+import DoeNameInput from "@/components/shadcn-studio/input/DoeNameInput";
+import { useEffect, useRef, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { initializePowerMatrixRows } from "@/variables/defaultPowerMatrixTemplate";
+import AccordionOutline from "@/components/shadcn-studio/accordion/accordion-09";
 
 const PowerPage = () => {
+  const filterDropdownConfigs = useFilterDropdownConfigs();
   const dispatch = useAppDispatch();
   const rowHeaders = useAppSelector((state) => state.powerMatrix.rowHeaders);
   const isInitialized = useRef(false);
@@ -33,7 +40,12 @@ const PowerPage = () => {
   useEffect(() => {
     // Only initialize template rows if the store is empty and not yet initialized
     // This prevents re-initializing when navigating back from another page
-    console.log("[PowerPage] useEffect - rowHeaders:", rowHeaders, "isInitialized:", isInitialized.current);
+    console.log(
+      "[PowerPage] useEffect - rowHeaders:",
+      rowHeaders,
+      "isInitialized:",
+      isInitialized.current
+    );
     if (!isInitialized.current && rowHeaders.length === 0) {
       console.log("[PowerPage] Initializing power matrix rows...");
       initializePowerMatrixRows(dispatch);
@@ -41,15 +53,52 @@ const PowerPage = () => {
     }
   }, [dispatch, rowHeaders.length]);
 
+  const accordionItems = useMemo(
+    () => [
+      {
+        title: "Select Netlist Version",
+        value: "item-1",
+        content: (
+          <div className="flex flex-col gap-4">
+            <div className="overflow-x-auto">
+              <div className="flex gap-2 min-w-fit">
+                {filterDropdownConfigs.map((config, index) => (
+                  <FilterDropdownCombobox
+                    key={index}
+                    dropdownConfigs={[config]}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 items-end">
+              <DoeNameInput />
+              <PowerDatasetColumnAddButton />
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: "DoE Power Scenario",
+        value: "item-2",
+        content: <PowerColumnMetadataTable />,
+      },
+      {
+        title: "Power Table",
+        value: "item-3",
+        contentClassName: "px-5 flex flex-col h-[600px]",
+        content: <AgGridPowerTable />,
+      },
+    ],
+    [filterDropdownConfigs]
+  );
+
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* DEBUG: Test without Accordion */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-yellow-100">
-        <h2 className="text-lg font-bold p-2">Power Table (Debug Mode)</h2>
-        <div className="flex-1 flex flex-col overflow-hidden min-h-[400px]">
-          <AgGridPowerTable />
-        </div>
-      </div>
+    <div className="flex flex-col h-full">
+      <AccordionOutline
+        items={accordionItems}
+        defaultValue={["item-1", "item-2", "item-3"]}
+        className="flex flex-col h-full gap-2"
+      />
     </div>
   );
 };
