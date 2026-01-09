@@ -285,6 +285,15 @@ body {
   text-align: center !important;
 }
 
+/* DoE group header styling - ensure center alignment */
+.ag-theme-quartz .doe-group-header {
+  text-align: center !important;
+}
+
+.ag-theme-quartz .doe-group-header .ag-header-group-cell-label {
+  justify-content: center !important;
+}
+
 /* Group border styles - visual separation between groups */
 /* Top border on first row of each group */
 .ag-theme-quartz .ag-row-group-first .ag-cell {
