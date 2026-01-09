@@ -57,64 +57,64 @@ const METRIC_EXTRACTORS: Record<string, string> = {
   // ============================================================
 
   // Clock Network row
-  "Power(mW)!clock_network_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.internal`,
-  "Power(mW)!clock_network_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.switching`,
-  "Power(mW)!clock_network_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.leakage`,
-  "Power(mW)!clock_network_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.clock_network.total`,
+  "Power(mW)!clock_network_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.clock_network`,
+  "Power(mW)!clock_network_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.clock_network`,
+  "Power(mW)!clock_network_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.clock_network`,
+  "Power(mW)!clock_network_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.clock_network`,
 
   // Register row
-  "Power(mW)!register_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.internal`,
-  "Power(mW)!register_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.switching`,
-  "Power(mW)!register_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.leakage`,
-  "Power(mW)!register_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.register.total`,
+  "Power(mW)!register_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.register`,
+  "Power(mW)!register_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.register`,
+  "Power(mW)!register_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.register`,
+  "Power(mW)!register_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.register`,
 
   // Combinational row
-  "Power(mW)!combinational_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.internal`,
-  "Power(mW)!combinational_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.switching`,
-  "Power(mW)!combinational_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.leakage`,
-  "Power(mW)!combinational_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.combinational.total`,
+  "Power(mW)!combinational_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.combinational`,
+  "Power(mW)!combinational_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.combinational`,
+  "Power(mW)!combinational_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.combinational`,
+  "Power(mW)!combinational_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.combinational`,
 
   // Sequential row
-  "Power(mW)!sequential_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.internal`,
-  "Power(mW)!sequential_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.switching`,
-  "Power(mW)!sequential_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.leakage`,
-  "Power(mW)!sequential_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.sequential.total`,
+  "Power(mW)!sequential_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.sequential`,
+  "Power(mW)!sequential_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.sequential`,
+  "Power(mW)!sequential_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.sequential`,
+  "Power(mW)!sequential_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.sequential`,
 
   // Memory row
-  "Power(mW)!memory_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.internal`,
-  "Power(mW)!memory_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.switching`,
-  "Power(mW)!memory_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.leakage`,
-  "Power(mW)!memory_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.memory.total`,
+  "Power(mW)!memory_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.memory`,
+  "Power(mW)!memory_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.memory`,
+  "Power(mW)!memory_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.memory`,
+  "Power(mW)!memory_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.memory`,
 
   // IO Pad row
-  "Power(mW)!io_pad_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.internal`,
-  "Power(mW)!io_pad_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.switching`,
-  "Power(mW)!io_pad_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.leakage`,
-  "Power(mW)!io_pad_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.io_pad.total`,
+  "Power(mW)!io_pad_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.io_pad`,
+  "Power(mW)!io_pad_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.io_pad`,
+  "Power(mW)!io_pad_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.io_pad`,
+  "Power(mW)!io_pad_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.io_pad`,
 
   // Black Box row
-  "Power(mW)!black_box_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.internal`,
-  "Power(mW)!black_box_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.switching`,
-  "Power(mW)!black_box_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.leakage`,
-  "Power(mW)!black_box_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.black_box.total`,
+  "Power(mW)!black_box_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.black_box`,
+  "Power(mW)!black_box_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.black_box`,
+  "Power(mW)!black_box_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.black_box`,
+  "Power(mW)!black_box_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.black_box`,
 
   // Decap row
-  "Power(mW)!decap_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.internal`,
-  "Power(mW)!decap_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.switching`,
-  "Power(mW)!decap_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.leakage`,
-  "Power(mW)!decap_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.decap.total`,
+  "Power(mW)!decap_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.decap`,
+  "Power(mW)!decap_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.decap`,
+  "Power(mW)!decap_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.decap`,
+  "Power(mW)!decap_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.decap`,
 
   // Power Switch row
-  "Power(mW)!power_switch_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.internal`,
-  "Power(mW)!power_switch_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.switching`,
-  "Power(mW)!power_switch_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.leakage`,
-  "Power(mW)!power_switch_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.power_switch.total`,
+  "Power(mW)!power_switch_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.power_switch`,
+  "Power(mW)!power_switch_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.power_switch`,
+  "Power(mW)!power_switch_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.power_switch`,
+  "Power(mW)!power_switch_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.power_switch`,
 
   // Total row (separate metric values, not aggregated)
-  "Power(mW)!total_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.internal`,
-  "Power(mW)!total_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.switching`,
-  "Power(mW)!total_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.leakage`,
-  "Power(mW)!total_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.total.total`,
+  "Power(mW)!total_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.Total`,
+  "Power(mW)!total_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.Total`,
+  "Power(mW)!total_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.Total`,
+  "Power(mW)!total_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.Total`,
 };
 
 /**
@@ -216,11 +216,13 @@ export const extractScenarioMetric = (
   // 1. basePath로 ptpxpower_data까지 탐색 (점으로 split)
   let current: unknown = dataset;
   console.log(`    Start: dataset`);
-  
+
   for (const key of basePath.split(".")) {
     if (typeof current === "object" && current !== null) {
       current = (current as Record<string, unknown>)[key];
-      console.log(`    -> .${key}: ${typeof current === "object" ? "{...}" : current}`);
+      console.log(
+        `    -> .${key}: ${typeof current === "object" ? "{...}" : current}`
+      );
     } else {
       console.warn(
         `    ❌ Failed at basePath key "${key}": current is not an object (type: ${typeof current})`
@@ -232,9 +234,15 @@ export const extractScenarioMetric = (
   // 2. 시나리오 이름으로 직접 접근 (점으로 split하지 않음)
   if (typeof current === "object" && current !== null) {
     current = (current as Record<string, unknown>)[scenarioName];
-    console.log(`    -> [${scenarioName}]: ${typeof current === "object" ? "{...}" : current}`);
+    console.log(
+      `    -> [${scenarioName}]: ${
+        typeof current === "object" ? "{...}" : current
+      }`
+    );
   } else {
-    console.warn(`    ❌ ptpxpower_data is not an object (type: ${typeof current})`);
+    console.warn(
+      `    ❌ ptpxpower_data is not an object (type: ${typeof current})`
+    );
     return undefined;
   }
 
@@ -248,7 +256,9 @@ export const extractScenarioMetric = (
     for (const key of metricPath.split(".")) {
       if (typeof current === "object" && current !== null) {
         current = (current as Record<string, unknown>)[key];
-        console.log(`    -> .${key}: ${typeof current === "object" ? "{...}" : current}`);
+        console.log(
+          `    -> .${key}: ${typeof current === "object" ? "{...}" : current}`
+        );
       } else {
         console.warn(
           `    ❌ Failed at metricPath key "${key}": current is not an object (type: ${typeof current})`
@@ -353,12 +363,14 @@ export const extractMetricValue = (
     scenarioName,
     basePath,
   });
-  
+
   // 추가: METRIC_EXTRACTORS에서 사용 가능한 키 확인
-  const availableKeys = Object.keys(METRIC_EXTRACTORS).filter(k => k.includes("clock_network"));
+  const availableKeys = Object.keys(METRIC_EXTRACTORS).filter((k) =>
+    k.includes("clock_network")
+  );
   console.log("2. Available power keys in METRIC_EXTRACTORS:", availableKeys);
   console.log("   (showing sample keys that contain 'clock_network')");
-  
+
   console.log("3. Dataset structure:", {
     datasetKeys: Object.keys(dataset),
     datasetSize: Object.keys(dataset).length,
@@ -388,7 +400,12 @@ export const extractMetricValue = (
       scenarioName,
       hasPlaceholder: true,
     });
-    const result = extractWithScenario(basePath, scenarioName, dataset, metricKey);
+    const result = extractWithScenario(
+      basePath,
+      scenarioName,
+      dataset,
+      metricKey
+    );
     console.log("5. Result:", result);
     console.log("============================================");
     return result;
@@ -400,7 +417,10 @@ export const extractMetricValue = (
   console.log("   Path:", path);
 
   const rawResult = path.split(".").reduce((current, key) => {
-    console.log(`   Navigating: ${key} ->`, typeof current === "object" ? `{...}` : current);
+    console.log(
+      `   Navigating: ${key} ->`,
+      typeof current === "object" ? `{...}` : current
+    );
     if (typeof current === "object" && current !== null) {
       return (current as Record<string, unknown>)[key];
     }
