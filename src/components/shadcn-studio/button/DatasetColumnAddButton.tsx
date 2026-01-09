@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { addColumn, updateCell } from "@/store/matrixSlice";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
+import { addDoeGroup } from "@/store/reducers/powerMatrixReducer";
 import { setColumnPowerScenario } from "@/store/reducers/selectedReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
@@ -110,6 +111,15 @@ const DatasetColumnAddButton = () => {
     // 2. matrix에 로딩 상태의 새 컬럼 추가 (메타데이터는 registry에서 참조)
     dispatch(
       addColumn({
+        id: columnId,
+        label: columnLabel,
+        defaultValue: LOADING_PLACEHOLDER,
+      })
+    );
+
+    // [WHY] powerMatrix.doeGroups에도 추가하여 PowerPage에서도 column이 보이도록 함
+    dispatch(
+      addDoeGroup({
         id: columnId,
         label: columnLabel,
         defaultValue: LOADING_PLACEHOLDER,

@@ -29,6 +29,7 @@ import {
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
+import { addColumn } from "@/store/matrixSlice";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
 import { getDefaultPowerScenario } from "@/variables/defaultPowerScenarioMappingForPower";
@@ -116,6 +117,15 @@ const PowerDatasetColumnAddButton = () => {
     // 2. powerMatrix에 로딩 상태의 새 DoE 그룹 추가 (4개 컬럼 포함, 메타데이터는 registry에서 참조)
     dispatch(
       addDoeGroup({
+        id: doeId,
+        label: doeLabel,
+        defaultValue: LOADING_PLACEHOLDER,
+      })
+    );
+
+    // [WHY] matrix.columnHeaders에도 추가하여 QoRComparePage에서도 column이 보이도록 함
+    dispatch(
+      addColumn({
         id: doeId,
         label: doeLabel,
         defaultValue: LOADING_PLACEHOLDER,
