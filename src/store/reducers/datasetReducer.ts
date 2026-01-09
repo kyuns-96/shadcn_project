@@ -57,7 +57,10 @@ const datasetReducer = createSlice({
   initialState: {} as Dataset,
   reducers: {},
   extraReducers: (builder) => {
-    builder.addCase(fetchDataset.fulfilled, (_, action) => action.payload);
+    builder.addCase(fetchDataset.fulfilled, (state, action) => {
+      // Merge with existing data instead of replacing
+      return { ...state, ...action.payload };
+    });
   },
 });
 

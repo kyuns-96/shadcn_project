@@ -246,18 +246,13 @@ export const extractScenarioMetric = (
 
   // 3. metricPath로 나머지 탐색 (점으로 split)
   if (metricPath) {
-    console.log("[extractScenarioMetric] Before metricPath navigation, current:", current);
     for (const key of metricPath.split(".")) {
-      console.log("[extractScenarioMetric] Navigating key:", key);
       if (typeof current === "object" && current !== null) {
         current = (current as Record<string, unknown>)[key];
-        console.log("[extractScenarioMetric] After key navigation, current:", current);
       } else {
         console.warn(
           "[extractScenarioMetric] Failed to navigate metricPath at:",
-          key,
-          "current type:",
-          typeof current
+          key
         );
         return undefined;
       }
