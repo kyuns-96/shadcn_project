@@ -251,6 +251,18 @@ export const extractScenarioMetric = (
     return undefined;
   }
 
+  // IMPORTANT: Show the structure AFTER scenario access
+  console.log(`\n    📊 DATA STRUCTURE AFTER SCENARIO ACCESS:`);
+  console.log(`       Type: ${typeof current}`);
+  if (typeof current === "object" && current !== null) {
+    const keys = Object.keys(current as Record<string, unknown>);
+    console.log(
+      `       Keys: ${keys.slice(0, 10).join(", ")}${keys.length > 10 ? ` ... (+${keys.length - 10} more)` : ""}`
+    );
+    console.log(`       Sample: ${JSON.stringify(current).substring(0, 300)}`);
+  }
+  console.log(`    metricPath to navigate: "${metricPath}"\n`);
+
   // 3. metricPath로 나머지 탐색 (점으로 split)
   if (metricPath) {
     for (const key of metricPath.split(".")) {
