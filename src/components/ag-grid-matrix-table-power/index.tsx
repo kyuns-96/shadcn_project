@@ -203,7 +203,7 @@ export default function AgGridPowerTable() {
       </div>
 
       {/* AG Grid */}
-      <div className="flex-1 ag-theme-alpine">
+      <div className="flex-1 ag-theme-quartz">
         <AgGridReact<PowerRowData>
           ref={gridRef}
           rowData={rowData}
