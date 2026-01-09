@@ -445,12 +445,21 @@ export function useRestoreDoeGroupData() {
 
         // Get metadata from doeRegistry
         const metadata = doeRegistry.byId[group.id];
+        console.log("[useRestoreDoeGroupData] Metadata for", group.id, ":", metadata);
         if (!metadata) {
           // Skip if metadata not found
+          console.error("[useRestoreDoeGroupData] No metadata found for DoE group:", group.id);
           continue;
         }
 
         // Set selection state for this DoE group
+        console.log("[useRestoreDoeGroupData] Setting selection state:", {
+          PROJECT_NAME: metadata.PROJECT_NAME,
+          BLOCK: metadata.BLOCK,
+          NET_VER: metadata.NET_VER,
+          REVISION: metadata.REVISION,
+          ECO_NUM: metadata.ECO_NUM,
+        });
         dispatch(
           restoreFromURL({
             selectedProject: (metadata.PROJECT_NAME as string) ?? null,
@@ -466,13 +475,18 @@ export function useRestoreDoeGroupData() {
         await new Promise((resolve) => setTimeout(resolve, 50));
 
         // Fetch and update cells
+        console.log("[useRestoreDoeGroupData] Dispatching fetchDataset for:", group.label);
         const action = await dispatch(fetchDataset());
+
+        console.log("[useRestoreDoeGroupData] fetchDataset result:", action);
 
         if (fetchDataset.fulfilled.match(action)) {
           const datasetPayload = (action.payload?.[group.label] ?? {}) as Record<
             string,
             unknown
           >;
+
+          console.log("[useRestoreDoeGroupData] Dataset payload:", Object.keys(datasetPayload));
 
           // [WHY] If POWER_SCENARIO is missing (DoE added from QoRComparePage),
           // extract available scenarios and set default scenario
@@ -484,7 +498,7 @@ export function useRestoreDoeGroupData() {
               metadata.PROJECT_NAME as string,
               availableScenarios
             );
-            console.log("[useRestoreDoeGroupData] Setting default scenario:", scenarioName);
+            console.log("[useRestoreDoeGroupData] Setting default scenario:", scenarioName, "from", availableScenarios);
             
             // Update doeRegistry with the scenario information
             dispatch(
@@ -502,10 +516,14 @@ export function useRestoreDoeGroupData() {
                 scenario: scenarioName,
               })
             );
+          } else {
+            console.log("[useRestoreDoeGroupData] Using existing POWER_SCENARIO:", scenarioName);
           }
 
           // The 4 power metric columns: Internal, Switching, Leakage, Total
           const columnNames = ["Internal", "Switching", "Leakage", "Total"];
+
+          console.log("[useRestoreDoeGroupData] Updating", currentRowHeaders.length, "rows with", columnNames.length, "columns each");
 
           // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
           currentRowHeaders.forEach((row) => {
@@ -516,6 +534,7 @@ export function useRestoreDoeGroupData() {
               if (value === undefined) {
                 value = "-";
               }
+              console.log("[useRestoreDoeGroupData] Updating cell:", { rowId: row.id, columnId, metricKey, value });
               dispatch(
                 updatePowerCell({
                   rowId: row.id,
@@ -525,9 +544,12 @@ export function useRestoreDoeGroupData() {
               );
             });
           });
+        } else {
+          console.error("[useRestoreDoeGroupData] fetchDataset failed or rejected:", action);
         }
 
         // Mark this group as fetched
+        console.log("[useRestoreDoeGroupData] Marking DoE group as fetched:", group.id);
         dispatch(markDoeFetched(group.id));
       }
 
