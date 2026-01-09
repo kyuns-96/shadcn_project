@@ -64,9 +64,7 @@ const PowerColumnMetadataTable = () => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Redux에서 DoE 그룹 및 행 헤더, 데이터셋 조회
-  const { rowHeaders } = useAppSelector(
-    (state) => state.powerMatrix
-  );
+  const { rowHeaders } = useAppSelector((state) => state.powerMatrix);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const dataset = useAppSelector((state) => state.dataset);
 

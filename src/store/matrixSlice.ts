@@ -187,6 +187,7 @@ const matrixSlice = createSlice({
         label: string;
         accessorKey?: string;
         defaultValue?: any;
+        _needsDataFetch?: boolean;
         meta?: {
           PROJECT_NAME?: string;
           BLOCK?: string;
@@ -198,16 +199,20 @@ const matrixSlice = createSlice({
         };
       }>
     ) => {
-      const { label, defaultValue = "" } = action.payload;
+      const { label, defaultValue = "", _needsDataFetch } = action.payload;
       const id = action.payload.id || `col-${Date.now()}`;
       const accessorKey = action.payload.accessorKey || id;
+      const meta = action.payload.meta || {};
 
-      // [WHY] Add new column header without metadata
+      // [WHY] Add new column header without metadata in the header object
       // Metadata is now managed in doeRegistry, not here
+      // But we keep _needsDataFetch flag for data fetching logic
       state.columnHeaders.push({
         id,
         label,
         accessorKey,
+        _needsDataFetch,
+        ...meta,
       });
 
       // Add default value for this column to all existing rows

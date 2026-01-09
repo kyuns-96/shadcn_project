@@ -74,12 +74,8 @@ const PowerDatasetColumnAddButton = () => {
     selectedRevision,
     selectedEconum,
   } = useAppSelector((state) => state.selected);
-  const { rowHeaders } = useAppSelector(
-    (state) => state.powerMatrix
-  );
-  const matrixRowHeaders = useAppSelector(
-    (state) => state.matrix.rowHeaders
-  );
+  const { rowHeaders } = useAppSelector((state) => state.powerMatrix);
+  const matrixRowHeaders = useAppSelector((state) => state.matrix.rowHeaders);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
 
   // Check if button should be disabled (empty or duplicate)
@@ -127,11 +123,22 @@ const PowerDatasetColumnAddButton = () => {
     );
 
     // [WHY] matrix.columnHeaders에도 추가하여 QoRComparePage에서도 column이 보이도록 함
+    // accessorKey와 meta를 함께 전달하여 QoRComparePage에서 데이터 fetch 가능하도록 함
+    // _needsDataFetch: true로 설정하여 useRestoreColumnData가 자동으로 데이터를 가져오도록 함
     dispatch(
       addColumn({
         id: doeId,
         label: doeLabel,
+        accessorKey: doeId,
         defaultValue: LOADING_PLACEHOLDER,
+        _needsDataFetch: true,
+        meta: {
+          PROJECT_NAME: selectedProject || undefined,
+          BLOCK: selectedBlock || undefined,
+          NET_VER: selectedNetver || undefined,
+          REVISION: selectedRevision || undefined,
+          ECO_NUM: selectedEconum || undefined,
+        },
       })
     );
 
@@ -229,8 +236,11 @@ const PowerDatasetColumnAddButton = () => {
               );
               const columnId = `${doeId}_${columnName}`;
               const metricValue =
-                extractMetricValue(metricKey, datasetPayload, defaultScenario) ??
-                EMPTY_VALUE_PLACEHOLDER;
+                extractMetricValue(
+                  metricKey,
+                  datasetPayload,
+                  defaultScenario
+                ) ?? EMPTY_VALUE_PLACEHOLDER;
 
               dispatch(
                 updateCell({
