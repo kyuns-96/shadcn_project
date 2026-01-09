@@ -51,6 +51,10 @@ export default function AgGridPowerTable() {
   const powerDoeGroups = useAppSelector((state) => state.powerMatrix.doeGroups);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
 
+  // DEBUG
+  console.log("[AgGridPowerTable] rowHeaders:", rowHeaders);
+  console.log("[AgGridPowerTable] powerDoeGroups:", powerDoeGroups);
+
   // [FIX] Enrich doeGroups with metadata from doeRegistry
   // PowerDoeGroup만으로는 PROJECT_NAME 등의 메타데이터가 없어서 컬럼 헤더 생성 시 문제 발생
   const doeGroups = useMemo(() => {
@@ -151,12 +155,14 @@ export default function AgGridPowerTable() {
 
   // Transform rowHeaders to PowerRowData format
   const rowData: PowerRowData[] = useMemo(() => {
-    return rowHeaders.map((row) => ({
+    const transformed = rowHeaders.map((row) => ({
       id: row.id,
       rowHeader: row.label,
       rowKey: row.rowKey,
       ...row.data,
     }));
+    console.log("[AgGridPowerTable] rowData:", transformed);
+    return transformed;
   }, [rowHeaders]);
 
   const { onCellClicked } = useSelectionHandlers(gridRef);
