@@ -18,7 +18,11 @@ import {
   restoreColumnsFromURL,
   markColumnFetched,
 } from "@/store/matrixSlice";
-import { setDoEs, updateDoEMetadata } from "@/store/doeRegistry";
+import { setDoEs } from "@/store/doeRegistry";
+import {
+  updatePowerCell,
+  markDoeFetched,
+} from "@/store/reducers/powerMatrixReducer";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 
@@ -284,6 +288,8 @@ export function useRestoreColumnData() {
         col._needsDataFetch === true && !fetchedColumnsRef.current.has(col.id)
     );
 
+    console.log("[useRestoreColumnData] Columns to fetch:", columnsToFetch.map(c => ({ id: c.id, label: c.label, _needsDataFetch: c._needsDataFetch })));
+
     if (columnsToFetch.length === 0) return;
 
     isFetching.current = true;
@@ -295,6 +301,7 @@ export function useRestoreColumnData() {
     // Fetch data for each column sequentially
     const fetchAllColumns = async () => {
       for (const col of columnsToFetch) {
+        console.log("[useRestoreColumnData] Fetching data for column:", col.label);
         // [WHY] Mark column as being processed immediately to prevent duplicate fetches
         fetchedColumnsRef.current.add(col.id);
 
@@ -414,6 +421,8 @@ export function useRestoreDoeGroupData() {
         !fetchedGroupsRef.current.has(group.id)
     );
 
+    console.log("[useRestoreDoeGroupData] DoE groups to fetch:", groupsToFetch.map(g => ({ id: g.id, label: g.label, _needsDataFetch: g._needsDataFetch })));
+
     if (groupsToFetch.length === 0) return;
 
     isFetching.current = true;
@@ -425,6 +434,7 @@ export function useRestoreDoeGroupData() {
     // Fetch data for each DoE group sequentially
     const fetchAllGroups = async () => {
       for (const group of groupsToFetch) {
+        console.log("[useRestoreDoeGroupData] Fetching data for DoE group:", group.label);
         // [WHY] Mark group as being processed immediately to prevent duplicate fetches
         fetchedGroupsRef.current.add(group.id);
 
@@ -477,7 +487,7 @@ export function useRestoreDoeGroupData() {
                 value = "-";
               }
               dispatch(
-                updateCell({
+                updatePowerCell({
                   rowId: row.id,
                   columnId: columnId,
                   value,
@@ -488,11 +498,7 @@ export function useRestoreDoeGroupData() {
         }
 
         // Mark this group as fetched
-        dispatch(
-          updateDoEMetadata({
-            doeId: group.id,
-          })
-        );
+        dispatch(markDoeFetched(group.id));
       }
 
       // Clear selection after restoration
