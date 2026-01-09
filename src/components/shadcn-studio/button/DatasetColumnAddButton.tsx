@@ -118,11 +118,13 @@ const DatasetColumnAddButton = () => {
     );
 
     // [WHY] powerMatrix.doeGroups에도 추가하여 PowerPage에서도 column이 보이도록 함
+    // _needsDataFetch: true로 설정하여 PowerPage의 useRestoreDoeGroupData가 자동으로 데이터를 가져오도록 함
     dispatch(
       addDoeGroup({
         id: columnId,
         label: columnLabel,
         defaultValue: LOADING_PLACEHOLDER,
+        _needsDataFetch: true,
       })
     );
 
@@ -134,27 +136,13 @@ const DatasetColumnAddButton = () => {
           unknown
         >;
 
-        console.log("[DatasetColumnAddButton] fetchDataset fulfilled:", {
-          doeName,
-          datasetKeys: Object.keys(datasetPayload),
-          datasetPayload,
-        });
-
         // 3. Power Scenario 목록 추출
         const availableScenarios = extractAvailableScenarios(datasetPayload);
-        console.log(
-          "[DatasetColumnAddButton] Available scenarios:",
-          availableScenarios
-        );
 
         // 4. 기본 시나리오 결정
         const defaultScenario = getDefaultScenario(
           selectedProject,
           availableScenarios
-        );
-        console.log(
-          "[DatasetColumnAddButton] Default scenario:",
-          defaultScenario
         );
 
         // 4. doeRegistry의 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
@@ -181,14 +169,6 @@ const DatasetColumnAddButton = () => {
           const metricValue =
             extractMetricValue(metricKey, datasetPayload, defaultScenario) ??
             EMPTY_VALUE_PLACEHOLDER;
-
-          console.log("[DatasetColumnAddButton] updateCell:", {
-            rowId: rowHeader.id,
-            columnId,
-            metricKey,
-            metricValue,
-            defaultScenario,
-          });
 
           dispatch(
             updateCell({

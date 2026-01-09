@@ -211,22 +211,13 @@ export const extractScenarioMetric = (
 ): unknown => {
   if (!scenarioName) return undefined;
 
-  console.log("  [extractScenarioMetric] Navigating dataset:");
-
   // 1. basePath로 ptpxpower_data까지 탐색 (점으로 split)
   let current: unknown = dataset;
-  console.log(`    Start: dataset`);
 
   for (const key of basePath.split(".")) {
     if (typeof current === "object" && current !== null) {
       current = (current as Record<string, unknown>)[key];
-      console.log(
-        `    -> .${key}: ${typeof current === "object" ? "{...}" : current}`
-      );
     } else {
-      console.warn(
-        `    ❌ Failed at basePath key "${key}": current is not an object (type: ${typeof current})`
-      );
       return undefined;
     }
   }
@@ -234,53 +225,25 @@ export const extractScenarioMetric = (
   // 2. 시나리오 이름으로 직접 접근 (점으로 split하지 않음)
   if (typeof current === "object" && current !== null) {
     current = (current as Record<string, unknown>)[scenarioName];
-    console.log(
-      `    -> [${scenarioName}]: ${
-        typeof current === "object" ? "{...}" : current
-      }`
-    );
   } else {
-    console.warn(
-      `    ❌ ptpxpower_data is not an object (type: ${typeof current})`
-    );
     return undefined;
   }
 
   if (current === undefined) {
-    console.warn(`    ❌ Scenario "${scenarioName}" not found`);
     return undefined;
   }
-
-  // IMPORTANT: Show the structure AFTER scenario access
-  console.log(`\n    📊 DATA STRUCTURE AFTER SCENARIO ACCESS:`);
-  console.log(`       Type: ${typeof current}`);
-  if (typeof current === "object" && current !== null) {
-    const keys = Object.keys(current as Record<string, unknown>);
-    console.log(
-      `       Keys: ${keys.slice(0, 10).join(", ")}${keys.length > 10 ? ` ... (+${keys.length - 10} more)` : ""}`
-    );
-    console.log(`       Sample: ${JSON.stringify(current).substring(0, 300)}`);
-  }
-  console.log(`    metricPath to navigate: "${metricPath}"\n`);
 
   // 3. metricPath로 나머지 탐색 (점으로 split)
   if (metricPath) {
     for (const key of metricPath.split(".")) {
       if (typeof current === "object" && current !== null) {
         current = (current as Record<string, unknown>)[key];
-        console.log(
-          `    -> .${key}: ${typeof current === "object" ? "{...}" : current}`
-        );
       } else {
-        console.warn(
-          `    ❌ Failed at metricPath key "${key}": current is not an object (type: ${typeof current})`
-        );
         return undefined;
       }
     }
   }
 
-  console.log(`    ✓ Final value: ${current}`);
   return current;
 };
 
@@ -300,16 +263,8 @@ const extractWithScenario = (
   dataset: DatasetRecord,
   metricKey: string
 ): unknown => {
-  console.log("\n[extractWithScenario] START");
-  console.log("  Input path:", path);
-  console.log("  Scenario name:", scenarioName);
-
   // 경로를 ${SCENARIO}를 기준으로 분리
   const [beforeScenario, afterScenario] = path.split(SCENARIO_PLACEHOLDER);
-
-  console.log("  Split by ${SCENARIO}:");
-  console.log("    Before:", beforeScenario);
-  console.log("    After:", afterScenario);
 
   // beforeScenario에서 마지막 점 제거 (예: "get_ptpxpower.ptpxpower_data." -> "get_ptpxpower.ptpxpower_data")
   const basePath = beforeScenario.endsWith(".")
@@ -321,10 +276,6 @@ const extractWithScenario = (
     ? afterScenario.slice(1)
     : afterScenario;
 
-  console.log("  Parsed:");
-  console.log("    basePath:", basePath);
-  console.log("    metricPath:", metricPath);
-
   // extractScenarioMetric 사용하여 추출
   const rawValue = extractScenarioMetric(
     basePath,
@@ -333,12 +284,8 @@ const extractWithScenario = (
     dataset
   );
 
-  console.log("  Raw value from extractScenarioMetric:", rawValue);
-
   // 변환 적용
   const transformedValue = applyTransform(metricKey, rawValue);
-  console.log("  After transform:", transformedValue);
-  console.log("[extractWithScenario] END\n");
 
   return transformedValue;
 };
@@ -366,85 +313,28 @@ export const extractMetricValue = (
 ): unknown => {
   const basePath = METRIC_EXTRACTORS[metricKey];
 
-  // Full debug logging of the entire flow
-  console.log("============================================");
-  console.log("[extractMetricValue] FULL FLOW START");
-  console.log("============================================");
-  console.log("1. Input parameters:", {
-    metricKey,
-    scenarioName,
-    basePath,
-  });
-
-  // 추가: METRIC_EXTRACTORS에서 사용 가능한 키 확인
-  const availableKeys = Object.keys(METRIC_EXTRACTORS).filter((k) =>
-    k.includes("clock_network")
-  );
-  console.log("2. Available power keys in METRIC_EXTRACTORS:", availableKeys);
-  console.log("   (showing sample keys that contain 'clock_network')");
-
-  console.log("3. Dataset structure:", {
-    datasetKeys: Object.keys(dataset),
-    datasetSize: Object.keys(dataset).length,
-    sample: Object.entries(dataset)
-      .slice(0, 2)
-      .map(([k, v]) => `${k}: ${typeof v}`),
-  });
-
   if (!basePath) {
-    console.warn(
-      "[extractMetricValue] ❌ FAILED: No path found for metricKey:",
-      metricKey
-    );
-    console.warn(
-      "   Looking for this exact key in METRIC_EXTRACTORS but not found!"
-    );
-    console.log("============================================");
     return undefined;
   }
-
-  console.log("3. BasePath found:", basePath);
 
   // 시나리오 플레이스홀더가 있고 시나리오 이름이 제공된 경우
   // 특별 처리하여 시나리오 이름의 점을 보존
   if (scenarioName && hasScenarioPlaceholder(basePath)) {
-    console.log("4. Using scenario-based extraction:", {
-      scenarioName,
-      hasPlaceholder: true,
-    });
-    const result = extractWithScenario(
-      basePath,
-      scenarioName,
-      dataset,
-      metricKey
-    );
-    console.log("5. Result:", result);
-    console.log("============================================");
-    return result;
+    return extractWithScenario(basePath, scenarioName, dataset, metricKey);
   }
 
   // 일반 경로 처리 (시나리오 플레이스홀더 없음)
-  console.log("4. Using simple path extraction (no scenario placeholder)");
   const path = basePath;
-  console.log("   Path:", path);
 
   const rawResult = path.split(".").reduce((current, key) => {
-    console.log(
-      `   Navigating: ${key} ->`,
-      typeof current === "object" ? `{...}` : current
-    );
     if (typeof current === "object" && current !== null) {
       return (current as Record<string, unknown>)[key];
     }
     return undefined;
   }, dataset as unknown);
 
-  console.log("5. Raw result:", rawResult);
-
   // 변환 적용
   const transformedResult = applyTransform(metricKey, rawResult);
-  console.log("6. After transform:", transformedResult);
-  console.log("============================================");
 
   return transformedResult;
 };

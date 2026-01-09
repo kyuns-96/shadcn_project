@@ -29,6 +29,7 @@ import DoeNameInput from "@/components/shadcn-studio/input/DoeNameInput";
 import { useEffect, useRef, useMemo } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { initializePowerMatrixRows } from "@/variables/defaultPowerMatrixTemplate";
+import { useRestoreDoeGroupData } from "@/hooks/useURLSync";
 import AccordionOutline from "@/components/shadcn-studio/accordion/accordion-09";
 
 const PowerPage = () => {
@@ -36,6 +37,9 @@ const PowerPage = () => {
   const dispatch = useAppDispatch();
   const rowHeaders = useAppSelector((state) => state.powerMatrix.rowHeaders);
   const isInitialized = useRef(false);
+
+  // Restore DoE groups data when added from QoRComparePage
+  useRestoreDoeGroupData();
 
   useEffect(() => {
     // Only initialize template rows if the store is empty and not yet initialized

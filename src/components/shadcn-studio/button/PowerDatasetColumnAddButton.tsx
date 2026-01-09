@@ -150,26 +150,13 @@ const PowerDatasetColumnAddButton = () => {
           unknown
         >;
 
-        console.log("[PowerDatasetColumnAddButton] fetchDataset fulfilled:", {
-          doeName,
-          datasetKeys: Object.keys(datasetPayload),
-        });
-
         // 3. Power Scenario 목록 추출
         const availableScenarios = extractAvailableScenarios(datasetPayload);
-        console.log(
-          "[PowerDatasetColumnAddButton] Available scenarios:",
-          availableScenarios
-        );
 
         // 4. Power 전용 기본 시나리오 결정
         const defaultScenario = getDefaultPowerScenario(
           selectedProject,
           availableScenarios
-        );
-        console.log(
-          "[PowerDatasetColumnAddButton] Default scenario:",
-          defaultScenario
         );
 
         // 5. doeRegistry의 메타데이터 업데이트 (시나리오 정보 및 가용 시나리오 목록)
@@ -200,14 +187,6 @@ const PowerDatasetColumnAddButton = () => {
             const metricValue =
               extractMetricValue(metricKey, datasetPayload, defaultScenario) ??
               EMPTY_VALUE_PLACEHOLDER;
-
-            console.log("[PowerDatasetColumnAddButton] updatePowerCell:", {
-              rowId: rowHeader.id,
-              columnId,
-              metricKey,
-              metricValue,
-              defaultScenario,
-            });
 
             // [WHY] powerMatrix와 matrix 모두에 업데이트하여 양쪽 페이지에서 데이터가 보이도록 함
             dispatch(

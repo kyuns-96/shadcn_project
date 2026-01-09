@@ -81,12 +81,6 @@ const PowerColumnMetadataTable = () => {
    */
   const handleScenarioChange = useCallback(
     (doeId: string, doeLabel: string, newScenario: string) => {
-      console.log("[PowerColumnMetadataTable] handleScenarioChange:", {
-        doeId,
-        doeLabel,
-        newScenario,
-      });
-
       // 1. doeRegistry 메타데이터 업데이트 (모든 참조처에 자동 반영)
       dispatch(
         updateDoEMetadata({
@@ -104,11 +98,6 @@ const PowerColumnMetadataTable = () => {
         unknown
       >;
 
-      console.log("[PowerColumnMetadataTable] Dataset for DoE:", {
-        doeLabel,
-        datasetKeys: Object.keys(datasetPayload),
-      });
-
       // 4. 각 행의 4개 컬럼 셀 값 다시 추출
       rowHeaders.forEach((rowHeader) => {
         POWER_COLUMN_NAMES.forEach((columnName) => {
@@ -117,13 +106,6 @@ const PowerColumnMetadataTable = () => {
           const metricValue =
             extractMetricValue(metricKey, datasetPayload, newScenario) ??
             EMPTY_VALUE_PLACEHOLDER;
-
-          console.log("[PowerColumnMetadataTable] updatePowerCell:", {
-            rowId: rowHeader.id,
-            columnId,
-            metricKey,
-            metricValue,
-          });
 
           dispatch(
             updatePowerCell({

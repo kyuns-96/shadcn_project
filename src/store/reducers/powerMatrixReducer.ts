@@ -69,6 +69,7 @@ const powerMatrixSlice = createSlice({
         id?: string;
         label: string;
         defaultValue?: string;
+        _needsDataFetch?: boolean;
         meta?: {
           PROJECT_NAME?: string;
           BLOCK?: string;
@@ -80,13 +81,14 @@ const powerMatrixSlice = createSlice({
         };
       }>
     ) => {
-      const { label, defaultValue = "", meta } = action.payload;
+      const { label, defaultValue = "", _needsDataFetch, meta } = action.payload;
       const id = action.payload.id || `doe-${Date.now()}`;
 
       // Add the new DoE group
       state.doeGroups.push({
         id,
         label,
+        _needsDataFetch,
         ...(meta || {}),
       });
 
