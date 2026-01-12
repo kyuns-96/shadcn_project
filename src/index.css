@@ -219,6 +219,12 @@ body {
   justify-content: center;
 }
 
+/* Force center alignment for all header group cells */
+.ag-theme-quartz .ag-header-group-cell .ag-header-group-cell-label {
+  justify-content: center;
+  text-align: center;
+}
+
 /* Individual header cell center alignment */
 .ag-theme-quartz .ag-header-cell-center .ag-header-cell-label {
   justify-content: center;
