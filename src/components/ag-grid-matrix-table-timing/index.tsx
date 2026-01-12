@@ -3,13 +3,13 @@
  *
  * @purpose
  * Timing 전용 AG Grid 기반의 매트릭스 테이블 컴포넌트입니다.
- * DoE별 여러 컬럼 그룹 × flat structure의 행으로 구성됩니다.
+ * Row: DoE Name (pinned left)
+ * Column: 7개 그룹 × 3개 메트릭 = 21개 컬럼
  *
  * @structure
  * 1. AgGridTimingTable: 메인 컴포넌트
- * 2. 행 데이터 변환
- * 3. 컬럼 정의 생성
- * 4. 클립보드 복사 기능 지원
+ * 2. 행 데이터 변환 (DoE별 1개 행)
+ * 3. 컬럼 정의 생성 (고정)
  *
  * @dependencies
  * - ag-grid-react: AG Grid React 컴포넌트
@@ -33,7 +33,7 @@ import {
   type RowHeightOption,
   type TextAlignOption,
 } from "./constants";
-import type { TimingRowData, EnrichedTimingDoeGroup } from "./types";
+import type { TimingRowData } from "./types";
 import { buildTimingColumnDefs, updateTimingColumnAlignment } from "./columns";
 
 // AG Grid 모듈 등록
@@ -43,26 +43,7 @@ export default function AgGridTimingTable() {
   const gridRef = useRef<AgGridReact<TimingRowData>>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  const { rowHeaders } = useAppSelector((state) => state.timingMatrix);
-  const timingDoeGroups = useAppSelector((state) => state.timingMatrix.doeGroups);
-  const doeRegistry = useAppSelector((state) => state.doeRegistry);
-
-  // Enrich doeGroups with metadata from doeRegistry
-  const doeGroups = useMemo(() => {
-    return timingDoeGroups.map((doeGroup) => {
-      const metadata = doeRegistry.byId[doeGroup.id] || {};
-      return {
-        ...doeGroup,
-        PROJECT_NAME: metadata.PROJECT_NAME,
-        BLOCK: metadata.BLOCK,
-        NET_VER: metadata.NET_VER,
-        REVISION: metadata.REVISION,
-        ECO_NUM: metadata.ECO_NUM,
-        TIMING_SCENARIO: metadata.TIMING_SCENARIO,
-        AVAILABLE_TIMING_SCENARIOS: metadata.AVAILABLE_TIMING_SCENARIOS,
-      } as EnrichedTimingDoeGroup;
-    });
-  }, [timingDoeGroups, doeRegistry]);
+  const { rows } = useAppSelector((state) => state.timingMatrix);
 
   const [rowHeightOption] =
     useState<RowHeightOption>("normal");
@@ -71,19 +52,19 @@ export default function AgGridTimingTable() {
 
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height;
 
-  // 행 데이터 변환
+  // 행 데이터 변환 (DoE별 1개 행)
   const rowData = useMemo(() => {
-    return rowHeaders.map((row) => ({
+    return rows.map((row) => ({
       id: row.id,
-      name: row.label, // 행 라벨 표시
+      name: row.label, // DoE name
       ...row.data,
     })) as TimingRowData[];
-  }, [rowHeaders]);
+  }, [rows]);
 
-  // 컬럼 정의 생성
+  // 컬럼 정의 생성 (고정 - DoE와 무관)
   let columnDefs = useMemo(() => {
-    return buildTimingColumnDefs(doeGroups, textAlignOption);
-  }, [doeGroups, textAlignOption]);
+    return buildTimingColumnDefs(textAlignOption);
+  }, [textAlignOption]);
 
   // 텍스트 정렬 변경 시 컬럼 업데이트
   columnDefs = useMemo(() => {
@@ -102,9 +83,8 @@ export default function AgGridTimingTable() {
     <div className="w-full h-full flex flex-col gap-2">
       {/* 정보 영역 */}
       <div className="text-sm text-muted-foreground p-2 bg-muted rounded">
-        <p>DoE Name: {doeGroups.map((dg) => dg.label).join(", ") || "None"}</p>
-        <p>Rows: {rowHeaders.length}</p>
-        <p>Columns (per DoE): {7 * 3} (7 groups × 3 metrics)</p>
+        <p>DoE Rows: {rows.length}</p>
+        <p>Columns: 7 groups × 3 metrics = 21 columns</p>
       </div>
 
       {/* AG Grid */}
