@@ -4,8 +4,7 @@
  * @purpose
  * Timing 분석 페이지입니다.
  * PowerPage와 유사한 구조로 DoE 입력 기능을 제공하며,
- * 각 DoE당 여러 컬럼 그룹 (setup/hold/clock_mttv 등)과
- * flat structure의 행으로 구성된 매트릭스 테이블을 표시합니다.
+ * 각 DoE별로 행이 생성되고, 컬럼은 고정된 21개 타이밍 메트릭입니다.
  *
  * @structure
  * 1. 필터 드롭다운 영역: 프로젝트/블록/넷버전 등 선택
@@ -18,7 +17,6 @@
  * - @/components/TimingColumnMetadataTable: Timing Scenario 선택 UI
  * - @/components/shadcn-studio/*: UI 컴포넌트들
  * - @/variables/useFilterDropdownConfigs: 필터 설정
- * - @/variables/defaultTimingMatrixTemplate: 기본 템플릿
  */
 
 import AgGridTimingTable from "@/components/ag-grid-matrix-table-timing";
@@ -27,24 +25,11 @@ import TimingColumnMetadataTable from "@/components/TimingColumnMetadataTable";
 import useFilterDropdownConfigs from "@/variables/useFilterDropdownConfigs";
 import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import DoeNameInput from "@/components/shadcn-studio/input/DoeNameInput";
-import { useEffect, useRef, useMemo } from "react";
-import { useAppDispatch, useAppSelector } from "@/store";
-import { initializeTimingMatrixRows } from "@/variables/defaultTimingMatrixTemplate";
+import { useMemo } from "react";
 import AccordionOutline from "@/components/shadcn-studio/accordion/accordion-09";
 
 const TimingPage = () => {
   const filterDropdownConfigs = useFilterDropdownConfigs();
-  const dispatch = useAppDispatch();
-  const rowHeaders = useAppSelector((state) => state.timingMatrix.rowHeaders);
-  const isInitialized = useRef(false);
-
-  useEffect(() => {
-    // Only initialize template rows if the store is empty and not yet initialized
-    if (!isInitialized.current && rowHeaders.length === 0) {
-      initializeTimingMatrixRows(dispatch);
-      isInitialized.current = true;
-    }
-  }, [dispatch, rowHeaders.length]);
 
   const accordionItems = useMemo(
     () => [
