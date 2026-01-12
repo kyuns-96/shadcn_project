@@ -33,7 +33,8 @@ import ColumnHeaderWithPopup from "@/components/ColumnHeaderWithPopup";
  * DoE 그룹 헤더 렌더러 - 중앙정렬
  */
 function DoeGroupHeader(props: IHeaderParams) {
-  const displayText = (props as any).columnGroup?.displayName || props.displayName;
+  const displayText =
+    (props as any).columnGroup?.displayName || props.displayName;
   return (
     <div className="w-full h-full flex items-center justify-center !text-center">
       <span className="truncate">{displayText}</span>

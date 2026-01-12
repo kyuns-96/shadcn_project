@@ -39,8 +39,14 @@ export interface DoEEntry {
   ECO_NUM?: string;
   /** 선택된 Power Scenario */
   POWER_SCENARIO?: string;
-  /** 사용 가능한 시나리오 목록 */
+  /** 사용 가능한 Power Scenario 목록 (AVAILABLE_SCENARIOS와 동일, 명시적 이름) */
+  AVAILABLE_POWER_SCENARIOS?: string[];
+  /** 사용 가능한 Scenario 목록 (QoRComparePage/PowerPage 호환성 유지, AVAILABLE_POWER_SCENARIOS의 별칭) */
   AVAILABLE_SCENARIOS?: string[];
+  /** 선택된 Timing Scenario */
+  TIMING_SCENARIO?: string;
+  /** 사용 가능한 Timing Scenario 목록 */
+  AVAILABLE_TIMING_SCENARIOS?: string[];
 }
 
 /**
@@ -77,7 +83,10 @@ const doeRegistrySlice = createSlice({
         REVISION?: string;
         ECO_NUM?: string;
         POWER_SCENARIO?: string;
+        AVAILABLE_POWER_SCENARIOS?: string[];
         AVAILABLE_SCENARIOS?: string[];
+        TIMING_SCENARIO?: string;
+        AVAILABLE_TIMING_SCENARIOS?: string[];
       }>
     ) => {
       const {
@@ -88,7 +97,10 @@ const doeRegistrySlice = createSlice({
         REVISION,
         ECO_NUM,
         POWER_SCENARIO,
+        AVAILABLE_POWER_SCENARIOS,
         AVAILABLE_SCENARIOS,
+        TIMING_SCENARIO,
+        AVAILABLE_TIMING_SCENARIOS,
       } = action.payload;
       const id = action.payload.id || `doe-${Date.now()}`;
 
@@ -101,7 +113,10 @@ const doeRegistrySlice = createSlice({
         ...(REVISION && { REVISION }),
         ...(ECO_NUM && { ECO_NUM }),
         ...(POWER_SCENARIO && { POWER_SCENARIO }),
+        ...(AVAILABLE_POWER_SCENARIOS && { AVAILABLE_POWER_SCENARIOS }),
         ...(AVAILABLE_SCENARIOS && { AVAILABLE_SCENARIOS }),
+        ...(TIMING_SCENARIO && { TIMING_SCENARIO }),
+        ...(AVAILABLE_TIMING_SCENARIOS && { AVAILABLE_TIMING_SCENARIOS }),
       };
 
       if (!state.allIds.includes(id)) {
@@ -111,7 +126,7 @@ const doeRegistrySlice = createSlice({
 
     /**
      * DoE의 메타데이터를 업데이트합니다.
-     * 이 변경사항은 이 DoE를 참조하는 모든 페이지(PowerPage, QoRComparePage)에 자동으로 반영됩니다.
+     * 이 변경사항은 이 DoE를 참조하는 모든 페이지(PowerPage, QoRComparePage, TimingPage)에 자동으로 반영됩니다.
      */
     updateDoEMetadata: (
       state,
@@ -123,7 +138,10 @@ const doeRegistrySlice = createSlice({
         REVISION?: string;
         ECO_NUM?: string;
         POWER_SCENARIO?: string;
+        AVAILABLE_POWER_SCENARIOS?: string[];
         AVAILABLE_SCENARIOS?: string[];
+        TIMING_SCENARIO?: string;
+        AVAILABLE_TIMING_SCENARIOS?: string[];
       }>
     ) => {
       const { doeId, ...metadata } = action.payload;

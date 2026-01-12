@@ -37,6 +37,7 @@ import datasetReducer from "@/store/reducers/datasetReducer";
 import pageReducer from "@/store/reducers/pageReducer";
 import fcCheckToolReducer from "@/store/reducers/fcCheckToolReducer";
 import powerMatrixReducer from "@/store/reducers/powerMatrixReducer";
+import timingMatrixReducer from "@/store/reducers/timingMatrixReducer";
 
 // Type 및 Action exports
 export type { SelectedState } from "@/store/reducers/selectedReducer";
@@ -48,6 +49,7 @@ const rootReducer = combineReducers({
   matrix: matrixSlice,
   doeRegistry: doeRegistryReducer,
   powerMatrix: powerMatrixReducer,
+  timingMatrix: timingMatrixReducer,
   projectList: projectListReducer,
   blockList: blockListReducer,
   netverList: netverListReducer,

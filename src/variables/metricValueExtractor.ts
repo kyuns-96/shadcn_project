@@ -25,6 +25,8 @@ const BASE_PATHS = {
   product: "api.product.data",
   /** Power 시나리오 데이터 기본 경로 (시나리오 이름이 동적으로 삽입됨) */
   ptpxpower: "get_ptpxpower.ptpxpower_data",
+  /** Timing 시나리오 데이터 기본 경로 (시나리오 이름이 동적으로 삽입됨) */
+  timingSummary: "get_timing_summary.timing_summary_data",
 };
 
 /**
@@ -115,6 +117,133 @@ const METRIC_EXTRACTORS: Record<string, string> = {
   "Power(mW)!total_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.Total`,
   "Power(mW)!total_Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.Total`,
   "Power(mW)!total_Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.Total`,
+
+  // ============================================================
+  // Timing Page Metrics (5 rows × 7 groups × 3 metrics = 105 metrics)
+  // Format: "Timing!{RowKey}_{ColumnGroup}_{Metric}"
+  // Path: ${BASE_PATHS.timingSummary}.${SCENARIO}.{column_group}.{metric}
+  //
+  // [MODIFY HERE] Update the paths below to match your actual data structure
+  // ============================================================
+
+  // Setup(r2r) group
+  "Timing!setup_time_setup(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).WNS`,
+  "Timing!setup_time_setup(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).TNS`,
+  "Timing!setup_time_setup(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).NVP`,
+  "Timing!hold_time_setup(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).WNS`,
+  "Timing!hold_time_setup(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).TNS`,
+  "Timing!hold_time_setup(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).NVP`,
+  "Timing!max_transition_setup(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).WNS`,
+  "Timing!max_transition_setup(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).TNS`,
+  "Timing!max_transition_setup(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).NVP`,
+  "Timing!max_capacitance_setup(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).WNS`,
+  "Timing!max_capacitance_setup(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).TNS`,
+  "Timing!max_capacitance_setup(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).NVP`,
+  "Timing!total_power_setup(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).WNS`,
+  "Timing!total_power_setup(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).TNS`,
+  "Timing!total_power_setup(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).NVP`,
+
+  // Hold(r2r) group
+  "Timing!setup_time_hold(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).WNS`,
+  "Timing!setup_time_hold(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).TNS`,
+  "Timing!setup_time_hold(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).NVP`,
+  "Timing!hold_time_hold(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).WNS`,
+  "Timing!hold_time_hold(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).TNS`,
+  "Timing!hold_time_hold(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).NVP`,
+  "Timing!max_transition_hold(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).WNS`,
+  "Timing!max_transition_hold(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).TNS`,
+  "Timing!max_transition_hold(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).NVP`,
+  "Timing!max_capacitance_hold(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).WNS`,
+  "Timing!max_capacitance_hold(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).TNS`,
+  "Timing!max_capacitance_hold(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).NVP`,
+  "Timing!total_power_hold(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).WNS`,
+  "Timing!total_power_hold(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).TNS`,
+  "Timing!total_power_hold(r2r)_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.hold(r2r).NVP`,
+
+  // Clock_mttv group
+  "Timing!setup_time_clock_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.WNS`,
+  "Timing!setup_time_clock_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.TNS`,
+  "Timing!setup_time_clock_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.NVP`,
+  "Timing!hold_time_clock_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.WNS`,
+  "Timing!hold_time_clock_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.TNS`,
+  "Timing!hold_time_clock_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.NVP`,
+  "Timing!max_transition_clock_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.WNS`,
+  "Timing!max_transition_clock_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.TNS`,
+  "Timing!max_transition_clock_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.NVP`,
+  "Timing!max_capacitance_clock_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.WNS`,
+  "Timing!max_capacitance_clock_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.TNS`,
+  "Timing!max_capacitance_clock_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.NVP`,
+  "Timing!total_power_clock_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.WNS`,
+  "Timing!total_power_clock_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.TNS`,
+  "Timing!total_power_clock_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.clock_mttv.NVP`,
+
+  // Data_mttv group
+  "Timing!setup_time_data_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.WNS`,
+  "Timing!setup_time_data_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.TNS`,
+  "Timing!setup_time_data_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.NVP`,
+  "Timing!hold_time_data_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.WNS`,
+  "Timing!hold_time_data_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.TNS`,
+  "Timing!hold_time_data_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.NVP`,
+  "Timing!max_transition_data_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.WNS`,
+  "Timing!max_transition_data_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.TNS`,
+  "Timing!max_transition_data_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.NVP`,
+  "Timing!max_capacitance_data_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.WNS`,
+  "Timing!max_capacitance_data_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.TNS`,
+  "Timing!max_capacitance_data_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.NVP`,
+  "Timing!total_power_data_mttv_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.WNS`,
+  "Timing!total_power_data_mttv_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.TNS`,
+  "Timing!total_power_data_mttv_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.data_mttv.NVP`,
+
+  // Max_cap group
+  "Timing!setup_time_max_cap_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.WNS`,
+  "Timing!setup_time_max_cap_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.TNS`,
+  "Timing!setup_time_max_cap_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.NVP`,
+  "Timing!hold_time_max_cap_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.WNS`,
+  "Timing!hold_time_max_cap_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.TNS`,
+  "Timing!hold_time_max_cap_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.NVP`,
+  "Timing!max_transition_max_cap_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.WNS`,
+  "Timing!max_transition_max_cap_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.TNS`,
+  "Timing!max_transition_max_cap_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.NVP`,
+  "Timing!max_capacitance_max_cap_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.WNS`,
+  "Timing!max_capacitance_max_cap_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.TNS`,
+  "Timing!max_capacitance_max_cap_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.NVP`,
+  "Timing!total_power_max_cap_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.WNS`,
+  "Timing!total_power_max_cap_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.TNS`,
+  "Timing!total_power_max_cap_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.max_cap.NVP`,
+
+  // Cpc group
+  "Timing!setup_time_cpc_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.WNS`,
+  "Timing!setup_time_cpc_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.TNS`,
+  "Timing!setup_time_cpc_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.NVP`,
+  "Timing!hold_time_cpc_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.WNS`,
+  "Timing!hold_time_cpc_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.TNS`,
+  "Timing!hold_time_cpc_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.NVP`,
+  "Timing!max_transition_cpc_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.WNS`,
+  "Timing!max_transition_cpc_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.TNS`,
+  "Timing!max_transition_cpc_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.NVP`,
+  "Timing!max_capacitance_cpc_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.WNS`,
+  "Timing!max_capacitance_cpc_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.TNS`,
+  "Timing!max_capacitance_cpc_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.NVP`,
+  "Timing!total_power_cpc_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.WNS`,
+  "Timing!total_power_cpc_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.TNS`,
+  "Timing!total_power_cpc_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.cpc.NVP`,
+
+  // Gnoise group
+  "Timing!setup_time_gnoise_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.WNS`,
+  "Timing!setup_time_gnoise_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.TNS`,
+  "Timing!setup_time_gnoise_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.NVP`,
+  "Timing!hold_time_gnoise_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.WNS`,
+  "Timing!hold_time_gnoise_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.TNS`,
+  "Timing!hold_time_gnoise_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.NVP`,
+  "Timing!max_transition_gnoise_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.WNS`,
+  "Timing!max_transition_gnoise_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.TNS`,
+  "Timing!max_transition_gnoise_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.NVP`,
+  "Timing!max_capacitance_gnoise_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.WNS`,
+  "Timing!max_capacitance_gnoise_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.TNS`,
+  "Timing!max_capacitance_gnoise_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.NVP`,
+  "Timing!total_power_gnoise_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.WNS`,
+  "Timing!total_power_gnoise_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.TNS`,
+  "Timing!total_power_gnoise_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.NVP`,
 };
 
 /**
