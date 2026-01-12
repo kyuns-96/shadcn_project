@@ -214,6 +214,11 @@ body {
   --ag-selected-row-background-color: var(--accent);
 }
 
+/* Header group center alignment */
+.ag-theme-quartz .ag-header-cell-center .ag-header-cell-label {
+  justify-content: center;
+}
+
 /* Row spanning styles for group column */
 .ag-theme-quartz .ag-cell[col-id="rowGroup"] {
   border-right: 1px solid var(--ag-border-color) !important;

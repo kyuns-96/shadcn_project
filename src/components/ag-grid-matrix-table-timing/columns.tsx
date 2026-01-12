@@ -44,6 +44,7 @@ export const buildTimingColumnDefs = (
     pinned: "left",
     lockPinned: true,
     cellClass: "ag-cell-focus-after font-medium",
+    rowDrag: true,
   } as ColDef<TimingRowData>);
 
   // 2. 컬럼 그룹별 컬럼 정의
@@ -64,6 +65,7 @@ export const buildTimingColumnDefs = (
     // 컬럼 그룹 (setup/hold/clock_mttv 등)
     columnDefs.push({
       headerName: columnGroup,
+      headerClass: "ag-header-cell-center",
       children: metricColumns,
     } as ColGroupDef);
   });

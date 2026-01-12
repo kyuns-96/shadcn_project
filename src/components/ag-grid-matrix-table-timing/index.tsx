@@ -73,7 +73,7 @@ export default function AgGridTimingTable() {
 
   // AG Grid 기본 설정
   const defaultColDef = {
-    sortable: true,
+    sortable: false,
     filter: true,
     resizable: true,
     rowDrag: false,
@@ -103,6 +103,8 @@ export default function AgGridTimingTable() {
           domLayout="normal"
           suppressMovableColumns={true}
           groupDisplayType="multipleColumns"
+          rowDragManaged={true}
+          animateRows={true}
         />
       </div>
     </div>
