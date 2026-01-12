@@ -215,14 +215,28 @@ body {
 }
 
 /* Header group center alignment - for column groups like setup(r2r), hold(r2r) */
-.ag-theme-quartz .ag-header-group-center .ag-header-group-cell-label {
-  justify-content: center;
+/* AG Grid header group structure: .ag-header-group-cell > .ag-header-group-cell-label > .ag-header-group-text */
+.ag-theme-quartz .ag-header-group-cell .ag-header-group-cell-label {
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
 }
 
-/* Force center alignment for all header group cells */
-.ag-theme-quartz .ag-header-group-cell .ag-header-group-cell-label {
-  justify-content: center;
-  text-align: center;
+.ag-theme-quartz .ag-header-group-cell-label {
+  justify-content: center !important;
+}
+
+.ag-theme-quartz .ag-header-group-text {
+  text-align: center !important;
+}
+
+/* defaultColGroupDef headerClass target */
+.ag-theme-quartz .ag-header-group-center-text .ag-header-group-cell-label {
+  justify-content: center !important;
+}
+
+.ag-theme-quartz .ag-header-group-center-text {
+  text-align: center !important;
 }
 
 /* Individual header cell center alignment */

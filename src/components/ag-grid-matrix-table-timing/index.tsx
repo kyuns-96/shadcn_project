@@ -74,6 +74,11 @@ export default function AgGridTimingTable() {
     rowDrag: false,
   };
 
+  // 그룹 헤더 기본 설정
+  const defaultColGroupDef = {
+    headerClass: "ag-header-group-center-text",
+  };
+
   return (
     <div className="w-full h-full flex flex-col gap-2">
       {/* 정보 영역 */}
@@ -93,8 +98,10 @@ export default function AgGridTimingTable() {
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
+          defaultColGroupDef={defaultColGroupDef}
           rowHeight={currentRowHeight}
           headerHeight={40}
+          groupHeaderHeight={40}
           domLayout="normal"
           suppressMovableColumns={true}
           groupDisplayType="multipleColumns"
