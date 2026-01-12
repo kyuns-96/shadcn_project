@@ -22,7 +22,10 @@
 import { ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { addTimingRow, updateTimingCell } from "@/store/reducers/timingMatrixReducer";
+import {
+  addTimingRow,
+  updateTimingCell,
+} from "@/store/reducers/timingMatrixReducer";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import { extractAvailableTimingScenarios } from "@/variables/timingScenarioExtractor";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
@@ -143,8 +146,11 @@ const TimingDatasetColumnAddButton = () => {
               const columnId = generateTimingColumnKey(columnGroup, metric);
               const metricKey = getTimingMetricKey(columnGroup, metric);
               const metricValue =
-                extractMetricValue(metricKey, datasetPayload, defaultTimingScenario) ??
-                EMPTY_VALUE_PLACEHOLDER;
+                extractMetricValue(
+                  metricKey,
+                  datasetPayload,
+                  defaultTimingScenario
+                ) ?? EMPTY_VALUE_PLACEHOLDER;
 
               dispatch(
                 updateTimingCell({

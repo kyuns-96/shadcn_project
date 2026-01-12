@@ -23,10 +23,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  ModuleRegistry,
-} from "ag-grid-community";
+import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { useAppSelector } from "@/store";
 import {
   ROW_HEIGHT_CONFIG,
@@ -45,10 +42,8 @@ export default function AgGridTimingTable() {
 
   const { rows } = useAppSelector((state) => state.timingMatrix);
 
-  const [rowHeightOption] =
-    useState<RowHeightOption>("normal");
-  const [textAlignOption] =
-    useState<TextAlignOption>("right");
+  const [rowHeightOption] = useState<RowHeightOption>("normal");
+  const [textAlignOption] = useState<TextAlignOption>("right");
 
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height;
 

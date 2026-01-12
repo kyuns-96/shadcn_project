@@ -82,4 +82,3 @@ const TimingPage = () => {
 };
 
 export default TimingPage;
-

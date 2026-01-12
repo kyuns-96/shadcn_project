@@ -37,7 +37,10 @@ import FilterDropdownCombobox, {
 } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { updateDoEMetadata, removeDoE } from "@/store/doeRegistry";
-import { removeTimingRow, updateTimingCell } from "@/store/reducers/timingMatrixReducer";
+import {
+  removeTimingRow,
+  updateTimingCell,
+} from "@/store/reducers/timingMatrixReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
   TIMING_COLUMN_GROUPS,

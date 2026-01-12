@@ -50,22 +50,25 @@ export const buildTimingColumnDefs = (
   // 2. 컬럼 그룹별 컬럼 정의
   TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
     // 각 그룹 내 메트릭들 (WNS, TNS, NVP)
-    const metricColumns: ColDef<TimingRowData>[] = TIMING_METRICS.map((metric) => {
-      const columnId = generateTimingColumnKey(columnGroup, metric);
-      return {
-        field: columnId,
-        headerName: metric,
-        width: 80,
-        cellStyle: { textAlign },
-        editable: false,
-        suppressMovable: true,
-      };
-    });
+    const metricColumns: ColDef<TimingRowData>[] = TIMING_METRICS.map(
+      (metric) => {
+        const columnId = generateTimingColumnKey(columnGroup, metric);
+        return {
+          field: columnId,
+          headerName: metric,
+          width: 100,
+          cellStyle: { textAlign },
+          editable: false,
+          suppressMovable: true,
+          sortable: false,
+        };
+      }
+    );
 
     // 컬럼 그룹 (setup/hold/clock_mttv 등)
     columnDefs.push({
       headerName: columnGroup,
-      headerClass: "ag-header-cell-center",
+      headerClass: "ag-header-group-center",
       children: metricColumns,
     } as ColGroupDef);
   });
