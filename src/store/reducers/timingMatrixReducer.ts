@@ -26,6 +26,8 @@ export interface TimingRow {
   label: string;
   /** 동적 데이터: columnId -> value */
   data: Record<string, unknown>;
+  /** URL 복원 시 데이터 fetch 필요 여부 */
+  _needsDataFetch?: boolean;
 }
 
 /** Timing 매트릭스 상태 타입 */
@@ -118,6 +120,17 @@ const timingMatrixSlice = createSlice({
     },
 
     /**
+     * 행의 _needsDataFetch 플래그를 해제합니다.
+     */
+    markTimingRowFetched: (state, action: PayloadAction<string>) => {
+      const rowId = action.payload;
+      const row = state.rows.find((r) => r.id === rowId);
+      if (row) {
+        row._needsDataFetch = false;
+      }
+    },
+
+    /**
      * 전체 상태를 초기화합니다.
      */
     resetTimingMatrix: () => initialState,
@@ -130,6 +143,7 @@ export const {
   removeTimingRow,
   updateTimingRowLabel,
   setTimingRows,
+  markTimingRowFetched,
   resetTimingMatrix,
 } = timingMatrixSlice.actions;
 

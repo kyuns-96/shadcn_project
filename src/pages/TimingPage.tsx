@@ -17,6 +17,7 @@
  * - @/components/TimingColumnMetadataTable: Timing Scenario 선택 UI
  * - @/components/shadcn-studio/*: UI 컴포넌트들
  * - @/variables/useFilterDropdownConfigs: 필터 설정
+ * - @/hooks/useURLSync: URL 동기화 및 데이터 복원 훅
  */
 
 import AgGridTimingTable from "@/components/ag-grid-matrix-table-timing";
@@ -27,9 +28,13 @@ import FilterDropdownCombobox from "@/components/shadcn-studio/combobox/FilterDr
 import DoeNameInput from "@/components/shadcn-studio/input/DoeNameInput";
 import { useMemo } from "react";
 import AccordionOutline from "@/components/shadcn-studio/accordion/accordion-09";
+import { useRestoreTimingRowData } from "@/hooks/useURLSync";
 
 const TimingPage = () => {
   const filterDropdownConfigs = useFilterDropdownConfigs();
+
+  // [WHY] URL 복원 시 _needsDataFetch 플래그가 있는 행의 데이터를 자동으로 페칭
+  useRestoreTimingRowData();
 
   const accordionItems = useMemo(
     () => [

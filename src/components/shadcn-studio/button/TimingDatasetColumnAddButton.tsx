@@ -26,8 +26,16 @@ import {
   addTimingRow,
   updateTimingCell,
 } from "@/store/reducers/timingMatrixReducer";
+import { addColumn, updateCell } from "@/store/matrixSlice";
+import {
+  addDoeGroup,
+  updatePowerCell,
+} from "@/store/reducers/powerMatrixReducer";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
+import { setColumnPowerScenario } from "@/store/reducers/selectedReducer";
 import { extractAvailableTimingScenarios } from "@/variables/timingScenarioExtractor";
+import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
+import { getDefaultScenario } from "@/variables/defaultPowerScenarioMapping";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import {
   TIMING_COLUMN_GROUPS,
@@ -54,6 +62,7 @@ const generateUniqueDoeId = (): string => {
  *
  * 사용자가 클릭하면 현재 선택된 필터 조건을 기반으로
  * 새로운 DoE 행을 Timing 테이블에 추가합니다.
+ * QoRComparePage와 PowerPage에도 동시에 추가하여 데이터 동기화를 보장합니다.
  */
 const TimingDatasetColumnAddButton = () => {
   const dispatch = useAppDispatch();
@@ -68,6 +77,12 @@ const TimingDatasetColumnAddButton = () => {
     selectedEconum,
   } = useAppSelector((state) => state.selected);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
+  const { rowHeaders: matrixRowHeaders } = useAppSelector(
+    (state) => state.matrix
+  );
+  const { rowHeaders: powerRowHeaders } = useAppSelector(
+    (state) => state.powerMatrix
+  );
 
   // Check if button should be disabled (empty or duplicate)
   const trimmedDoeName = doeName.trim();
@@ -76,6 +91,9 @@ const TimingDatasetColumnAddButton = () => {
   );
   const isDisabled = !trimmedDoeName || isDuplicate;
 
+  /** 데이터 로딩 중 표시되는 placeholder 값 */
+  const LOADING_PLACEHOLDER = "___LOADING___";
+
   /**
    * 새 DoE 행을 추가하고 시나리오 정보를 로드합니다.
    *
@@ -83,9 +101,11 @@ const TimingDatasetColumnAddButton = () => {
    * 1. 고유한 DoE ID 생성
    * 2. doeRegistry에 DoE 추가
    * 3. Timing 테이블에 새 행 추가
-   * 4. API에서 데이터셋 조회
-   * 5. Timing Scenario 목록 추출 및 저장
-   * 6. 기본 시나리오로 셀 데이터 채우기
+   * 4. QoRComparePage matrix에 컬럼 추가 (_needsDataFetch: true)
+   * 5. PowerPage powerMatrix에 DoE 그룹 추가 (_needsDataFetch: true)
+   * 6. API에서 데이터셋 조회
+   * 7. Timing/Power Scenario 목록 추출 및 저장
+   * 8. 기본 시나리오로 셀 데이터 채우기 (모든 페이지)
    */
   const handleAddDoeRow = () => {
     const doeId = generateUniqueDoeId();
@@ -112,7 +132,25 @@ const TimingDatasetColumnAddButton = () => {
       })
     );
 
-    // 3. 데이터셋 fetch 후 시나리오 정보 및 셀 데이터 업데이트
+    // 3. QoRComparePage matrix에 컬럼 추가
+    dispatch(
+      addColumn({
+        id: doeId,
+        label: doeLabel,
+        defaultValue: LOADING_PLACEHOLDER,
+      })
+    );
+
+    // 4. PowerPage powerMatrix에 DoE 그룹 추가
+    dispatch(
+      addDoeGroup({
+        id: doeId,
+        label: doeLabel,
+        defaultValue: LOADING_PLACEHOLDER,
+      })
+    );
+
+    // 5. 데이터셋 fetch 후 시나리오 정보 및 셀 데이터 업데이트
     dispatch(fetchDataset()).then((action) => {
       if (fetchDataset.fulfilled.match(action)) {
         const datasetPayload = (action.payload?.[doeName] ?? {}) as Record<
@@ -120,26 +158,44 @@ const TimingDatasetColumnAddButton = () => {
           unknown
         >;
 
-        // 4. Timing Scenario 목록 추출
+        // 6. Timing Scenario 목록 추출
         const availableTimingScenarios =
           extractAvailableTimingScenarios(datasetPayload);
 
-        // 5. 가용 시나리오가 있으면 첫 번째를 기본값으로 설정
+        // 7. 가용 시나리오가 있으면 첫 번째를 기본값으로 설정
         const defaultTimingScenario =
           availableTimingScenarios.length > 0
             ? availableTimingScenarios[0]
             : undefined;
 
-        // 6. doeRegistry의 메타데이터 업데이트 (timing 시나리오 정보)
+        // 8. Power Scenario 목록 추출 및 기본 시나리오 결정
+        const availablePowerScenarios =
+          extractAvailableScenarios(datasetPayload);
+        const defaultPowerScenario = getDefaultScenario(
+          selectedProject,
+          availablePowerScenarios
+        );
+
+        // 9. doeRegistry의 메타데이터 업데이트 (timing + power 시나리오 정보)
         dispatch(
           updateDoEMetadata({
             doeId,
             TIMING_SCENARIO: defaultTimingScenario,
             AVAILABLE_TIMING_SCENARIOS: availableTimingScenarios,
+            POWER_SCENARIO: defaultPowerScenario,
+            AVAILABLE_SCENARIOS: availablePowerScenarios,
           })
         );
 
-        // 7. 기본 시나리오가 있으면 모든 셀에 데이터 채우기
+        // 10. Redux selected 상태에 Power 시나리오 매핑 저장
+        dispatch(
+          setColumnPowerScenario({
+            columnId: doeId,
+            scenario: defaultPowerScenario,
+          })
+        );
+
+        // 11. TimingPage: 기본 시나리오가 있으면 모든 셀에 데이터 채우기
         if (defaultTimingScenario) {
           TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
             TIMING_METRICS.forEach((metric) => {
@@ -162,6 +218,50 @@ const TimingDatasetColumnAddButton = () => {
             });
           });
         }
+
+        // 12. QoRComparePage: 각 행의 셀에 메트릭 값 업데이트 (Power 시나리오 적용)
+        matrixRowHeaders.forEach((rowHeader) => {
+          const metricKey = `${rowHeader.rowGroup}!${rowHeader.label}`;
+          const metricValue =
+            extractMetricValue(
+              metricKey,
+              datasetPayload,
+              defaultPowerScenario
+            ) ?? EMPTY_VALUE_PLACEHOLDER;
+
+          dispatch(
+            updateCell({
+              rowId: rowHeader.id,
+              columnId: doeId,
+              value: metricValue,
+            })
+          );
+        });
+
+        // 13. PowerPage: 각 Power 메트릭 셀에 값 업데이트
+        const powerColumnNames = ["Internal", "Switching", "Leakage", "Total"];
+        powerRowHeaders.forEach((row) => {
+          powerColumnNames.forEach((colName) => {
+            const columnId = `${doeId}_${colName}`;
+            const metricKey = `Power(mW)!${
+              (row as { rowKey?: string }).rowKey
+            }_${colName}`;
+            const metricValue =
+              extractMetricValue(
+                metricKey,
+                datasetPayload,
+                defaultPowerScenario
+              ) ?? EMPTY_VALUE_PLACEHOLDER;
+
+            dispatch(
+              updatePowerCell({
+                rowId: row.id,
+                columnId: columnId,
+                value: metricValue,
+              })
+            );
+          });
+        });
       }
     });
   };

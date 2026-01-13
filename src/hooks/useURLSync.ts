@@ -23,10 +23,23 @@ import {
   updatePowerCell,
   markDoeFetched,
 } from "@/store/reducers/powerMatrixReducer";
+import {
+  setTimingRows,
+  updateTimingCell,
+  type TimingRow,
+} from "@/store/reducers/timingMatrixReducer";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
 import { getDefaultScenario } from "@/variables/defaultPowerScenarioMapping";
+import { extractAvailableTimingScenarios } from "@/variables/timingScenarioExtractor";
+import {
+  TIMING_COLUMN_GROUPS,
+  TIMING_METRICS,
+  generateTimingColumnKey,
+  getTimingMetricKey,
+  EMPTY_VALUE_PLACEHOLDER,
+} from "@/variables/defaultTimingMatrixTemplate";
 
 // URL parameter keys
 const URL_PARAMS = {
@@ -38,6 +51,8 @@ const URL_PARAMS = {
   FC_BLOCK: "fc_block",
   FC_NETVER: "fc_netver",
   FC_REVISION: "fc_revision",
+  // Timing Page params
+  TIMING_ROWS: "timing_rows", // Compressed timing row metadata
 } as const;
 
 // Valid page types for validation
@@ -61,25 +76,125 @@ interface ColumnMeta {
   AVAILABLE_SCENARIOS?: string[];
 }
 
+// Timing row metadata structure for URL
+interface TimingRowMeta {
+  id: string;
+  label: string;
+  PROJECT_NAME?: string;
+  BLOCK?: string;
+  NET_VER?: string;
+  REVISION?: string;
+  ECO_NUM?: string;
+  TIMING_SCENARIO?: string;
+  AVAILABLE_TIMING_SCENARIOS?: string[];
+}
+
+// Property shorthand mapping for compression
+const COMPRESS_MAP: Record<string, string> = {
+  id: "i",
+  label: "l",
+  PROJECT_NAME: "p",
+  BLOCK: "b",
+  NET_VER: "n",
+  REVISION: "r",
+  ECO_NUM: "e",
+  POWER_SCENARIO: "s",
+  AVAILABLE_SCENARIOS: "a",
+  TIMING_SCENARIO: "t",
+  AVAILABLE_TIMING_SCENARIOS: "at",
+};
+
+// Reverse mapping for decompression
+const DECOMPRESS_MAP: Record<string, string> = Object.entries(
+  COMPRESS_MAP
+).reduce(
+  (acc, [key, value]) => ({ ...acc, [value]: key }),
+  {} as Record<string, string>
+);
+
 /**
- * Encode column headers to a compact URL-safe string
+ * Compress object by shortening property names
+ */
+function compressObject(obj: Record<string, unknown>): Record<string, unknown> {
+  const compressed: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const shortKey = COMPRESS_MAP[key] || key;
+    compressed[shortKey] = value;
+  }
+  return compressed;
+}
+
+/**
+ * Decompress object by restoring original property names
+ */
+function decompressObject(
+  obj: Record<string, unknown>
+): Record<string, unknown> {
+  const decompressed: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const originalKey = DECOMPRESS_MAP[key] || key;
+    decompressed[originalKey] = value;
+  }
+  return decompressed;
+}
+
+/**
+ * Encode column headers to a compact URL-safe string with compression
  */
 function encodeColumns(columns: ColumnMeta[]): string {
   if (columns.length === 0) return "";
   try {
-    return btoa(encodeURIComponent(JSON.stringify(columns)));
+    const compressed = columns.map((col) =>
+      compressObject(col as unknown as Record<string, unknown>)
+    );
+    return btoa(encodeURIComponent(JSON.stringify(compressed)));
   } catch {
     return "";
   }
 }
 
 /**
- * Decode columns from URL parameter
+ * Decode columns from URL parameter with decompression
  */
 function decodeColumns(encoded: string): ColumnMeta[] {
   if (!encoded) return [];
   try {
-    return JSON.parse(decodeURIComponent(atob(encoded)));
+    const parsed = JSON.parse(decodeURIComponent(atob(encoded)));
+    return parsed.map(
+      (obj: Record<string, unknown>) =>
+        decompressObject(obj) as unknown as ColumnMeta
+    );
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Encode timing rows to a compact URL-safe string with compression
+ */
+function encodeTimingRows(rows: TimingRowMeta[]): string {
+  if (rows.length === 0) return "";
+  try {
+    const compressed = rows.map((row) =>
+      compressObject(row as unknown as Record<string, unknown>)
+    );
+    return btoa(encodeURIComponent(JSON.stringify(compressed)));
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Decode timing rows from URL parameter with decompression
+ */
+function decodeTimingRows(encoded: string): TimingRowMeta[] {
+  if (!encoded) return [];
+  try {
+    const parsed = JSON.parse(decodeURIComponent(atob(encoded)));
+    return parsed.map(
+      (obj: Record<string, unknown>) =>
+        decompressObject(obj) as unknown as TimingRowMeta
+    );
   } catch {
     return [];
   }
@@ -101,6 +216,8 @@ export function useURLSync() {
     currentPage,
     // QOR Compare state
     columnHeaders,
+    // Timing Page state
+    timingRows,
     // FC Check Tool state
     fcProject,
     fcBlock,
@@ -111,6 +228,7 @@ export function useURLSync() {
     (state: RootState) => ({
       currentPage: state.page.currentPage,
       columnHeaders: state.matrix.columnHeaders,
+      timingRows: state.timingMatrix.rows,
       fcProject: state.fcCheckTool.selectedProject,
       fcBlock: state.fcCheckTool.selectedBlock,
       fcNetver: state.fcCheckTool.selectedNetver,
@@ -199,6 +317,44 @@ export function useURLSync() {
       setTimeout(() => {
         isRestoringFromURL.current = false;
       }, 100);
+    } else if (effectivePage === "timing") {
+      // Restore Timing Page rows
+      const timingRowsParam = params.get(URL_PARAMS.TIMING_ROWS);
+      if (timingRowsParam) {
+        const rows = decodeTimingRows(timingRowsParam);
+        if (rows.length > 0) {
+          isRestoringFromURL.current = true;
+
+          // Restore timing rows with _needsDataFetch flag
+          const storedRows: TimingRow[] = rows.map((row) => ({
+            id: row.id,
+            label: row.label,
+            data: {},
+            _needsDataFetch: true,
+          }));
+
+          dispatch(setTimingRows(storedRows));
+
+          // Also restore DoE metadata to doeRegistry
+          const doeMetadata = rows.map((row) => ({
+            id: row.id,
+            label: row.label,
+            PROJECT_NAME: row.PROJECT_NAME,
+            BLOCK: row.BLOCK,
+            NET_VER: row.NET_VER,
+            REVISION: row.REVISION,
+            ECO_NUM: row.ECO_NUM,
+            TIMING_SCENARIO: row.TIMING_SCENARIO,
+            AVAILABLE_TIMING_SCENARIOS: row.AVAILABLE_TIMING_SCENARIOS,
+          }));
+          dispatch(setDoEs(doeMetadata));
+
+          // Delay data fetch to allow initialization
+          setTimeout(() => {
+            isRestoringFromURL.current = false;
+          }, 500);
+        }
+      }
     }
   }, [dispatch]);
 
@@ -241,6 +397,28 @@ export function useURLSync() {
       if (fcBlock) params.set(URL_PARAMS.FC_BLOCK, fcBlock);
       if (fcNetver) params.set(URL_PARAMS.FC_NETVER, fcNetver);
       if (fcRevision) params.set(URL_PARAMS.FC_REVISION, fcRevision);
+    } else if (currentPage === "timing") {
+      // Save Timing Page rows (only if there are any)
+      if (timingRows.length > 0) {
+        const rowMeta: TimingRowMeta[] = timingRows.map((row) => {
+          const metadata = doeRegistry.byId[row.id];
+          return {
+            id: row.id,
+            label: row.label,
+            PROJECT_NAME: metadata?.PROJECT_NAME,
+            BLOCK: metadata?.BLOCK,
+            NET_VER: metadata?.NET_VER,
+            REVISION: metadata?.REVISION,
+            ECO_NUM: metadata?.ECO_NUM,
+            TIMING_SCENARIO: metadata?.TIMING_SCENARIO,
+            AVAILABLE_TIMING_SCENARIOS: metadata?.AVAILABLE_TIMING_SCENARIOS,
+          };
+        });
+        const encoded = encodeTimingRows(rowMeta);
+        if (encoded) {
+          params.set(URL_PARAMS.TIMING_ROWS, encoded);
+        }
+      }
     }
 
     // Update URL without triggering a page reload
@@ -249,6 +427,7 @@ export function useURLSync() {
   }, [
     currentPage,
     columnHeaders,
+    timingRows,
     doeRegistry,
     fcProject,
     fcBlock,
@@ -463,21 +642,20 @@ export function useRestoreDoeGroupData() {
         const action = await dispatch(fetchDataset());
 
         if (fetchDataset.fulfilled.match(action)) {
-          const datasetPayload = (action.payload?.[group.label] ?? {}) as Record<
-            string,
-            unknown
-          >;
+          const datasetPayload = (action.payload?.[group.label] ??
+            {}) as Record<string, unknown>;
 
           // [WHY] If POWER_SCENARIO is missing (DoE added from QoRComparePage),
           // extract available scenarios and set default scenario
           let scenarioName = metadata.POWER_SCENARIO;
           if (!scenarioName) {
-            const availableScenarios = extractAvailableScenarios(datasetPayload);
+            const availableScenarios =
+              extractAvailableScenarios(datasetPayload);
             scenarioName = getDefaultScenario(
               metadata.PROJECT_NAME as string,
               availableScenarios
             );
-            
+
             // Update doeRegistry with the scenario information
             dispatch(
               updateDoEMetadata({
@@ -486,7 +664,7 @@ export function useRestoreDoeGroupData() {
                 AVAILABLE_SCENARIOS: availableScenarios,
               })
             );
-            
+
             // Also update selected state
             dispatch(
               setColumnPowerScenario({
@@ -507,7 +685,11 @@ export function useRestoreDoeGroupData() {
               // row.rowKey is the actual key used in the data (e.g., "clock_network")
               // NOT row.label which is the display name (e.g., "Clock Network")
               const metricKey = `Power(mW)!${(row as any).rowKey}_${colName}`;
-              let value = extractMetricValue(metricKey, datasetPayload, scenarioName);
+              let value = extractMetricValue(
+                metricKey,
+                datasetPayload,
+                scenarioName
+              );
               if (value === undefined) {
                 value = "-";
               }
@@ -545,6 +727,162 @@ export function useRestoreDoeGroupData() {
 
     fetchAllGroups();
   }, [dispatch, doeGroups, rowHeaders, doeRegistry]);
+}
+
+/**
+ * Custom hook for TimingPage to fetch data for timing rows with _needsDataFetch flag.
+ * Only fetches data for rows that have _needsDataFetch flag (from URL restoration)
+ */
+export function useRestoreTimingRowData() {
+  const dispatch = useDispatch<AppDispatch>();
+  const isFetching = useRef(false);
+  // [WHY] Track which rows we've already processed to prevent re-fetching on re-renders
+  const fetchedRowsRef = useRef<Set<string>>(new Set());
+
+  const { rows: timingRows } = useSelector(
+    (state: RootState) => ({
+      rows: state.timingMatrix.rows,
+    }),
+    shallowEqual
+  );
+
+  const { doeRegistry } = useSelector(
+    (state: RootState) => ({
+      doeRegistry: state.doeRegistry,
+    }),
+    shallowEqual
+  );
+
+  useEffect(() => {
+    // [WHY] Prevent concurrent fetches to avoid race conditions
+    if (isFetching.current) return;
+
+    // [WHY] Filter rows that need fetch AND haven't been processed yet
+    // Using both _needsDataFetch flag and ref to handle React strict mode double-renders
+    const rowsToFetch = timingRows.filter(
+      (row) =>
+        row._needsDataFetch === true && !fetchedRowsRef.current.has(row.id)
+    );
+
+    if (rowsToFetch.length === 0) return;
+
+    isFetching.current = true;
+
+    // Fetch data for each timing row sequentially
+    const fetchAllRows = async () => {
+      for (const row of rowsToFetch) {
+        // [WHY] Mark row as being processed immediately to prevent duplicate fetches
+        fetchedRowsRef.current.add(row.id);
+
+        // [WHY] Set doeName - fetchDataset uses this as the key for storing results
+        dispatch(setDoeName(row.label));
+
+        // Get metadata from doeRegistry
+        const metadata = doeRegistry.byId[row.id];
+        if (!metadata) {
+          // Skip if metadata not found
+          continue;
+        }
+
+        // Set selection state for this DoE row
+        dispatch(
+          restoreFromURL({
+            selectedProject: (metadata.PROJECT_NAME as string) ?? null,
+            selectedBlock: (metadata.BLOCK as string) ?? null,
+            selectedNetver: (metadata.NET_VER as string) ?? null,
+            selectedRevision: (metadata.REVISION as string) ?? null,
+            selectedEconum: (metadata.ECO_NUM as string) ?? null,
+          })
+        );
+
+        // [WHY] Small delay to ensure Redux state is updated before fetch
+        // This prevents race condition where fetchDataset reads stale selection state
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        // Fetch and update cells
+        const action = await dispatch(fetchDataset());
+
+        if (fetchDataset.fulfilled.match(action)) {
+          const datasetPayload = (action.payload?.[row.label] ?? {}) as Record<
+            string,
+            unknown
+          >;
+
+          // [WHY] If TIMING_SCENARIO is missing, extract available scenarios and set default
+          let scenarioName = metadata.TIMING_SCENARIO;
+          if (!scenarioName) {
+            const availableTimingScenarios =
+              extractAvailableTimingScenarios(datasetPayload);
+            scenarioName =
+              availableTimingScenarios.length > 0
+                ? availableTimingScenarios[0]
+                : undefined;
+
+            // Update doeRegistry with the scenario information
+            dispatch(
+              updateDoEMetadata({
+                doeId: row.id,
+                TIMING_SCENARIO: scenarioName,
+                AVAILABLE_TIMING_SCENARIOS: availableTimingScenarios,
+              })
+            );
+          }
+
+          // Update all timing cells for this row
+          if (scenarioName) {
+            TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
+              TIMING_METRICS.forEach((metric) => {
+                const columnId = generateTimingColumnKey(columnGroup, metric);
+                const metricKey = getTimingMetricKey(columnGroup, metric);
+                let value = extractMetricValue(
+                  metricKey,
+                  datasetPayload,
+                  scenarioName
+                );
+                if (value === undefined) {
+                  value = EMPTY_VALUE_PLACEHOLDER;
+                }
+                dispatch(
+                  updateTimingCell({
+                    rowId: row.id,
+                    columnId,
+                    value,
+                  })
+                );
+              });
+            });
+          }
+        }
+
+        // Mark this row as fetched
+        dispatch(
+          setTimingRows(
+            timingRows.map((r) =>
+              r.id === row.id ? { ...r, _needsDataFetch: false } : r
+            )
+          )
+        );
+      }
+
+      // Clear selection after restoration
+      dispatch(
+        restoreFromURL({
+          selectedProject: null,
+          selectedBlock: null,
+          selectedNetver: null,
+          selectedRevision: null,
+          selectedEconum: null,
+        })
+      );
+
+      // [WHY] Clear doeName after restoration to reset UI state
+      dispatch(setDoeName(""));
+
+      isFetching.current = false;
+    };
+
+    fetchAllRows();
+  }, [dispatch, timingRows, doeRegistry]);
 }
 
 /**
