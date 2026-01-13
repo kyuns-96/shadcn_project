@@ -154,7 +154,7 @@ export default function AgGridPowerTable() {
         // 헤더 행 (DoE 그룹)
         let headerHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        headerHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">Component</th>`;
+        headerHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; vertical-align: middle; ${borderStyle}" rowspan="2">Component</th>`;
         for (const doeGroup of doeGroups) {
           headerHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}" colspan="4">${doeGroup.label}</th>`;
         }
@@ -164,7 +164,6 @@ export default function AgGridPowerTable() {
         // 서브 헤더 행 (컬럼명)
         let subHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        subHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">&nbsp;</th>`;
         for (let i = 0; i < doeDataArray.length; i++) {
           const colName = doeDataArray[i][1];
           subHeaderHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}">${colName}</th>`;

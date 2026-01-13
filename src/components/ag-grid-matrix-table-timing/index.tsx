@@ -212,7 +212,7 @@ export default function AgGridTimingTable() {
         // 그룹 헤더 행
         let groupHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        groupHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">DoE Name</th>`;
+        groupHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; vertical-align: middle; ${borderStyle}" rowspan="2">DoE Name</th>`;
         for (const group of TIMING_COLUMN_GROUPS) {
           groupHeaderHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}" colspan="3">${group}</th>`;
         }
@@ -222,7 +222,6 @@ export default function AgGridTimingTable() {
         // 메트릭 헤더 행
         let metricHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        metricHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">&nbsp;</th>`;
         for (let i = 0; i < metricDataArray.length; i++) {
           const metric = metricDataArray[i][1];
           metricHeaderHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}">${metric}</th>`;
