@@ -162,11 +162,13 @@ const TimingDatasetColumnAddButton = () => {
         const availableTimingScenarios =
           extractAvailableTimingScenarios(datasetPayload);
 
-        // 7. 가용 시나리오가 있으면 첫 번째를 기본값으로 설정
+        // 7. 가용 시나리오 중 "total"을 기본값으로 설정, 없으면 첫 번째 사용
         const defaultTimingScenario =
-          availableTimingScenarios.length > 0
-            ? availableTimingScenarios[0]
-            : undefined;
+          availableTimingScenarios.includes("total")
+            ? "total"
+            : availableTimingScenarios.length > 0
+              ? availableTimingScenarios[0]
+              : undefined;
 
         // 8. Power Scenario 목록 추출 및 기본 시나리오 결정
         const availablePowerScenarios =

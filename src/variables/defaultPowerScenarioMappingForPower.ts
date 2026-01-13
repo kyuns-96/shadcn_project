@@ -38,12 +38,31 @@ const POWER_PROJECT_SCENARIO_MAP: Record<string, string> = {
 };
 
 /**
+ * "mission*.tt_*" 패턴을 만족하는 시나리오를 찾습니다.
+ * 패턴: mission{임의} . tt_{임의}
+ * (. 은 실제 dot 문자입니다)
+ *
+ * @param scenario - 확인할 시나리오 이름
+ * @returns 패턴을 만족하면 true
+ *
+ * @example
+ * matchesMissionPattern(\"mission.tt_0p85v\") // true
+ * matchesMissionPattern(\"mission1.tt_25c\") // true
+ * matchesMissionPattern(\"tt_0p85v_25c\") // false
+ */
+const matchesMissionPattern = (scenario: string): boolean => {
+  // \"mission*.tt_*\" 패턴: mission + 임의 문자(0개 이상) + . (실제 dot) + tt_ + 임의 문자(0개 이상)
+  return /^mission.*\.tt_.*/i.test(scenario);
+};
+
+/**
  * Power Page에서 프로젝트 이름과 가용 시나리오 목록을 기반으로 기본 시나리오를 결정합니다.
  *
  * 우선순위:
  * 1. POWER_PROJECT_SCENARIO_MAP에서 프로젝트에 매핑된 시나리오 (가용 목록에 있는 경우)
- * 2. 가용 시나리오 목록의 첫 번째 항목
- * 3. 빈 문자열 (가용 시나리오가 없는 경우)
+ * 2. "mission*.tt_*" 패턴을 만족하는 첫 번째 시나리오
+ * 3. "input_data"가 아닌 다른 시나리오 중 첫 번째
+ * 4. 빈 문자열 (가용 시나리오가 없는 경우)
  *
  * @param projectName - 프로젝트 이름 (null일 수 있음)
  * @param availableScenarios - 해당 컬럼에서 사용 가능한 시나리오 목록
@@ -53,8 +72,11 @@ const POWER_PROJECT_SCENARIO_MAP: Record<string, string> = {
  * const scenario = getDefaultPowerScenario("ProjectA", ["tt_0p85v_25c", "ff_0p99v_m40c"]);
  * // Returns: "tt_0p85v_25c" (if mapped and available)
  *
- * const scenario = getDefaultPowerScenario("UnknownProject", ["scenario1", "scenario2"]);
- * // Returns: "scenario1" (first available)
+ * const scenario = getDefaultPowerScenario("UnknownProject", ["mission_tt_0p85v", "input_data"]);
+ * // Returns: "mission_tt_0p85v" (matches mission*.tt_* pattern)
+ *
+ * const scenario = getDefaultPowerScenario("UnknownProject", ["input_data", "scenario1"]);
+ * // Returns: "scenario1" (first scenario except input_data)
  */
 export const getDefaultPowerScenario = (
   projectName: string | null | undefined,
@@ -65,7 +87,7 @@ export const getDefaultPowerScenario = (
     return "";
   }
 
-  // 프로젝트에 매핑된 시나리오가 있고, 가용 목록에 포함되어 있으면 반환
+  // 우선순위 1: 프로젝트에 매핑된 시나리오가 있고, 가용 목록에 포함되어 있으면 반환
   if (projectName && POWER_PROJECT_SCENARIO_MAP[projectName]) {
     const mappedScenario = POWER_PROJECT_SCENARIO_MAP[projectName];
     if (availableScenarios.includes(mappedScenario)) {
@@ -73,7 +95,21 @@ export const getDefaultPowerScenario = (
     }
   }
 
-  // 기본값: 가용 시나리오 목록의 첫 번째 항목
+  // 우선순위 2: "mission*.tt_*" 패턴을 만족하는 첫 번째 시나리오
+  const missionScenario = availableScenarios.find(matchesMissionPattern);
+  if (missionScenario) {
+    return missionScenario;
+  }
+
+  // 우선순위 3: "input_data"가 아닌 다른 시나리오 중 첫 번째
+  const nonInputDataScenario = availableScenarios.find(
+    (s) => s !== "input_data"
+  );
+  if (nonInputDataScenario) {
+    return nonInputDataScenario;
+  }
+
+  // 우선순위 4: 다른 방법이 없으면 첫 번째 시나리오 사용 (예: "input_data"만 있는 경우)
   return availableScenarios[0];
 };
 
