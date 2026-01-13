@@ -178,7 +178,7 @@ export const METRIC_EXTRACTORS: Record<string, string> = {
   // Format: "LayoutData!Area(G/C)_{Entry}"
   // Path: ${BASE_PATHS.layoutData}.{GATE_COUNT_*}
   // ============================================================
-  "Area(G/C)!SRAM": `${BASE_PATHS.layoutData}.GATE_COUNT_MEORY`,
+  "Area(G/C)!SRAM": `${BASE_PATHS.layoutData}.GATE_COUNT_MEMORY`,
   "Area(G/C)!F/F": `${BASE_PATHS.layoutData}.GATE_COUNT_SEQUENTIAL`,
   "Area(G/C)!Combi": `${BASE_PATHS.layoutData}.GATE_COUNT_COMBINATIONAL`,
   "Area(G/C)!HM": `${BASE_PATHS.layoutData}.GATE_COUNT_HM`,
@@ -190,7 +190,7 @@ export const METRIC_EXTRACTORS: Record<string, string> = {
   // Format: "LayoutData!Area(um^2)_{Entry}"
   // Path: ${BASE_PATHS.layoutData}.{AREA_*} (references GATE_COUNT_*)
   // ============================================================
-  "Area(um^2)!SRAM": `${BASE_PATHS.layoutData}.AREA_MEORY`,
+  "Area(um^2)!SRAM": `${BASE_PATHS.layoutData}.AREA_MEMORY`,
   "Area(um^2)!F/F": `${BASE_PATHS.layoutData}.AREA_SEQUENTIAL`,
   "Area(um^2)!Combi": `${BASE_PATHS.layoutData}.AREA_COMBINATIONAL`,
   "Area(um^2)!HM": `${BASE_PATHS.layoutData}.AREA_HM`,
