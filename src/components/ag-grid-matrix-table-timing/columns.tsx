@@ -11,14 +11,68 @@
  * - @/variables/defaultTimingMatrixTemplate: Column group and metric constants
  */
 
-import type { ColDef, ColGroupDef } from "ag-grid-community";
+import type {
+  ColDef,
+  ColGroupDef,
+  ICellRendererParams,
+} from "ag-grid-community";
 import {
   TIMING_COLUMN_GROUPS,
   TIMING_METRICS,
   generateTimingColumnKey,
 } from "@/variables/defaultTimingMatrixTemplate";
 import type { TimingRowData } from "./types";
-import { type TextAlignOption } from "./constants";
+import {
+  type TextAlignOption,
+  LOADING_CELL_VALUE,
+  EMPTY_CELL_VALUE,
+} from "./constants";
+
+/**
+ * 숫자 값 포맷팅 함수
+ * - 0값은 소수점 없이 "0"으로 표시
+ * - NVP 컬럼은 정수로 표시
+ * - 로딩 중인 값은 "-"로 표시
+ * - 그 외 숫자는 지정된 소수점 자리수로 표시
+ */
+export const formatTimingValue = (
+  value: unknown,
+  decimalPlaces: number,
+  isNVP: boolean
+): string => {
+  // null, undefined, 빈 문자열 처리
+  if (value === null || value === undefined || value === "") {
+    return EMPTY_CELL_VALUE;
+  }
+
+  // 로딩 중인 값 처리
+  if (value === LOADING_CELL_VALUE) {
+    return EMPTY_CELL_VALUE;
+  }
+
+  // NVP 컬럼은 정수로 표시
+  if (isNVP) {
+    const num = parseInt(String(value), 10);
+    if (!isNaN(num)) {
+      return String(num);
+    }
+    return String(value);
+  }
+
+  // 숫자 변환 시도
+  const num = parseFloat(String(value));
+  if (isNaN(num)) {
+    return String(value);
+  }
+
+  // 0인 경우 소수점 없이 "0"으로 표시
+  if (num === 0) {
+    return "0";
+  }
+
+  // 그 외 숫자는 지정된 소수점 자리수로 표시
+  return num.toFixed(decimalPlaces);
+};
 
 /**
  * Timing 테이블 컬럼 정의 생성
@@ -32,7 +86,8 @@ import { type TextAlignOption } from "./constants";
  * - ... (나머지 그룹들)
  */
 export const buildTimingColumnDefs = (
-  textAlign: TextAlignOption = "right"
+  textAlign: TextAlignOption = "right",
+  decimalPlaces: number = 3
 ): (ColDef | ColGroupDef)[] => {
   const columnDefs: (ColDef | ColGroupDef)[] = [];
 
@@ -53,6 +108,7 @@ export const buildTimingColumnDefs = (
     const metricColumns: ColDef<TimingRowData>[] = TIMING_METRICS.map(
       (metric) => {
         const columnId = generateTimingColumnKey(columnGroup, metric);
+        const isNVP = metric === "NVP";
         return {
           field: columnId,
           headerName: metric,
@@ -61,6 +117,19 @@ export const buildTimingColumnDefs = (
           editable: false,
           suppressMovable: true,
           sortable: false,
+          valueFormatter: (params) => {
+            return formatTimingValue(params.value, decimalPlaces, isNVP);
+          },
+          cellRenderer: (params: ICellRendererParams<TimingRowData>) => {
+            if (params.value === LOADING_CELL_VALUE) {
+              return (
+                <span className="text-muted-foreground">
+                  {EMPTY_CELL_VALUE}
+                </span>
+              );
+            }
+            return params.valueFormatted ?? params.value;
+          },
         };
       }
     );
@@ -82,22 +151,32 @@ export const buildTimingColumnDefs = (
  */
 export const updateTimingColumnAlignment = (
   columnDefs: (ColDef | ColGroupDef)[],
-  textAlign: TextAlignOption
+  textAlign: TextAlignOption,
+  decimalPlaces: number = 3
 ): (ColDef | ColGroupDef)[] => {
   return columnDefs.map((colDef) => {
     if ("children" in colDef && colDef.children) {
       // 그룹 컬럼: children 재귀적으로 업데이트
       return {
         ...colDef,
-        children: updateTimingColumnAlignment(colDef.children, textAlign),
+        children: updateTimingColumnAlignment(
+          colDef.children,
+          textAlign,
+          decimalPlaces
+        ),
       };
     }
 
     if ("field" in colDef && colDef.field !== "name") {
-      // 데이터 컬럼: cellStyle 업데이트
+      // 데이터 컬럼: cellStyle 업데이트 및 valueFormatter 재설정
+      const field = colDef.field as string;
+      const isNVP = field.endsWith("_NVP");
       return {
         ...colDef,
         cellStyle: { textAlign },
+        valueFormatter: (params: { value: unknown }) => {
+          return formatTimingValue(params.value, decimalPlaces, isNVP);
+        },
       };
     }
 

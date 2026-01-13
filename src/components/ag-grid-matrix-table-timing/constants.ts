@@ -6,12 +6,14 @@
  *
  * @dependencies
  * - @/variables/defaultTimingMatrixTemplate: Timing column groups and metrics
+ * - lucide-react: 아이콘
  */
 
 import {
   TIMING_COLUMN_GROUPS,
   TIMING_METRICS,
 } from "@/variables/defaultTimingMatrixTemplate";
+import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "lucide-react";
 
 // ============================================================
 // Row Height Configuration
@@ -32,6 +34,15 @@ export type RowHeightOption = keyof typeof ROW_HEIGHT_CONFIG;
 export const TEXT_ALIGN_OPTIONS = ["left", "center", "right"] as const;
 
 export type TextAlignOption = (typeof TEXT_ALIGN_OPTIONS)[number];
+
+export const TEXT_ALIGN_CONFIG: Record<
+  TextAlignOption,
+  { label: string; icon: typeof AlignLeftIcon }
+> = {
+  left: { label: "Left", icon: AlignLeftIcon },
+  center: { label: "Center", icon: AlignCenterIcon },
+  right: { label: "Right", icon: AlignRightIcon },
+};
 
 // ============================================================
 // Timing Column Groups and Metrics
