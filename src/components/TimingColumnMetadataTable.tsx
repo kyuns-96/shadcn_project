@@ -153,7 +153,7 @@ const TimingColumnMetadataTable = () => {
   if (timingDoeEntries.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No DoE added yet. Use the DoE input form to add one.</p>
+        <p>추가된 데이터가 없습니다.</p>
       </div>
     );
   }

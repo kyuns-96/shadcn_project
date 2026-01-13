@@ -198,7 +198,7 @@ const PowerColumnMetadataTable = () => {
   if (enrichedDoeGroups.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        추가된 DoE가 없습니다. "Select Netlist Version"에서 DoE를 추가해주세요.
+        추가된 데이터가 없습니다.
       </div>
     );
   }

@@ -328,7 +328,7 @@ const FCCheckToolPage = () => {
               </>
             ) : (
               <div className="flex items-center justify-center h-32 text-muted-foreground">
-                No data to display
+                추가된 데이터가 없습니다.
               </div>
             )}
           </div>

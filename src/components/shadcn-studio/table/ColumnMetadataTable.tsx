@@ -197,8 +197,7 @@ const ColumnMetadataTable = () => {
   if (enrichedColumnHeaders.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        추가된 컬럼이 없습니다. "Select Netlist Version"에서 컬럼을
-        추가해주세요.
+        추가된 데이터가 없습니다.
       </div>
     );
   }
