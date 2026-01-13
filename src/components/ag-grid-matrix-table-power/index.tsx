@@ -182,6 +182,14 @@ export default function AgGridPowerTable() {
     []
   );
 
+  // 그룹 헤더 기본 설정 (중앙 정렬)
+  const defaultColGroupDef = useMemo(
+    () => ({
+      headerClass: "ag-header-group-center-text",
+    }),
+    []
+  );
+
   return (
     <div
       ref={gridContainerRef}
@@ -209,6 +217,7 @@ export default function AgGridPowerTable() {
           rowData={rowData}
           columnDefs={columnDefs}
           defaultColDef={defaultColDef}
+          defaultColGroupDef={defaultColGroupDef}
           rowHeight={currentRowHeight}
           headerHeight={32}
           groupHeaderHeight={32}
