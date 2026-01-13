@@ -140,16 +140,18 @@ export default function AgGridMatrixTable() {
       // 5. HTML 형식 생성
       const generateHtmlTable = (): string => {
         const htmlRows: string[] = [];
+        // 공통 border 스타일: 웹용 CSS + Excel용 MSO 속성
+        const borderStyle = "border: 1px solid #000; mso-border-alt: solid #000 .5pt;";
 
         // 헤더 행
         let headerHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        headerHtml += `<th border="1" style="padding: 8px; font-weight: bold; background-color: #e8f5e9; border: 1px solid #000;">Group</th>`;
-        headerHtml += `<th border="1" style="padding: 8px; font-weight: bold; background-color: #e8f5e9; border: 1px solid #000;">Row Header</th>`;
+        headerHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">Group</th>`;
+        headerHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">Row Header</th>`;
         for (const colId of dataColumnOrder) {
           const colHeader = columnHeaders.find((c) => c.id === colId);
           const label = colHeader?.label ?? colId;
-          headerHtml += `<th border="1" style="padding: 8px; font-weight: bold; text-align: center; border: 1px solid #000;">${label}</th>`;
+          headerHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}">${label}</th>`;
         }
         headerHtml += "</tr>";
         htmlRows.push(headerHtml);
@@ -172,19 +174,19 @@ export default function AgGridMatrixTable() {
 
           let rowHtml =
             '<tr style="text-align: right;">';
-          rowHtml += `<td border="1" style="padding: 8px; text-align: left; background-color: #e8f5e9; border: 1px solid #000;">${groupValue}</td>`;
-          rowHtml += `<td border="1" style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; border: 1px solid #000;">${originalRow.label}</td>`;
+          rowHtml += `<td style="padding: 8px; text-align: left; background-color: #e8f5e9; ${borderStyle}">${groupValue}</td>`;
+          rowHtml += `<td style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; ${borderStyle}">${originalRow.label}</td>`;
 
           for (const colId of dataColumnOrder) {
             const value = originalRow.data[colId] ?? "";
-            rowHtml += `<td border="1" style="padding: 8px; text-align: right; border: 1px solid #000;">${value}</td>`;
+            rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${value}</td>`;
           }
 
           rowHtml += "</tr>";
           htmlRows.push(rowHtml);
         }
 
-        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #000; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #000; mso-border-alt: solid #000 .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();

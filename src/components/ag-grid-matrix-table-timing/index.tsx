@@ -206,13 +206,15 @@ export default function AgGridTimingTable() {
       // 5. HTML 형식 생성
       const generateHtmlTable = (): string => {
         const htmlRows: string[] = [];
+        // 공통 border 스타일: 웹용 CSS + Excel용 MSO 속성
+        const borderStyle = "border: 1px solid #000; mso-border-alt: solid #000 .5pt;";
 
         // 그룹 헤더 행
         let groupHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        groupHeaderHtml += `<th border="1" style="padding: 8px; font-weight: bold; background-color: #e8f5e9; border: 1px solid #000;">DoE Name</th>`;
+        groupHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">DoE Name</th>`;
         for (const group of TIMING_COLUMN_GROUPS) {
-          groupHeaderHtml += `<th border="1" style="padding: 8px; font-weight: bold; text-align: center; border: 1px solid #000;" colspan="3">${group}</th>`;
+          groupHeaderHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}" colspan="3">${group}</th>`;
         }
         groupHeaderHtml += "</tr>";
         htmlRows.push(groupHeaderHtml);
@@ -220,10 +222,10 @@ export default function AgGridTimingTable() {
         // 메트릭 헤더 행
         let metricHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        metricHeaderHtml += `<th border="1" style="padding: 8px; font-weight: bold; background-color: #e8f5e9; border: 1px solid #000;"></th>`;
+        metricHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}"></th>`;
         for (let i = 0; i < metricDataArray.length; i++) {
           const metric = metricDataArray[i][1];
-          metricHeaderHtml += `<th border="1" style="padding: 8px; font-weight: bold; text-align: center; border: 1px solid #000;">${metric}</th>`;
+          metricHeaderHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}">${metric}</th>`;
         }
         metricHeaderHtml += "</tr>";
         htmlRows.push(metricHeaderHtml);
@@ -235,7 +237,7 @@ export default function AgGridTimingTable() {
 
           let rowHtml =
             '<tr style="text-align: right;">';
-          rowHtml += `<td border="1" style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; border: 1px solid #000;">${originalRow.label}</td>`;
+          rowHtml += `<td style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; ${borderStyle}">${originalRow.label}</td>`;
 
           for (const [_group, metric] of metricDataArray) {
             const columnId = generateTimingColumnKey(
@@ -249,14 +251,14 @@ export default function AgGridTimingTable() {
               decimalPlaces,
               isNVP
             );
-            rowHtml += `<td border="1" style="padding: 8px; text-align: right; border: 1px solid #000;">${formattedValue}</td>`;
+            rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${formattedValue}</td>`;
           }
 
           rowHtml += "</tr>";
           htmlRows.push(rowHtml);
         }
 
-        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #000; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #000; mso-border-alt: solid #000 .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();

@@ -148,13 +148,15 @@ export default function AgGridPowerTable() {
       // 5. HTML 형식 생성
       const generateHtmlTable = (): string => {
         const htmlRows: string[] = [];
+        // 공통 border 스타일: 웹용 CSS + Excel용 MSO 속성
+        const borderStyle = "border: 1px solid #000; mso-border-alt: solid #000 .5pt;";
 
         // 헤더 행 (DoE 그룹)
         let headerHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        headerHtml += `<th border="1" style="padding: 8px; font-weight: bold; background-color: #e8f5e9; border: 1px solid #000;">Component</th>`;
+        headerHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">Component</th>`;
         for (const doeGroup of doeGroups) {
-          headerHtml += `<th border="1" style="padding: 8px; font-weight: bold; text-align: center; border: 1px solid #000;" colspan="4">${doeGroup.label}</th>`;
+          headerHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}" colspan="4">${doeGroup.label}</th>`;
         }
         headerHtml += "</tr>";
         htmlRows.push(headerHtml);
@@ -162,10 +164,10 @@ export default function AgGridPowerTable() {
         // 서브 헤더 행 (컬럼명)
         let subHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        subHeaderHtml += `<th border="1" style="padding: 8px; font-weight: bold; background-color: #e8f5e9; border: 1px solid #000;"></th>`;
+        subHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}"></th>`;
         for (let i = 0; i < doeDataArray.length; i++) {
           const colName = doeDataArray[i][1];
-          subHeaderHtml += `<th border="1" style="padding: 8px; font-weight: bold; text-align: center; border: 1px solid #000;">${colName}</th>`;
+          subHeaderHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}">${colName}</th>`;
         }
         subHeaderHtml += "</tr>";
         htmlRows.push(subHeaderHtml);
@@ -177,19 +179,19 @@ export default function AgGridPowerTable() {
 
           let rowHtml =
             '<tr style="text-align: right;">';
-          rowHtml += `<td border="1" style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; border: 1px solid #000;">${originalRow.label}</td>`;
+          rowHtml += `<td style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; ${borderStyle}">${originalRow.label}</td>`;
 
           for (const [doeId, colName] of doeDataArray) {
             const columnId = `${doeId}_${colName}`;
             const value = originalRow.data[columnId] ?? "";
-            rowHtml += `<td border="1" style="padding: 8px; text-align: right; border: 1px solid #000;">${value}</td>`;
+            rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${value}</td>`;
           }
 
           rowHtml += "</tr>";
           htmlRows.push(rowHtml);
         }
 
-        return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #000; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #000; mso-border-alt: solid #000 .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();
