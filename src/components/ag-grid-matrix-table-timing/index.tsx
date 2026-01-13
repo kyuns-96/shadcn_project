@@ -57,7 +57,6 @@ export default function AgGridTimingTable() {
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const { rows } = useAppSelector((state) => state.timingMatrix);
-  const doeRegistry = useAppSelector((state) => state.doeRegistry);
 
   // UI 상태 관리
   const [rowHeightOption, setRowHeightOption] =
@@ -140,27 +139,22 @@ export default function AgGridTimingTable() {
   /**
    * 클립보드 복사 핸들러
    * TSV 형식으로 포맷팅된 데이터를 복사합니다.
-   * 헤더: DoE Name, [Scenario] GroupName - MetricName
+   * 헤더: 계층 구조 (GroupName / MetricName)
    */
   const handleCopyToClipboard = useCallback(async () => {
     try {
       const api = gridRef.current?.api as GridApi<TimingRowData> | undefined;
       if (!api) return;
 
-      // 1. 헤더 생성: DoE Name, 각 컬럼 그룹별 메트릭
-      const headers: string[] = ["DoE Name"];
+      // 1. 헤더 생성: 계층 구조 (그룹명 행, 메트릭명 행)
+      const groupHeaderRow: string[] = ["DoE Name"];
+      const metricHeaderRow: string[] = [""];
 
-      // 각 행의 시나리오 정보를 가져오기 위한 맵
-      const scenarioMap: Record<string, string> = {};
-      rows.forEach((row) => {
-        const doeMetadata = doeRegistry.byId[row.id];
-        scenarioMap[row.id] = doeMetadata?.TIMING_SCENARIO || "-";
-      });
-
-      // 컬럼 헤더 생성 (GroupName - MetricName)
+      // 각 컬럼 그룹별 메트릭 헤더 생성
       TIMING_COLUMN_GROUPS.forEach((group) => {
         TIMING_METRICS.forEach((metric) => {
-          headers.push(`${group} - ${metric}`);
+          groupHeaderRow.push(group);
+          metricHeaderRow.push(metric);
         });
       });
 
@@ -175,9 +169,8 @@ export default function AgGridTimingTable() {
         const originalRow = rows.find((r) => r.id === row.id);
         if (!originalRow) return "";
 
-        // DoE 이름과 시나리오 정보
-        const scenario = scenarioMap[row.id] || "-";
-        const rowLabel = `${originalRow.label} [${scenario}]`;
+        // DoE 이름만 표시 (시나리오 제외)
+        const rowLabel = originalRow.label;
 
         // 각 컬럼의 포맷팅된 값
         const rowValues: string[] = [rowLabel];
@@ -198,8 +191,12 @@ export default function AgGridTimingTable() {
         return rowValues.join("\t");
       });
 
-      // 4. 클립보드에 복사
-      const tsvContent = [headers.join("\t"), ...dataRows].join("\n");
+      // 4. 클립보드에 복사 (헤더 2행 + 데이터 행)
+      const tsvContent = [
+        groupHeaderRow.join("\t"),
+        metricHeaderRow.join("\t"),
+        ...dataRows,
+      ].join("\n");
       await navigator.clipboard.writeText(tsvContent);
 
       // 5. 피드백 UI
@@ -208,7 +205,7 @@ export default function AgGridTimingTable() {
     } catch (err) {
       console.error("Failed to copy table data: ", err);
     }
-  }, [rows, doeRegistry, decimalPlaces]);
+  }, [rows, decimalPlaces]);
 
   // AG Grid 기본 설정
   const defaultColDef = {
