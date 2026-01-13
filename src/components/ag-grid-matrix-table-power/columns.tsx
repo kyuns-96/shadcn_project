@@ -83,11 +83,9 @@ export function buildPowerColumnDefs(args: {
       const childColumns: ColDef<PowerRowData>[] = POWER_COLUMN_NAMES.map(
         (columnName) => {
           const columnId = `${doeGroup.id}_${columnName}`;
-          // 컬럼명에 단위 추가 (예: "Internal (mW)")
-          const headerNameWithUnit = `${columnName} (${powerUnit})`;
           return {
             field: columnId,
-            headerName: headerNameWithUnit,
+            headerName: columnName,
             width: POWER_TABLE_CONFIG.dataColumnWidth,
             editable: true,
             cellStyle: { textAlign: textAlignOption } as any,
@@ -95,7 +93,7 @@ export function buildPowerColumnDefs(args: {
             headerComponentParams: {
               columnMetadata: {
                 id: columnId,
-                label: headerNameWithUnit,
+                label: columnName,
                 accessorKey: columnId,
                 PROJECT_NAME: doeGroup.PROJECT_NAME,
                 BLOCK: doeGroup.BLOCK,
