@@ -154,6 +154,7 @@ export function TimingToolbar(props: TimingToolbarProps) {
 
       {/* Decimal Places Control */}
       <div className="flex items-center gap-1 border rounded-md px-2 py-1">
+        <span className="text-xs text-muted-foreground mr-1">Decimal</span>
         <Button
           variant="ghost"
           size="icon"
@@ -163,8 +164,8 @@ export function TimingToolbar(props: TimingToolbarProps) {
         >
           <MinusIcon className="size-3" />
         </Button>
-        <span className="text-xs min-w-[24px] text-center">
-          .{decimalPlaces}
+        <span className="text-xs min-w-[16px] text-center font-medium">
+          {decimalPlaces}
         </span>
         <Button
           variant="ghost"

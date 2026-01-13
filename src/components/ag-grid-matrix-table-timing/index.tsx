@@ -226,23 +226,17 @@ export default function AgGridTimingTable() {
   return (
     <div className="w-full h-full flex flex-col gap-2">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-2 bg-muted rounded">
-        <div className="text-sm text-muted-foreground">
-          <span>DoE Rows: {rows.length}</span>
-          <span className="ml-4">Columns: 7 groups × 3 metrics = 21</span>
-        </div>
-        <TimingToolbar
-          rowHeightOption={rowHeightOption}
-          onRowHeightChange={handleRowHeightChange}
-          textAlignOption={textAlignOption}
-          onTextAlignChange={handleTextAlignChange}
-          decimalPlaces={decimalPlaces}
-          onIncreaseDecimal={handleDecimalIncrease}
-          onDecreaseDecimal={handleDecimalDecrease}
-          copied={copied}
-          onCopy={handleCopyToClipboard}
-        />
-      </div>
+      <TimingToolbar
+        rowHeightOption={rowHeightOption}
+        onRowHeightChange={handleRowHeightChange}
+        textAlignOption={textAlignOption}
+        onTextAlignChange={handleTextAlignChange}
+        decimalPlaces={decimalPlaces}
+        onIncreaseDecimal={handleDecimalIncrease}
+        onDecreaseDecimal={handleDecimalDecrease}
+        copied={copied}
+        onCopy={handleCopyToClipboard}
+      />
 
       {/* AG Grid */}
       <div
