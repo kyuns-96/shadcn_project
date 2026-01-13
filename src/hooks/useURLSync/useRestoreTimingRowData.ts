@@ -114,8 +114,8 @@ export function useRestoreTimingRowData() {
             scenarioName = availableTimingScenarios.includes("total")
               ? "total"
               : availableTimingScenarios.length > 0
-                ? availableTimingScenarios[0]
-                : undefined;
+              ? availableTimingScenarios[0]
+              : undefined;
 
             // Update doeRegistry with the scenario information
             dispatch(

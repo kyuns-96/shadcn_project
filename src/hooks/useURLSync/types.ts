@@ -19,6 +19,8 @@ export const URL_PARAMS = {
   FC_REVISION: "fc_revision",
   // Timing Page params
   TIMING_ROWS: "timing_rows", // Compressed timing row metadata
+  // Power Page params
+  POWER_DOES: "power_does", // Compressed power DoE metadata
 } as const;
 
 // Valid page types for validation
@@ -53,4 +55,17 @@ export interface TimingRowMeta {
   ECO_NUM?: string;
   TIMING_SCENARIO?: string;
   AVAILABLE_TIMING_SCENARIOS?: string[];
+}
+
+// Power DoE metadata structure for URL
+export interface PowerDoeMeta {
+  id: string;
+  label: string;
+  PROJECT_NAME?: string;
+  BLOCK?: string;
+  NET_VER?: string;
+  REVISION?: string;
+  ECO_NUM?: string;
+  POWER_SCENARIO?: string;
+  AVAILABLE_SCENARIOS?: string[];
 }

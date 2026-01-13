@@ -17,7 +17,7 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import type { RootState, AppDispatch } from "@/store";
 import { setCurrentPage, type PageType } from "@/store/reducers/pageReducer";
-import { restoreColumnsFromURL } from "@/store/matrixSlice";
+import { restoreColumnsFromURL, addColumn } from "@/store/matrixSlice";
 import { setDoEs } from "@/store/doeRegistry";
 import {
   setFCSelectedProject,
@@ -27,20 +27,28 @@ import {
 } from "@/store/reducers/fcCheckToolReducer";
 import {
   setTimingRows,
+  addTimingRow,
   type TimingRow,
 } from "@/store/reducers/timingMatrixReducer";
+import {
+  addDoeGroup,
+  restoreDoeGroupsFromURL,
+} from "@/store/reducers/powerMatrixReducer";
 
 import {
   URL_PARAMS,
   VALID_PAGES,
   type ColumnMeta,
   type TimingRowMeta,
+  type PowerDoeMeta,
 } from "./types";
 import {
   encodeColumns,
   decodeColumns,
   encodeTimingRows,
   decodeTimingRows,
+  encodePowerDoes,
+  decodePowerDoes,
 } from "./utils";
 
 // Re-export hooks from separate files
@@ -49,7 +57,7 @@ export { useRestoreDoeGroupData } from "./useRestoreDoeGroupData";
 export { useRestoreTimingRowData } from "./useRestoreTimingRowData";
 
 // Re-export types
-export type { ColumnMeta, TimingRowMeta } from "./types";
+export type { ColumnMeta, TimingRowMeta, PowerDoeMeta } from "./types";
 
 /**
  * Custom hook to synchronize URL query parameters with Redux state.
@@ -69,6 +77,8 @@ export function useURLSync() {
     columnHeaders,
     // Timing Page state
     timingRows,
+    // Power Page state
+    doeGroups,
     // FC Check Tool state
     fcProject,
     fcBlock,
@@ -80,6 +90,7 @@ export function useURLSync() {
       currentPage: state.page.currentPage,
       columnHeaders: state.matrix.columnHeaders,
       timingRows: state.timingMatrix.rows,
+      doeGroups: state.powerMatrix.doeGroups,
       fcProject: state.fcCheckTool.selectedProject,
       fcBlock: state.fcCheckTool.selectedBlock,
       fcNetver: state.fcCheckTool.selectedNetver,
@@ -145,6 +156,30 @@ export function useURLSync() {
           }));
           dispatch(setDoEs(doeMetadata));
 
+          // [WHY] Also add to timingMatrix for cross-page sync
+          // _needsDataFetch: true so TimingPage will fetch data when navigated to
+          columns.forEach((col) => {
+            dispatch(
+              addTimingRow({
+                id: col.id,
+                label: col.label,
+                _needsDataFetch: true,
+              })
+            );
+          });
+
+          // [WHY] Also add to powerMatrix for cross-page sync
+          columns.forEach((col) => {
+            dispatch(
+              addDoeGroup({
+                id: col.id,
+                label: col.label,
+                defaultValue: "___LOADING___",
+                _needsDataFetch: true,
+              })
+            );
+          });
+
           // Delay data fetch to allow template rows to initialize
           setTimeout(() => {
             isRestoringFromURL.current = false;
@@ -199,6 +234,105 @@ export function useURLSync() {
             AVAILABLE_TIMING_SCENARIOS: row.AVAILABLE_TIMING_SCENARIOS,
           }));
           dispatch(setDoEs(doeMetadata));
+
+          // [WHY] Also add to matrix (QOR Compare) for cross-page sync
+          // _needsDataFetch: true so QORComparePage will fetch data when navigated to
+          rows.forEach((row) => {
+            dispatch(
+              addColumn({
+                id: row.id,
+                label: row.label,
+                defaultValue: "___LOADING___",
+                _needsDataFetch: true,
+                meta: {
+                  PROJECT_NAME: row.PROJECT_NAME,
+                  BLOCK: row.BLOCK,
+                  NET_VER: row.NET_VER,
+                  REVISION: row.REVISION,
+                  ECO_NUM: row.ECO_NUM,
+                },
+              })
+            );
+          });
+
+          // [WHY] Also add to powerMatrix for cross-page sync
+          rows.forEach((row) => {
+            dispatch(
+              addDoeGroup({
+                id: row.id,
+                label: row.label,
+                defaultValue: "___LOADING___",
+                _needsDataFetch: true,
+              })
+            );
+          });
+          dispatch(setDoEs(doeMetadata));
+
+          // Delay data fetch to allow initialization
+          setTimeout(() => {
+            isRestoringFromURL.current = false;
+          }, 500);
+        }
+      }
+    } else if (effectivePage === "power") {
+      // Restore Power Page DoE groups
+      const powerDoesParam = params.get(URL_PARAMS.POWER_DOES);
+      if (powerDoesParam) {
+        const does = decodePowerDoes(powerDoesParam);
+        if (does.length > 0) {
+          isRestoringFromURL.current = true;
+
+          // Restore DoE groups with _needsDataFetch flag using restoreDoeGroupsFromURL
+          const storedDoes = does.map((doe) => ({
+            id: doe.id,
+            label: doe.label,
+          }));
+
+          dispatch(restoreDoeGroupsFromURL(storedDoes));
+
+          // Also restore DoE metadata to doeRegistry
+          const doeMetadata = does.map((doe) => ({
+            id: doe.id,
+            label: doe.label,
+            PROJECT_NAME: doe.PROJECT_NAME,
+            BLOCK: doe.BLOCK,
+            NET_VER: doe.NET_VER,
+            REVISION: doe.REVISION,
+            ECO_NUM: doe.ECO_NUM,
+            POWER_SCENARIO: doe.POWER_SCENARIO,
+            AVAILABLE_SCENARIOS: doe.AVAILABLE_SCENARIOS,
+          }));
+          dispatch(setDoEs(doeMetadata));
+
+          // [WHY] Also add to matrix (QOR Compare) for cross-page sync
+          does.forEach((doe) => {
+            dispatch(
+              addColumn({
+                id: doe.id,
+                label: doe.label,
+                defaultValue: "___LOADING___",
+                _needsDataFetch: true,
+                meta: {
+                  PROJECT_NAME: doe.PROJECT_NAME,
+                  BLOCK: doe.BLOCK,
+                  NET_VER: doe.NET_VER,
+                  REVISION: doe.REVISION,
+                  ECO_NUM: doe.ECO_NUM,
+                },
+              })
+            );
+          });
+
+          // [WHY] Also add to timingMatrix for cross-page sync
+          does.forEach((doe) => {
+            dispatch(
+              addTimingRow({
+                id: doe.id,
+                label: doe.label,
+                _needsDataFetch: true,
+              })
+            );
+          });
 
           // Delay data fetch to allow initialization
           setTimeout(() => {
@@ -270,6 +404,28 @@ export function useURLSync() {
           params.set(URL_PARAMS.TIMING_ROWS, encoded);
         }
       }
+    } else if (currentPage === "power") {
+      // Save Power Page DoE groups (only if there are any)
+      if (doeGroups.length > 0) {
+        const doeMeta: PowerDoeMeta[] = doeGroups.map((doe) => {
+          const metadata = doeRegistry.byId[doe.id];
+          return {
+            id: doe.id,
+            label: doe.label,
+            PROJECT_NAME: metadata?.PROJECT_NAME,
+            BLOCK: metadata?.BLOCK,
+            NET_VER: metadata?.NET_VER,
+            REVISION: metadata?.REVISION,
+            ECO_NUM: metadata?.ECO_NUM,
+            POWER_SCENARIO: metadata?.POWER_SCENARIO,
+            AVAILABLE_SCENARIOS: metadata?.AVAILABLE_SCENARIOS,
+          };
+        });
+        const encoded = encodePowerDoes(doeMeta);
+        if (encoded) {
+          params.set(URL_PARAMS.POWER_DOES, encoded);
+        }
+      }
     }
 
     // Update URL without triggering a page reload
@@ -279,6 +435,7 @@ export function useURLSync() {
     currentPage,
     columnHeaders,
     timingRows,
+    doeGroups,
     doeRegistry,
     fcProject,
     fcBlock,

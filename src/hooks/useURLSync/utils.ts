@@ -5,7 +5,7 @@
  * URL 인코딩/디코딩 및 압축 유틸리티 함수
  */
 
-import type { ColumnMeta, TimingRowMeta } from "./types";
+import type { ColumnMeta, TimingRowMeta, PowerDoeMeta } from "./types";
 
 // Property shorthand mapping for compression
 const COMPRESS_MAP: Record<string, string> = {
@@ -112,6 +112,37 @@ export function decodeTimingRows(encoded: string): TimingRowMeta[] {
     return parsed.map(
       (obj: Record<string, unknown>) =>
         decompressObject(obj) as unknown as TimingRowMeta
+    );
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Encode power DoE groups to a compact URL-safe string with compression
+ */
+export function encodePowerDoes(does: PowerDoeMeta[]): string {
+  if (does.length === 0) return "";
+  try {
+    const compressed = does.map((doe) =>
+      compressObject(doe as unknown as Record<string, unknown>)
+    );
+    return btoa(encodeURIComponent(JSON.stringify(compressed)));
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Decode power DoE groups from URL parameter with decompression
+ */
+export function decodePowerDoes(encoded: string): PowerDoeMeta[] {
+  if (!encoded) return [];
+  try {
+    const parsed = JSON.parse(decodeURIComponent(atob(encoded)));
+    return parsed.map(
+      (obj: Record<string, unknown>) =>
+        decompressObject(obj) as unknown as PowerDoeMeta
     );
   } catch {
     return [];
