@@ -140,9 +140,23 @@ const timingMatrixSlice = createSlice({
 
     /**
      * 여러 행을 설정합니다 (URL 복원용).
+     * [WHY] _needsDataFetch가 true인 행은 LOADING 상태로 초기화하여 spinner가 표시되도록 함
      */
     setTimingRows: (state, action: PayloadAction<TimingRow[]>) => {
-      state.rows = action.payload;
+      state.rows = action.payload.map((row) => {
+        // _needsDataFetch가 true이고 data가 비어있으면 LOADING 상태로 초기화
+        if (row._needsDataFetch && Object.keys(row.data).length === 0) {
+          const initialData: Record<string, unknown> = {};
+          TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
+            TIMING_METRICS.forEach((metric) => {
+              const columnId = generateTimingColumnKey(columnGroup, metric);
+              initialData[columnId] = LOADING_PLACEHOLDER;
+            });
+          });
+          return { ...row, data: initialData };
+        }
+        return row;
+      });
     },
 
     /**
