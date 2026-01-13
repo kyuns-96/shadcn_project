@@ -27,6 +27,7 @@ import {
   LOADING_CELL_VALUE,
   EMPTY_CELL_VALUE,
 } from "./constants";
+import { Spinner } from "@/components/ui/spinner";
 
 /**
  * 숫자 값 포맷팅 함수
@@ -123,11 +124,7 @@ export const buildTimingColumnDefs = (
           },
           cellRenderer: (params: ICellRendererParams<TimingRowData>) => {
             if (params.value === LOADING_CELL_VALUE) {
-              return (
-                <span className="text-muted-foreground">
-                  {EMPTY_CELL_VALUE}
-                </span>
-              );
+              return <Spinner className="mx-auto" />;
             }
             return params.valueFormatted ?? params.value;
           },

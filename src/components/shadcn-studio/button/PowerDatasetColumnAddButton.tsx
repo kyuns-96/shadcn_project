@@ -144,10 +144,12 @@ const PowerDatasetColumnAddButton = () => {
     );
 
     // [WHY] timingMatrix.rows에도 추가하여 TimingPage에서도 DoE가 보이도록 함
+    // _needsDataFetch: true로 설정하여 TimingPage의 useRestoreTimingRowData가 자동으로 데이터를 가져오도록 함
     dispatch(
       addTimingRow({
         id: doeId,
         label: doeLabel,
+        _needsDataFetch: true,
       })
     );
 

@@ -17,6 +17,12 @@
  */
 
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  TIMING_COLUMN_GROUPS,
+  TIMING_METRICS,
+  generateTimingColumnKey,
+  LOADING_PLACEHOLDER,
+} from "@/variables/defaultTimingMatrixTemplate";
 
 /** Timing 행 타입 (DoE 1개 = 1개 행) */
 export interface TimingRow {
@@ -53,19 +59,33 @@ const timingMatrixSlice = createSlice({
       action: PayloadAction<{
         id: string;
         label: string;
+        _needsDataFetch?: boolean;
       }>
     ) => {
-      const { id, label } = action.payload;
+      const { id, label, _needsDataFetch } = action.payload;
 
       // 중복 체크
       if (state.rows.some((row) => row.id === id)) {
         return;
       }
 
+      // [WHY] _needsDataFetch가 true일 경우 모든 셀을 LOADING 상태로 초기화
+      // 이렇게 하면 다른 페이지에서 추가된 DoE가 Timing 테이블에서 로딩 스피너를 표시함
+      const initialData: Record<string, unknown> = {};
+      if (_needsDataFetch) {
+        TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
+          TIMING_METRICS.forEach((metric) => {
+            const columnId = generateTimingColumnKey(columnGroup, metric);
+            initialData[columnId] = LOADING_PLACEHOLDER;
+          });
+        });
+      }
+
       state.rows.push({
         id,
         label,
-        data: {},
+        data: initialData,
+        _needsDataFetch,
       });
     },
 
