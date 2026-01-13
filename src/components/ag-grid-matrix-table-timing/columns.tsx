@@ -113,7 +113,7 @@ export const buildTimingColumnDefs = (
           field: columnId,
           headerName: metric,
           width: 85,
-          headerStyle: { textAlign: "center" },
+          headerClass: "ag-header-cell-center",
           cellStyle: { textAlign },
           editable: false,
           suppressMovable: true,
