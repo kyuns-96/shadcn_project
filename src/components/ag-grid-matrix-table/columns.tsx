@@ -3,7 +3,7 @@ import ColumnHeaderWithPopup, {
   type ColumnMetadata,
 } from "@/components/ColumnHeaderWithPopup";
 import { Spinner } from "@/components/ui/spinner";
-import type { RowData } from "./types";
+import type { RowData, PowerUnit } from "./types";
 import type { TextAlignOption } from "./constants";
 
 export function buildColumnDefs(args: {
@@ -19,6 +19,7 @@ export function buildColumnDefs(args: {
     rowIndex: number,
     groupName: string
   ) => boolean;
+  powerUnit?: PowerUnit;
 }): ColDef<RowData>[] {
   const {
     columnHeaders,
@@ -121,12 +122,10 @@ export function buildColumnDefs(args: {
     valueFormatter: (params) => {
       const value = params.value;
       if (value === null || value === undefined || value === "") return "";
-      const valueStr = value.toString();
-      if (valueStr.includes(".")) {
-        const num = parseFloat(value);
-        if (!isNaN(num)) return num.toFixed(decimalPlaces);
-      }
-      return value;
+      // Apply decimal formatting to all numbers
+      const num = parseFloat(String(value));
+      if (!isNaN(num)) return num.toFixed(decimalPlaces);
+      return String(value);
     },
     cellRenderer: (params: ICellRendererParams<RowData>) => {
       if (params.value === "___LOADING___")

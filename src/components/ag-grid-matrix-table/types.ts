@@ -8,6 +8,9 @@
  * - 없음 (순수 타입 정의)
  */
 
+/** Power 단위 타입 */
+export type PowerUnit = "mW" | "W";
+
 /** 테이블 행 데이터 타입 */
 export interface RowData {
   /** 행 고유 식별자 */
@@ -17,5 +20,5 @@ export interface RowData {
   /** 행 헤더 라벨 */
   rowHeader: string;
   /** 동적 셀 데이터 */
-  [key: string]: string;
+  [key: string]: string | number;
 }

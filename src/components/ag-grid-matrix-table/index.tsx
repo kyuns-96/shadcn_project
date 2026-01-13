@@ -36,7 +36,7 @@ import {
   type RowHeightOption,
   type TextAlignOption,
 } from "./constants";
-import type { RowData } from "./types";
+import type { RowData, PowerUnit } from "./types";
 import { buildColumnDefs } from "./columns";
 import {
   useRowSpanAndClasses,
@@ -59,8 +59,12 @@ export default function AgGridMatrixTable() {
   const [textAlignOption, setTextAlignOption] =
     useState<TextAlignOption>("right");
   const [decimalPlaces, setDecimalPlaces] = useState<number>(2);
+  const [powerUnit, setPowerUnit] = useState<PowerUnit>("mW");
 
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height;
+
+  // 단위 변환 배수: API 값은 W이므로, mW일 때 1000을 곱함
+  const unitMultiplier = powerUnit === "mW" ? 1000 : 1;
 
   const handleRowHeightChange = useCallback((option: RowHeightOption) => {
     setRowHeightOption(option);
@@ -91,6 +95,12 @@ export default function AgGridMatrixTable() {
     api?.refreshCells({ force: true });
   }, []);
 
+  const handlePowerUnitChange = useCallback((unit: PowerUnit) => {
+    setPowerUnit(unit);
+    const api = gridRef.current?.api as GridApi<RowData> | undefined;
+    api?.refreshCells({ force: true });
+  }, []);
+
   const handleCopyToClipboard = useCallback(async () => {
     try {
       const api = gridRef.current?.api as GridApi<RowData> | undefined;
@@ -99,6 +109,22 @@ export default function AgGridMatrixTable() {
       const dataColumnOrder = allColumns
         .map((col) => col.getColId())
         .filter((colId) => colId !== "rowGroup" && colId !== "rowHeader");
+
+      // Helper function to format power values with unit conversion
+      const formatValue = (value: unknown, rowGroup: string): string => {
+        if (value === null || value === undefined || value === "") return "";
+        if (value === "___LOADING___") return "";
+        
+        // Only apply unit conversion to Power-related row groups
+        const isPowerRow = rowGroup.toLowerCase().includes("power");
+        
+        const num = parseFloat(String(value));
+        if (isNaN(num)) return String(value);
+        
+        // Apply unit multiplier only for power rows
+        const converted = isPowerRow ? num * unitMultiplier : num;
+        return converted.toFixed(decimalPlaces);
+      };
 
       const headers = [
         "Group",
@@ -130,7 +156,9 @@ export default function AgGridMatrixTable() {
         const rowValues = [
           groupValue,
           originalRow.label,
-          ...dataColumnOrder.map((colId) => originalRow.data[colId] ?? ""),
+          ...dataColumnOrder.map((colId) => 
+            formatValue(originalRow.data[colId], originalRow.rowGroup)
+          ),
         ];
         return rowValues.join("\t");
       });
@@ -227,16 +255,43 @@ export default function AgGridMatrixTable() {
     } catch (err) {
       console.error("Failed to copy table data: ", err);
     }
-  }, [columnHeaders, rowHeaders]);
+  }, [columnHeaders, rowHeaders, unitMultiplier, decimalPlaces]);
 
   const rowData: RowData[] = useMemo(() => {
-    return rowHeaders.map((row) => ({
-      id: row.id,
-      rowGroup: row.rowGroup,
-      rowHeader: row.label,
-      ...row.data,
-    }));
-  }, [rowHeaders]);
+    return rowHeaders.map((row) => {
+      // Only apply unit conversion to Power-related row groups
+      const isPowerRow = row.rowGroup.toLowerCase().includes("power");
+      
+      // Transform data with unit conversion applied only to Power rows
+      const transformedData: Record<string, string | number> = {};
+      for (const key in row.data) {
+        const value = row.data[key];
+        if (value === null || value === undefined || value === "") {
+          transformedData[key] = "";
+        } else if (value === "___LOADING___") {
+          transformedData[key] = "___LOADING___";
+        } else {
+          const num = parseFloat(String(value));
+          if (!isNaN(num) && isPowerRow) {
+            // Apply unit conversion only for power rows, keep as number
+            transformedData[key] = num * unitMultiplier;
+          } else if (!isNaN(num)) {
+            // Non-power rows: keep as number for decimal formatting
+            transformedData[key] = num;
+          } else {
+            transformedData[key] = String(value);
+          }
+        }
+      }
+      
+      return {
+        id: row.id,
+        rowGroup: row.rowGroup,
+        rowHeader: row.label,
+        ...transformedData,
+      };
+    });
+  }, [rowHeaders, unitMultiplier]);
 
   const {
     isFirstOfGroupFromApi,
@@ -281,6 +336,7 @@ export default function AgGridMatrixTable() {
         rowGroupRowSpan,
         rowGroupCellClass,
         isFirstOfGroupFromApi,
+        powerUnit,
       }),
     [
       columnHeaders,
@@ -291,6 +347,7 @@ export default function AgGridMatrixTable() {
       rowGroupRowSpan,
       rowGroupCellClass,
       isFirstOfGroupFromApi,
+      powerUnit,
     ]
   );
 
@@ -313,6 +370,8 @@ export default function AgGridMatrixTable() {
         decimalPlaces={decimalPlaces}
         onIncreaseDecimal={handleDecimalIncrease}
         onDecreaseDecimal={handleDecimalDecrease}
+        powerUnit={powerUnit}
+        onPowerUnitChange={handlePowerUnitChange}
         copied={copied}
         onCopy={handleCopyToClipboard}
       />

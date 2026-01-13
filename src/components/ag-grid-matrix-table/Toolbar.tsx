@@ -14,6 +14,7 @@ import {
   type RowHeightOption,
   type TextAlignOption,
 } from "./constants";
+import type { PowerUnit } from "./types";
 
 interface ToolbarProps {
   rowHeightOption: RowHeightOption;
@@ -23,6 +24,8 @@ interface ToolbarProps {
   decimalPlaces: number;
   onIncreaseDecimal: () => void;
   onDecreaseDecimal: () => void;
+  powerUnit: PowerUnit;
+  onPowerUnitChange: (unit: PowerUnit) => void;
   copied: boolean;
   onCopy: () => void;
 }
@@ -36,6 +39,8 @@ export function Toolbar(props: ToolbarProps) {
     decimalPlaces,
     onIncreaseDecimal,
     onDecreaseDecimal,
+    powerUnit,
+    onPowerUnitChange,
     copied,
     onCopy,
   } = props;
@@ -157,6 +162,28 @@ export function Toolbar(props: ToolbarProps) {
           title="Increase decimal places"
         >
           <PlusIcon className="size-3" />
+        </Button>
+      </div>
+
+      {/* Power Unit Toggle Buttons */}
+      <div className="flex items-center gap-1 border rounded-md p-1">
+        <Button
+          variant={powerUnit === "mW" ? "default" : "ghost"}
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={() => onPowerUnitChange("mW")}
+          title="Switch to milliwatt (mW)"
+        >
+          mW
+        </Button>
+        <Button
+          variant={powerUnit === "W" ? "default" : "ghost"}
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={() => onPowerUnitChange("W")}
+          title="Switch to watt (W)"
+        >
+          W
         </Button>
       </div>
 

@@ -44,7 +44,8 @@ const PROJECT_SCENARIO_MAP: Record<string, string> = {
  * matchesMissionPattern(\"tt_0p85v_25c\") // false
  */
 const matchesMissionPattern = (scenario: string): boolean => {
-  // \"mission*.tt_*\" 패턴: mission + 임의 문자(0개 이상) + . (실제 dot) + tt_ + 임의 문자(0개 이상)\n  return /^mission.*\.tt_.*/i.test(scenario);
+  // "mission*.tt_*" 패턴: mission + 임의 문자(0개 이상) + . (실제 dot) + tt_ + 임의 문자(0개 이상)
+  return /^mission.*\.tt_.*/i.test(scenario);
 };
 
 /**
