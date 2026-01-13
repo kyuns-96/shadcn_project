@@ -124,11 +124,12 @@ const TimingDatasetColumnAddButton = () => {
       })
     );
 
-    // 2. timingMatrix에 새 DoE 행 추가
+    // 2. timingMatrix에 새 DoE 행 추가 (로딩 상태로 초기화)
     dispatch(
       addTimingRow({
         id: doeId,
         label: doeLabel,
+        _needsDataFetch: true,
       })
     );
 
@@ -174,12 +175,11 @@ const TimingDatasetColumnAddButton = () => {
           extractAvailableTimingScenarios(datasetPayload);
 
         // 7. 가용 시나리오 중 "total"을 기본값으로 설정, 없으면 첫 번째 사용
-        const defaultTimingScenario =
-          availableTimingScenarios.includes("total")
-            ? "total"
-            : availableTimingScenarios.length > 0
-              ? availableTimingScenarios[0]
-              : undefined;
+        const defaultTimingScenario = availableTimingScenarios.includes("total")
+          ? "total"
+          : availableTimingScenarios.length > 0
+          ? availableTimingScenarios[0]
+          : undefined;
 
         // 8. Power Scenario 목록 추출 및 기본 시나리오 결정
         const availablePowerScenarios =
