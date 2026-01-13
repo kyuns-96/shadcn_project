@@ -67,6 +67,16 @@ export function useRestoreDoeGroupData() {
 
     if (groupsToFetch.length === 0) return;
 
+    // [WHY] Check if doeRegistry has metadata for ALL groups that need fetching
+    // If not, URL restoration is still in progress - wait for next render cycle
+    const allMetadataReady = groupsToFetch.every(
+      (group) => doeRegistry.byId[group.id] !== undefined
+    );
+    if (!allMetadataReady) {
+      // [WHY] doeRegistry not ready yet - useEffect will re-run when doeRegistry updates
+      return;
+    }
+
     isFetching.current = true;
 
     // [WHY] Capture current rowHeaders snapshot to avoid stale closure issues

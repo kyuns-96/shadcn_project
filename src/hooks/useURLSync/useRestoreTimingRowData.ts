@@ -63,6 +63,16 @@ export function useRestoreTimingRowData() {
 
     if (rowsToFetch.length === 0) return;
 
+    // [WHY] Check if doeRegistry has metadata for ALL rows that need fetching
+    // If not, URL restoration is still in progress - wait for next render cycle
+    const allMetadataReady = rowsToFetch.every(
+      (row) => doeRegistry.byId[row.id] !== undefined
+    );
+    if (!allMetadataReady) {
+      // [WHY] doeRegistry not ready yet - useEffect will re-run when doeRegistry updates
+      return;
+    }
+
     isFetching.current = true;
 
     // Fetch data for each timing row sequentially
