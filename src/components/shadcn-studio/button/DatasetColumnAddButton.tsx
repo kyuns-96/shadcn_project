@@ -29,6 +29,7 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { addColumn, updateCell } from "@/store/matrixSlice";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import { addDoeGroup } from "@/store/reducers/powerMatrixReducer";
+import { addTimingRow } from "@/store/reducers/timingMatrixReducer";
 import { setColumnPowerScenario } from "@/store/reducers/selectedReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
@@ -125,6 +126,14 @@ const DatasetColumnAddButton = () => {
         label: columnLabel,
         defaultValue: LOADING_PLACEHOLDER,
         _needsDataFetch: true,
+      })
+    );
+
+    // [WHY] timingMatrix.rows에도 추가하여 TimingPage에서도 DoE가 보이도록 함
+    dispatch(
+      addTimingRow({
+        id: columnId,
+        label: columnLabel,
       })
     );
 

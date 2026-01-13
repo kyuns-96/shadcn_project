@@ -30,6 +30,7 @@ import {
 } from "@/store/reducers/powerMatrixReducer";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
 import { addColumn, updateCell } from "@/store/matrixSlice";
+import { addTimingRow } from "@/store/reducers/timingMatrixReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import { extractAvailableScenarios } from "@/variables/powerScenarioExtractor";
 import { getDefaultPowerScenario } from "@/variables/defaultPowerScenarioMappingForPower";
@@ -139,6 +140,14 @@ const PowerDatasetColumnAddButton = () => {
           REVISION: selectedRevision || undefined,
           ECO_NUM: selectedEconum || undefined,
         },
+      })
+    );
+
+    // [WHY] timingMatrix.rows에도 추가하여 TimingPage에서도 DoE가 보이도록 함
+    dispatch(
+      addTimingRow({
+        id: doeId,
+        label: doeLabel,
       })
     );
 
