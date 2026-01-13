@@ -144,12 +144,12 @@ export default function AgGridMatrixTable() {
         // 헤더 행
         let headerHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        headerHtml += `<th style="padding: 8px; border: 0.5px solid #000; font-weight: bold; background-color: #e8f5e9;">Group</th>`;
-        headerHtml += `<th style="padding: 8px; border: 0.5px solid #000; font-weight: bold; background-color: #e8f5e9;">Row Header</th>`;
+        headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;">Group</th>`;
+        headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;">Row Header</th>`;
         for (const colId of dataColumnOrder) {
           const colHeader = columnHeaders.find((c) => c.id === colId);
           const label = colHeader?.label ?? colId;
-          headerHtml += `<th style="padding: 8px; border: 0.5px solid #000; font-weight: bold; text-align: center;">${label}</th>`;
+          headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; text-align: center;">${label}</th>`;
         }
         headerHtml += "</tr>";
         htmlRows.push(headerHtml);
@@ -172,19 +172,19 @@ export default function AgGridMatrixTable() {
 
           let rowHtml =
             '<tr style="text-align: right;">';
-          rowHtml += `<td style="padding: 8px; border: 0.5px solid #000; text-align: left; background-color: #e8f5e9;">${groupValue}</td>`;
-          rowHtml += `<td style="padding: 8px; border: 0.5px solid #000; text-align: left; font-weight: 500; background-color: #e8f5e9;">${originalRow.label}</td>`;
+          rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: left; background-color: #e8f5e9;">${groupValue}</td>`;
+          rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: left; font-weight: 500; background-color: #e8f5e9;">${originalRow.label}</td>`;
 
           for (const colId of dataColumnOrder) {
             const value = originalRow.data[colId] ?? "";
-            rowHtml += `<td style="padding: 8px; border: 0.5px solid #000; text-align: right;">${value}</td>`;
+            rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: right;">${value}</td>`;
           }
 
           rowHtml += "</tr>";
           htmlRows.push(rowHtml);
         }
 
-        return `<table style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table>`;
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();

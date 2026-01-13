@@ -152,9 +152,9 @@ export default function AgGridPowerTable() {
         // 헤더 행 (DoE 그룹)
         let headerHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        headerHtml += `<th style="padding: 8px; border: 0.5px solid #000; font-weight: bold; background-color: #e8f5e9;">Component</th>`;
+        headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;">Component</th>`;
         for (const doeGroup of doeGroups) {
-          headerHtml += `<th style="padding: 8px; border: 0.5px solid #000; font-weight: bold; text-align: center;" colspan="4">${doeGroup.label}</th>`;
+          headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; text-align: center;" colspan="4">${doeGroup.label}</th>`;
         }
         headerHtml += "</tr>";
         htmlRows.push(headerHtml);
@@ -162,10 +162,10 @@ export default function AgGridPowerTable() {
         // 서브 헤더 행 (컬럼명)
         let subHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        subHeaderHtml += `<th style="padding: 8px; border: 0.5px solid #000; font-weight: bold; background-color: #e8f5e9;"></th>`;
+        subHeaderHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;"></th>`;
         for (let i = 0; i < doeDataArray.length; i++) {
           const colName = doeDataArray[i][1];
-          subHeaderHtml += `<th style="padding: 8px; border: 0.5px solid #000; font-weight: bold; text-align: center;">${colName}</th>`;
+          subHeaderHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; text-align: center;">${colName}</th>`;
         }
         subHeaderHtml += "</tr>";
         htmlRows.push(subHeaderHtml);
@@ -177,19 +177,19 @@ export default function AgGridPowerTable() {
 
           let rowHtml =
             '<tr style="text-align: right;">';
-          rowHtml += `<td style="padding: 8px; border: 0.5px solid #000; text-align: left; font-weight: 500; background-color: #e8f5e9;">${originalRow.label}</td>`;
+          rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: left; font-weight: 500; background-color: #e8f5e9;">${originalRow.label}</td>`;
 
           for (const [doeId, colName] of doeDataArray) {
             const columnId = `${doeId}_${colName}`;
             const value = originalRow.data[columnId] ?? "";
-            rowHtml += `<td style="padding: 8px; border: 0.5px solid #000; text-align: right;">${value}</td>`;
+            rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: right;">${value}</td>`;
           }
 
           rowHtml += "</tr>";
           htmlRows.push(rowHtml);
         }
 
-        return `<table style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table>`;
+        return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();
