@@ -63,7 +63,7 @@ export function buildPowerColumnDefs(args: {
   // Row Header 컬럼 (왼쪽 고정)
   const rowHeaderCol: ColDef<PowerRowData> = {
     field: "rowHeader",
-    headerName: "",
+    headerName: `Power(${powerUnit})`,
     width: POWER_TABLE_CONFIG.rowHeaderColumnWidth,
     pinned: "left",
     lockPosition: true,
@@ -109,12 +109,10 @@ export function buildPowerColumnDefs(args: {
               const value = params.value;
               if (value === null || value === undefined || value === "")
                 return "";
-              const valueStr = value.toString();
-              if (valueStr.includes(".")) {
-                const num = parseFloat(value);
-                if (!isNaN(num)) return num.toFixed(decimalPlaces);
-              }
-              return value;
+              // 모든 숫자에 소수점 자릿수 적용 (정수 포함)
+              const num = parseFloat(String(value));
+              if (!isNaN(num)) return num.toFixed(decimalPlaces);
+              return String(value);
             },
             cellRenderer: (params: ICellRendererParams<PowerRowData>) => {
               if (params.value === "___LOADING___")

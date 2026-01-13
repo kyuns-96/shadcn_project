@@ -122,19 +122,20 @@ export default function AgGridPowerTable() {
       const api = gridRef.current?.api as GridApi<PowerRowData> | undefined;
       if (!api) return;
 
-      // Format helper function (단위 변환 적용)
+      // Format helper function (1000 곱한 후 decimal 적용)
       const formatPowerValue = (value: unknown): string => {
         if (value === null || value === undefined || value === "") return "";
         if (value === "___LOADING___") return "";
         const num = parseFloat(String(value));
         if (isNaN(num)) return String(value);
+        // 먼저 1000을 곱하고 (mW인 경우), 그 후에 decimal 적용
         const converted = num * unitMultiplier;
-        if (converted === 0) return "0";
         return converted.toFixed(decimalPlaces);
       };
 
-      // Build headers: Component + DoE group columns
-      const headers = ["Component"];
+      // Build headers: Power(단위) + DoE group columns
+      const powerHeaderLabel = `Power(${powerUnit})`;
+      const headers = [powerHeaderLabel];
       const doeDataArray: Array<[string, string]> = [];
 
       doeGroups.forEach((doeGroup) => {
@@ -177,7 +178,7 @@ export default function AgGridPowerTable() {
         // 헤더 행 (DoE 그룹)
         let headerHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        headerHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; vertical-align: middle; ${borderStyle}" rowspan="2">Component</th>`;
+        headerHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; vertical-align: middle; ${borderStyle}" rowspan="2">${powerHeaderLabel}</th>`;
         for (const doeGroup of doeGroups) {
           headerHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}" colspan="4">${doeGroup.label}</th>`;
         }
