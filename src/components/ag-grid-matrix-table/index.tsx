@@ -141,7 +141,7 @@ export default function AgGridMatrixTable() {
       const generateHtmlTable = (): string => {
         const htmlRows: string[] = [];
         // 공통 border 스타일: 웹용 CSS + Excel용 MSO 속성
-        const borderStyle = "border: 1px solid #000; mso-border-alt: solid #000 .5pt;";
+        const borderStyle = "border: .5pt solid black; mso-border-alt: solid black .5pt;";
 
         // 헤더 행
         let headerHtml =
@@ -186,7 +186,7 @@ export default function AgGridMatrixTable() {
           htmlRows.push(rowHtml);
         }
 
-        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: 1px solid #000; mso-border-alt: solid #000 .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: .5pt solid black; mso-border-alt: solid black .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();
