@@ -47,6 +47,8 @@ import {
   TIMING_COLUMN_GROUPS,
   TIMING_METRICS,
   generateTimingColumnKey,
+  type TimingColumnGroup,
+  type TimingMetric,
 } from "@/variables/defaultTimingMatrixTemplate";
 
 // AG Grid 모듈 등록
@@ -138,8 +140,9 @@ export default function AgGridTimingTable() {
 
   /**
    * 클립보드 복사 핸들러
-   * TSV 형식으로 포맷팅된 데이터를 복사합니다.
-   * 헤더: 계층 구조 (GroupName / MetricName)
+   * HTML + TSV 형식으로 포맷팅된 데이터를 복사합니다.
+   * HTML: 메일/Excel에 직접 붙여넣기 가능 (스타일 유지)
+   * TSV: 계층 구조 (GroupName / MetricName)
    */
   const handleCopyToClipboard = useCallback(async () => {
     try {
@@ -149,12 +152,14 @@ export default function AgGridTimingTable() {
       // 1. 헤더 생성: 계층 구조 (그룹명 행, 메트릭명 행)
       const groupHeaderRow: string[] = ["DoE Name"];
       const metricHeaderRow: string[] = [""];
+      const metricDataArray: Array<[string, string]> = []; // HTML용 메트릭 데이터
 
       // 각 컬럼 그룹별 메트릭 헤더 생성
       TIMING_COLUMN_GROUPS.forEach((group) => {
         TIMING_METRICS.forEach((metric) => {
           groupHeaderRow.push(group);
           metricHeaderRow.push(metric);
+          metricDataArray.push([group, metric]);
         });
       });
 
@@ -164,7 +169,7 @@ export default function AgGridTimingTable() {
         if (node.data) displayedRows.push(node.data);
       });
 
-      // 3. TSV 형식으로 변환 (포맷팅된 값 사용)
+      // 3. TSV + HTML 형식으로 변환
       const dataRows = displayedRows.map((row) => {
         const originalRow = rows.find((r) => r.id === row.id);
         if (!originalRow) return "";
@@ -191,15 +196,87 @@ export default function AgGridTimingTable() {
         return rowValues.join("\t");
       });
 
-      // 4. 클립보드에 복사 (헤더 2행 + 데이터 행)
+      // 4. TSV 형식 생성
       const tsvContent = [
         groupHeaderRow.join("\t"),
         metricHeaderRow.join("\t"),
         ...dataRows,
       ].join("\n");
-      await navigator.clipboard.writeText(tsvContent);
 
-      // 5. 피드백 UI
+      // 5. HTML 형식 생성
+      const generateHtmlTable = (): string => {
+        const htmlRows: string[] = [];
+
+        // 그룹 헤더 행
+        let groupHeaderHtml =
+          '<tr style="background-color: #e5e7eb; font-weight: bold; text-align: center; border: 1px solid #ccc;">';
+        groupHeaderHtml += `<th style="padding: 8px; border: 1px solid #ccc; font-weight: bold;">DoE Name</th>`;
+        for (const group of TIMING_COLUMN_GROUPS) {
+          groupHeaderHtml += `<th style="padding: 8px; border: 1px solid #ccc; font-weight: bold; text-align: center;" colspan="3">${group}</th>`;
+        }
+        groupHeaderHtml += "</tr>";
+        htmlRows.push(groupHeaderHtml);
+
+        // 메트릭 헤더 행
+        let metricHeaderHtml =
+          '<tr style="background-color: #f3f4f6; font-weight: bold; text-align: center; border: 1px solid #ccc;">';
+        metricHeaderHtml += `<th style="padding: 8px; border: 1px solid #ccc; font-weight: bold;"></th>`;
+        for (let i = 0; i < metricDataArray.length; i++) {
+          const metric = metricDataArray[i][1];
+          metricHeaderHtml += `<th style="padding: 8px; border: 1px solid #ccc; font-weight: bold; text-align: center;">${metric}</th>`;
+        }
+        metricHeaderHtml += "</tr>";
+        htmlRows.push(metricHeaderHtml);
+
+        // 데이터 행들
+        for (const row of displayedRows) {
+          const originalRow = rows.find((r) => r.id === row.id);
+          if (!originalRow) continue;
+
+          let rowHtml =
+            '<tr style="border: 1px solid #ccc; text-align: right;">';
+          rowHtml += `<td style="padding: 8px; border: 1px solid #ccc; text-align: left; font-weight: 500;">${originalRow.label}</td>`;
+
+          for (const [_group, metric] of metricDataArray) {
+            const columnId = generateTimingColumnKey(
+              _group as TimingColumnGroup,
+              metric as TimingMetric
+            );
+            const rawValue = originalRow.data[columnId];
+            const isNVP = metric === "NVP";
+            const formattedValue = formatTimingValue(
+              rawValue,
+              decimalPlaces,
+              isNVP
+            );
+            rowHtml += `<td style="padding: 8px; border: 1px solid #ccc; text-align: right;">${formattedValue}</td>`;
+          }
+
+          rowHtml += "</tr>";
+          htmlRows.push(rowHtml);
+        }
+
+        return `<table style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table>`;
+      };
+
+      const htmlContent = generateHtmlTable();
+
+      // 6. 클립보드에 HTML + TSV 형식으로 복사
+      try {
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const data = [
+          new ClipboardItem({
+            "text/html": blob,
+            "text/plain": new Blob([tsvContent], { type: "text/plain" }),
+          }),
+        ];
+        await navigator.clipboard.write(data);
+      } catch {
+        // 다중 형식 미지원시 TSV만 복사
+        await navigator.clipboard.writeText(tsvContent);
+      }
+
+      // 7. 피드백 UI
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
