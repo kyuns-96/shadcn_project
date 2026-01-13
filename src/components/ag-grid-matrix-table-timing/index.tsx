@@ -222,7 +222,7 @@ export default function AgGridTimingTable() {
         // 메트릭 헤더 행
         let metricHeaderHtml =
           '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
-        metricHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}"></th>`;
+        metricHeaderHtml += `<th style="padding: 8px; font-weight: bold; background-color: #e8f5e9; ${borderStyle}">&nbsp;</th>`;
         for (let i = 0; i < metricDataArray.length; i++) {
           const metric = metricDataArray[i][1];
           metricHeaderHtml += `<th style="padding: 8px; font-weight: bold; text-align: center; ${borderStyle}">${metric}</th>`;
