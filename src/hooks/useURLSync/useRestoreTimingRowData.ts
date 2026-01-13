@@ -14,6 +14,7 @@ import { updateDoEMetadata } from "@/store/doeRegistry";
 import {
   setTimingRows,
   updateTimingCell,
+  type TimingRow,
 } from "@/store/reducers/timingMatrixReducer";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
@@ -63,16 +64,6 @@ export function useRestoreTimingRowData() {
 
     if (rowsToFetch.length === 0) return;
 
-    // [WHY] Check if doeRegistry has metadata for ALL rows that need fetching
-    // If not, URL restoration is still in progress - wait for next render cycle
-    const allMetadataReady = rowsToFetch.every(
-      (row) => doeRegistry.byId[row.id] !== undefined
-    );
-    if (!allMetadataReady) {
-      // [WHY] doeRegistry not ready yet - useEffect will re-run when doeRegistry updates
-      return;
-    }
-
     isFetching.current = true;
 
     // Fetch data for each timing row sequentially
@@ -84,21 +75,40 @@ export function useRestoreTimingRowData() {
         // [WHY] Set doeName - fetchDataset uses this as the key for storing results
         dispatch(setDoeName(row.label));
 
-        // Get metadata from doeRegistry
-        const metadata = doeRegistry.byId[row.id];
-        if (!metadata) {
-          // Skip if metadata not found
+        // [WHY] Read metadata from row object directly (like useRestoreColumnData does)
+        // This avoids timing issues with doeRegistry not being ready yet
+        // Fallback to doeRegistry for backwards compatibility
+        const rowWithMeta = row as TimingRow & Record<string, unknown>;
+        const metadata = doeRegistry.byId[row.id] || {};
+
+        const PROJECT_NAME = (rowWithMeta.PROJECT_NAME ??
+          metadata.PROJECT_NAME) as string | null;
+        const BLOCK = (rowWithMeta.BLOCK ?? metadata.BLOCK) as string | null;
+        const NET_VER = (rowWithMeta.NET_VER ?? metadata.NET_VER) as
+          | string
+          | null;
+        const REVISION = (rowWithMeta.REVISION ?? metadata.REVISION) as
+          | string
+          | null;
+        const ECO_NUM = (rowWithMeta.ECO_NUM ?? metadata.ECO_NUM) as
+          | string
+          | null;
+        const TIMING_SCENARIO = (rowWithMeta.TIMING_SCENARIO ??
+          metadata.TIMING_SCENARIO) as string | undefined;
+
+        // [WHY] Skip if no PROJECT_NAME - can't fetch without it
+        if (!PROJECT_NAME) {
           continue;
         }
 
         // Set selection state for this DoE row
         dispatch(
           restoreFromURL({
-            selectedProject: (metadata.PROJECT_NAME as string) ?? null,
-            selectedBlock: (metadata.BLOCK as string) ?? null,
-            selectedNetver: (metadata.NET_VER as string) ?? null,
-            selectedRevision: (metadata.REVISION as string) ?? null,
-            selectedEconum: (metadata.ECO_NUM as string) ?? null,
+            selectedProject: PROJECT_NAME ?? null,
+            selectedBlock: BLOCK ?? null,
+            selectedNetver: NET_VER ?? null,
+            selectedRevision: REVISION ?? null,
+            selectedEconum: ECO_NUM ?? null,
           })
         );
 
@@ -117,7 +127,7 @@ export function useRestoreTimingRowData() {
 
           // [WHY] If TIMING_SCENARIO is missing, extract available scenarios and set default
           // Prefer "total" scenario as default, fallback to first available
-          let scenarioName = metadata.TIMING_SCENARIO;
+          let scenarioName = TIMING_SCENARIO;
           if (!scenarioName) {
             const availableTimingScenarios =
               extractAvailableTimingScenarios(datasetPayload);

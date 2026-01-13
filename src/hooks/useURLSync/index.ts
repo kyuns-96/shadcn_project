@@ -211,13 +211,25 @@ export function useURLSync() {
         if (rows.length > 0) {
           isRestoringFromURL.current = true;
 
-          // Restore timing rows with _needsDataFetch flag
-          const storedRows: TimingRow[] = rows.map((row) => ({
-            id: row.id,
-            label: row.label,
-            data: {},
-            _needsDataFetch: true,
-          }));
+          // [WHY] Include metadata in storedRows so useRestoreTimingRowData can access it
+          // This matches how useRestoreColumnData works - it reads metadata from column object
+          const storedRows: TimingRow[] = rows.map(
+            (row) =>
+              ({
+                id: row.id,
+                label: row.label,
+                data: {},
+                _needsDataFetch: true,
+                // Include metadata for useRestoreTimingRowData
+                PROJECT_NAME: row.PROJECT_NAME,
+                BLOCK: row.BLOCK,
+                NET_VER: row.NET_VER,
+                REVISION: row.REVISION,
+                ECO_NUM: row.ECO_NUM,
+                TIMING_SCENARIO: row.TIMING_SCENARIO,
+                AVAILABLE_TIMING_SCENARIOS: row.AVAILABLE_TIMING_SCENARIOS,
+              } as TimingRow)
+          );
 
           dispatch(setTimingRows(storedRows));
 
