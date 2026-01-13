@@ -114,9 +114,12 @@ export default function AgGridPowerTable() {
 
       // Build headers: Component + DoE group columns
       const headers = ["Component"];
+      const doeDataArray: Array<[string, string]> = [];
+      
       doeGroups.forEach((doeGroup) => {
         POWER_COLUMN_NAMES.forEach((colName) => {
           headers.push(`${doeGroup.label} - ${colName}`);
+          doeDataArray.push([doeGroup.id, colName]);
         });
       });
 
@@ -141,7 +144,71 @@ export default function AgGridPowerTable() {
       });
 
       const tsvContent = [headers.join("\t"), ...dataRows].join("\n");
-      await navigator.clipboard.writeText(tsvContent);
+
+      // 5. HTML 형식 생성
+      const generateHtmlTable = (): string => {
+        const htmlRows: string[] = [];
+
+        // 헤더 행 (DoE 그룹)
+        let headerHtml =
+          '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
+        headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;">Component</th>`;
+        for (const doeGroup of doeGroups) {
+          headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; text-align: center;" colspan="4">${doeGroup.label}</th>`;
+        }
+        headerHtml += "</tr>";
+        htmlRows.push(headerHtml);
+
+        // 서브 헤더 행 (컬럼명)
+        let subHeaderHtml =
+          '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
+        subHeaderHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;"></th>`;
+        for (let i = 0; i < doeDataArray.length; i++) {
+          const colName = doeDataArray[i][1];
+          subHeaderHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; text-align: center;">${colName}</th>`;
+        }
+        subHeaderHtml += "</tr>";
+        htmlRows.push(subHeaderHtml);
+
+        // 데이터 행들
+        for (const row of displayedRows) {
+          const originalRow = rowHeaders.find((r) => r.id === row.id);
+          if (!originalRow) continue;
+
+          let rowHtml =
+            '<tr style="text-align: right;">';
+          rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: left; font-weight: 500; background-color: #e8f5e9;">${originalRow.label}</td>`;
+
+          for (const [doeId, colName] of doeDataArray) {
+            const columnId = `${doeId}_${colName}`;
+            const value = originalRow.data[columnId] ?? "";
+            rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: right;">${value}</td>`;
+          }
+
+          rowHtml += "</tr>";
+          htmlRows.push(rowHtml);
+        }
+
+        return `<table style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table>`;
+      };
+
+      const htmlContent = generateHtmlTable();
+
+      // 6. 클립보드에 HTML + TSV 형식으로 복사
+      try {
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const data = [
+          new ClipboardItem({
+            "text/html": blob,
+            "text/plain": new Blob([tsvContent], { type: "text/plain" }),
+          }),
+        ];
+        await navigator.clipboard.write(data);
+      } catch {
+        // 다중 형식 미지원시 TSV만 복사
+        await navigator.clipboard.writeText(tsvContent);
+      }
+
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {

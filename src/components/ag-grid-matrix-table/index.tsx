@@ -136,7 +136,74 @@ export default function AgGridMatrixTable() {
       });
 
       const tsvContent = [headers.join("\t"), ...dataRows].join("\n");
-      await navigator.clipboard.writeText(tsvContent);
+
+      // 5. HTML 형식 생성
+      const generateHtmlTable = (): string => {
+        const htmlRows: string[] = [];
+
+        // 헤더 행
+        let headerHtml =
+          '<tr style="background-color: #e3f2fd; font-weight: bold; text-align: center;">';
+        headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;">Group</th>`;
+        headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; background-color: #e8f5e9;">Row Header</th>`;
+        for (const colId of dataColumnOrder) {
+          const colHeader = columnHeaders.find((c) => c.id === colId);
+          const label = colHeader?.label ?? colId;
+          headerHtml += `<th style="padding: 8px; border: 1px solid #000; font-weight: bold; text-align: center;">${label}</th>`;
+        }
+        headerHtml += "</tr>";
+        htmlRows.push(headerHtml);
+
+        // 데이터 행들
+        prevGroup = "";
+        for (const row of displayedRows) {
+          const originalRow = rowHeaders.find((r) => r.id === row.id);
+          if (!originalRow) continue;
+
+          let groupValue =
+            originalRow.rowGroup !== prevGroup ? originalRow.rowGroup : "";
+          if (groupValue) {
+            groupValue = groupValue
+              .replace(/\r?\n+/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+          }
+          prevGroup = originalRow.rowGroup;
+
+          let rowHtml =
+            '<tr style="text-align: right;">';
+          rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: left; background-color: #e8f5e9;">${groupValue}</td>`;
+          rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: left; font-weight: 500; background-color: #e8f5e9;">${originalRow.label}</td>`;
+
+          for (const colId of dataColumnOrder) {
+            const value = originalRow.data[colId] ?? "";
+            rowHtml += `<td style="padding: 8px; border: 1px solid #000; text-align: right;">${value}</td>`;
+          }
+
+          rowHtml += "</tr>";
+          htmlRows.push(rowHtml);
+        }
+
+        return `<table style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table>`;
+      };
+
+      const htmlContent = generateHtmlTable();
+
+      // 6. 클립보드에 HTML + TSV 형식으로 복사
+      try {
+        const blob = new Blob([htmlContent], { type: "text/html" });
+        const data = [
+          new ClipboardItem({
+            "text/html": blob,
+            "text/plain": new Blob([tsvContent], { type: "text/plain" }),
+          }),
+        ];
+        await navigator.clipboard.write(data);
+      } catch {
+        // 다중 형식 미지원시 TSV만 복사
+        await navigator.clipboard.writeText(tsvContent);
+      }
+
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
