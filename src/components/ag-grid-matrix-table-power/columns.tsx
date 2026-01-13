@@ -23,7 +23,7 @@ import type {
   IHeaderParams,
 } from "ag-grid-community";
 import { Spinner } from "@/components/ui/spinner";
-import type { PowerRowData, DoeColumnGroup } from "./types";
+import type { PowerRowData, DoeColumnGroup, PowerUnit } from "./types";
 import type { TextAlignOption } from "./constants";
 import { POWER_TABLE_CONFIG } from "./constants";
 import { POWER_COLUMN_NAMES } from "@/variables/defaultPowerMatrixTemplate";
@@ -55,8 +55,10 @@ export function buildPowerColumnDefs(args: {
   textAlignOption: TextAlignOption;
   /** 소수점 자리수 */
   decimalPlaces: number;
+  /** Power 단위 (mW/W) */
+  powerUnit?: PowerUnit;
 }): (ColDef<PowerRowData> | ColGroupDef<PowerRowData>)[] {
-  const { doeGroups, textAlignOption, decimalPlaces } = args;
+  const { doeGroups, textAlignOption, decimalPlaces, powerUnit = "mW" } = args;
 
   // Row Header 컬럼 (왼쪽 고정)
   const rowHeaderCol: ColDef<PowerRowData> = {
@@ -81,9 +83,11 @@ export function buildPowerColumnDefs(args: {
       const childColumns: ColDef<PowerRowData>[] = POWER_COLUMN_NAMES.map(
         (columnName) => {
           const columnId = `${doeGroup.id}_${columnName}`;
+          // 컬럼명에 단위 추가 (예: "Internal (mW)")
+          const headerNameWithUnit = `${columnName} (${powerUnit})`;
           return {
             field: columnId,
-            headerName: columnName,
+            headerName: headerNameWithUnit,
             width: POWER_TABLE_CONFIG.dataColumnWidth,
             editable: true,
             cellStyle: { textAlign: textAlignOption } as any,
@@ -91,7 +95,7 @@ export function buildPowerColumnDefs(args: {
             headerComponentParams: {
               columnMetadata: {
                 id: columnId,
-                label: columnName,
+                label: headerNameWithUnit,
                 accessorKey: columnId,
                 PROJECT_NAME: doeGroup.PROJECT_NAME,
                 BLOCK: doeGroup.BLOCK,

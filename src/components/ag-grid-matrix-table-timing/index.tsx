@@ -207,7 +207,8 @@ export default function AgGridTimingTable() {
       const generateHtmlTable = (): string => {
         const htmlRows: string[] = [];
         // 공통 border 스타일: 웹용 CSS + Excel용 MSO 속성
-        const borderStyle = "border: .5pt solid black; mso-border-alt: solid black .5pt;";
+        const borderStyle =
+          "border: .5pt solid black; mso-border-alt: solid black .5pt;";
 
         // 그룹 헤더 행
         let groupHeaderHtml =
@@ -234,8 +235,7 @@ export default function AgGridTimingTable() {
           const originalRow = rows.find((r) => r.id === row.id);
           if (!originalRow) continue;
 
-          let rowHtml =
-            '<tr style="text-align: right;">';
+          let rowHtml = '<tr style="text-align: right;">';
           rowHtml += `<td style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; ${borderStyle}">${originalRow.label}</td>`;
 
           for (const [_group, metric] of metricDataArray) {
@@ -257,7 +257,9 @@ export default function AgGridTimingTable() {
           htmlRows.push(rowHtml);
         }
 
-        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: .5pt solid black; mso-border-alt: solid black .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: .5pt solid black; mso-border-alt: solid black .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join(
+          ""
+        )}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();

@@ -36,7 +36,7 @@ import {
   type RowHeightOption,
   type TextAlignOption,
 } from "./constants";
-import type { PowerRowData } from "./types";
+import type { PowerRowData, PowerUnit } from "./types";
 import { buildPowerColumnDefs } from "./columns";
 import { useSelectionHandlers, useRowClasses } from "./hooks";
 import { POWER_COLUMN_NAMES } from "@/variables/defaultPowerMatrixTemplate";
@@ -75,6 +75,10 @@ export default function AgGridPowerTable() {
   const [textAlignOption, setTextAlignOption] =
     useState<TextAlignOption>("right");
   const [decimalPlaces, setDecimalPlaces] = useState<number>(3);
+  const [powerUnit, setPowerUnit] = useState<PowerUnit>("mW");
+
+  // 단위 변환 배수: API 값은 W이므로, mW일 때 1000을 곱함
+  const unitMultiplier = powerUnit === "mW" ? 1000 : 1;
 
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height;
 
@@ -107,15 +111,32 @@ export default function AgGridPowerTable() {
     api?.refreshCells({ force: true });
   }, []);
 
+  const handlePowerUnitChange = useCallback((unit: PowerUnit) => {
+    setPowerUnit(unit);
+    const api = gridRef.current?.api as GridApi<PowerRowData> | undefined;
+    api?.refreshCells({ force: true });
+  }, []);
+
   const handleCopyToClipboard = useCallback(async () => {
     try {
       const api = gridRef.current?.api as GridApi<PowerRowData> | undefined;
       if (!api) return;
 
+      // Format helper function (단위 변환 적용)
+      const formatPowerValue = (value: unknown): string => {
+        if (value === null || value === undefined || value === "") return "";
+        if (value === "___LOADING___") return "";
+        const num = parseFloat(String(value));
+        if (isNaN(num)) return String(value);
+        const converted = num * unitMultiplier;
+        if (converted === 0) return "0";
+        return converted.toFixed(decimalPlaces);
+      };
+
       // Build headers: Component + DoE group columns
       const headers = ["Component"];
       const doeDataArray: Array<[string, string]> = [];
-      
+
       doeGroups.forEach((doeGroup) => {
         POWER_COLUMN_NAMES.forEach((colName) => {
           headers.push(`${doeGroup.label} - ${colName}`);
@@ -137,7 +158,8 @@ export default function AgGridPowerTable() {
         doeGroups.forEach((doeGroup) => {
           POWER_COLUMN_NAMES.forEach((colName) => {
             const columnId = `${doeGroup.id}_${colName}`;
-            rowValues.push(String(originalRow.data[columnId] ?? ""));
+            const rawValue = originalRow.data[columnId];
+            rowValues.push(formatPowerValue(rawValue));
           });
         });
         return rowValues.join("\t");
@@ -149,7 +171,8 @@ export default function AgGridPowerTable() {
       const generateHtmlTable = (): string => {
         const htmlRows: string[] = [];
         // 공통 border 스타일: 웹용 CSS + Excel용 MSO 속성
-        const borderStyle = "border: .5pt solid black; mso-border-alt: solid black .5pt;";
+        const borderStyle =
+          "border: .5pt solid black; mso-border-alt: solid black .5pt;";
 
         // 헤더 행 (DoE 그룹)
         let headerHtml =
@@ -176,21 +199,23 @@ export default function AgGridPowerTable() {
           const originalRow = rowHeaders.find((r) => r.id === row.id);
           if (!originalRow) continue;
 
-          let rowHtml =
-            '<tr style="text-align: right;">';
+          let rowHtml = '<tr style="text-align: right;">';
           rowHtml += `<td style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; ${borderStyle}">${originalRow.label}</td>`;
 
           for (const [doeId, colName] of doeDataArray) {
             const columnId = `${doeId}_${colName}`;
-            const value = originalRow.data[columnId] ?? "";
-            rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${value}</td>`;
+            const rawValue = originalRow.data[columnId];
+            const formattedValue = formatPowerValue(rawValue);
+            rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${formattedValue}</td>`;
           }
 
           rowHtml += "</tr>";
           htmlRows.push(rowHtml);
         }
 
-        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: .5pt solid black; mso-border-alt: solid black .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: .5pt solid black; mso-border-alt: solid black .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join(
+          ""
+        )}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();
@@ -215,17 +240,36 @@ export default function AgGridPowerTable() {
     } catch (err) {
       console.error("Failed to copy table data: ", err);
     }
-  }, [doeGroups, rowHeaders]);
+  }, [doeGroups, rowHeaders, decimalPlaces, unitMultiplier]);
 
-  // Transform rowHeaders to PowerRowData format
+  // Transform rowHeaders to PowerRowData format (단위 변환 적용)
   const rowData: PowerRowData[] = useMemo(() => {
-    return rowHeaders.map((row) => ({
-      id: row.id,
-      rowHeader: row.label,
-      rowKey: row.rowKey,
-      ...row.data,
-    }));
-  }, [rowHeaders]);
+    return rowHeaders.map((row) => {
+      // 각 데이터 값에 단위 변환 적용
+      const convertedData: Record<string, string | number> = {};
+      for (const key in row.data) {
+        const value = row.data[key];
+        if (value === null || value === undefined || value === "") {
+          convertedData[key] = "";
+        } else if (value === "___LOADING___") {
+          convertedData[key] = "___LOADING___";
+        } else {
+          const num = parseFloat(String(value));
+          if (!isNaN(num)) {
+            convertedData[key] = num * unitMultiplier;
+          } else {
+            convertedData[key] = String(value);
+          }
+        }
+      }
+      return {
+        id: row.id,
+        rowHeader: row.label,
+        rowKey: row.rowKey,
+        ...convertedData,
+      };
+    });
+  }, [rowHeaders, unitMultiplier]);
 
   const { onCellClicked } = useSelectionHandlers(gridRef);
   const { getRowClass } = useRowClasses();
@@ -237,8 +281,9 @@ export default function AgGridPowerTable() {
         doeGroups,
         textAlignOption,
         decimalPlaces,
+        powerUnit,
       }),
-    [doeGroups, textAlignOption, decimalPlaces]
+    [doeGroups, textAlignOption, decimalPlaces, powerUnit]
   );
 
   const defaultColDef = useMemo(
@@ -273,6 +318,8 @@ export default function AgGridPowerTable() {
           decimalPlaces={decimalPlaces}
           onIncreaseDecimal={handleDecimalIncrease}
           onDecreaseDecimal={handleDecimalDecrease}
+          powerUnit={powerUnit}
+          onPowerUnitChange={handlePowerUnitChange}
           copied={copied}
           onCopy={handleCopyToClipboard}
         />

@@ -10,6 +10,9 @@
 
 import type { PowerRowKey } from "@/variables/defaultPowerMatrixTemplate";
 
+/** Power 단위 타입 */
+export type PowerUnit = "mW" | "W";
+
 /** Power 테이블 행 데이터 타입 */
 export interface PowerRowData {
   /** 행 고유 식별자 */

@@ -26,6 +26,7 @@ import {
   type RowHeightOption,
   type TextAlignOption,
 } from "./constants";
+import type { PowerUnit } from "./types";
 
 interface PowerToolbarProps {
   rowHeightOption: RowHeightOption;
@@ -35,6 +36,8 @@ interface PowerToolbarProps {
   decimalPlaces: number;
   onIncreaseDecimal: () => void;
   onDecreaseDecimal: () => void;
+  powerUnit: PowerUnit;
+  onPowerUnitChange: (unit: PowerUnit) => void;
   copied: boolean;
   onCopy: () => void;
 }
@@ -48,6 +51,8 @@ export function PowerToolbar(props: PowerToolbarProps) {
     decimalPlaces,
     onIncreaseDecimal,
     onDecreaseDecimal,
+    powerUnit,
+    onPowerUnitChange,
     copied,
     onCopy,
   } = props;
@@ -176,6 +181,26 @@ export function PowerToolbar(props: PowerToolbarProps) {
           disabled={decimalPlaces >= 10}
         >
           <PlusIcon className="size-3" />
+        </Button>
+      </div>
+
+      {/* Power Unit Toggle */}
+      <div className="flex items-center gap-0.5 border rounded-md p-0.5">
+        <Button
+          variant={powerUnit === "mW" ? "default" : "ghost"}
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={() => onPowerUnitChange("mW")}
+        >
+          mW
+        </Button>
+        <Button
+          variant={powerUnit === "W" ? "default" : "ghost"}
+          size="sm"
+          className="h-6 px-2 text-xs"
+          onClick={() => onPowerUnitChange("W")}
+        >
+          W
         </Button>
       </div>
 

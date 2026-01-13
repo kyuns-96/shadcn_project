@@ -141,7 +141,8 @@ export default function AgGridMatrixTable() {
       const generateHtmlTable = (): string => {
         const htmlRows: string[] = [];
         // 공통 border 스타일: 웹용 CSS + Excel용 MSO 속성
-        const borderStyle = "border: .5pt solid black; mso-border-alt: solid black .5pt;";
+        const borderStyle =
+          "border: .5pt solid black; mso-border-alt: solid black .5pt;";
 
         // 헤더 행
         let headerHtml =
@@ -156,25 +157,37 @@ export default function AgGridMatrixTable() {
         headerHtml += "</tr>";
         htmlRows.push(headerHtml);
 
-        // 데이터 행들
+        // 각 그룹별 row span 계산
+        const groupRowCounts: Map<string, number> = new Map();
+        displayedRows.forEach((row) => {
+          const originalRow = rowHeaders.find((r) => r.id === row.id);
+          if (originalRow) {
+            const group = originalRow.rowGroup;
+            groupRowCounts.set(group, (groupRowCounts.get(group) || 0) + 1);
+          }
+        });
+
+        // 데이터 행들 (row group merge 적용)
         prevGroup = "";
         for (const row of displayedRows) {
           const originalRow = rowHeaders.find((r) => r.id === row.id);
           if (!originalRow) continue;
 
-          let groupValue =
-            originalRow.rowGroup !== prevGroup ? originalRow.rowGroup : "";
-          if (groupValue) {
-            groupValue = groupValue
+          const isFirstOfGroup = originalRow.rowGroup !== prevGroup;
+          const currentGroup = originalRow.rowGroup;
+          const rowSpan = groupRowCounts.get(currentGroup) || 1;
+
+          let rowHtml = '<tr style="text-align: right;">';
+
+          // Group 셀: 첫 행에만 rowspan으로 merge
+          if (isFirstOfGroup) {
+            let groupValue = currentGroup
               .replace(/\r?\n+/g, " ")
               .replace(/\s+/g, " ")
               .trim();
+            rowHtml += `<td style="padding: 8px; text-align: left; vertical-align: middle; background-color: #e8f5e9; ${borderStyle}" rowspan="${rowSpan}">${groupValue}</td>`;
           }
-          prevGroup = originalRow.rowGroup;
 
-          let rowHtml =
-            '<tr style="text-align: right;">';
-          rowHtml += `<td style="padding: 8px; text-align: left; background-color: #e8f5e9; ${borderStyle}">${groupValue}</td>`;
           rowHtml += `<td style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; ${borderStyle}">${originalRow.label}</td>`;
 
           for (const colId of dataColumnOrder) {
@@ -184,9 +197,12 @@ export default function AgGridMatrixTable() {
 
           rowHtml += "</tr>";
           htmlRows.push(rowHtml);
+          prevGroup = originalRow.rowGroup;
         }
 
-        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: .5pt solid black; mso-border-alt: solid black .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join("")}</table></body></html>`;
+        return `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>table { border-collapse: collapse; } td, th { border: .5pt solid black; mso-border-alt: solid black .5pt; }</style></head><body><table cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; font-size: 12px;">${htmlRows.join(
+          ""
+        )}</table></body></html>`;
       };
 
       const htmlContent = generateHtmlTable();
