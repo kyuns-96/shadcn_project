@@ -2,22 +2,25 @@
  * @file metricValueExtractor.ts
  *
  * @purpose
- * 데이터셋에서 특정 메트릭 값을 추출하는 유틸리티 함수입니다.
- * 메트릭 키에 해당하는 경로를 정의하고, 중첩된 객체에서 자동으로 값을 추출합니다.
- * Power Scenario를 지원하여 시나리오별 메트릭 값을 추출할 수 있습니다.
- * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
+ * 메트릭 키별 경로 및 매핑 정보를 정의합니다.
+ * 데이터셋에서 메트릭 값을 추출할 때 필요한 모든 매핑 설정을 중앙화합니다.
  *
  * @structure
- * 1. METRIC_EXTRACTORS: "Group!Label" -> "경로.문자열" 형태로 정의
- * 2. extractScenarioMetric: 시나리오 기반 메트릭 추출 (점 포함 시나리오 지원)
- * 3. extractMetricValue: 메인 추출 함수 (경로 자동 파싱, 시나리오 지원)
+ * 1. BASE_PATHS: 공통 경로 정의
+ * 2. METRIC_EXTRACTORS: "Group!Label" -> "경로.문자열" 형태로 정의
+ * 3. PHYSICAL_INFO_TYPE_MAPPING: Physical Info 메트릭 이름과 TYPE 값 매핑
  *
  * @dependencies
- * - 없음 (순수 유틸리티 함수)
+ * - extractors.ts (실제 추출 함수)
+ * - helpers.ts (변환 함수)
  */
 
-/** 데이터셋 타입 정의 */
-type DatasetRecord = Record<string, unknown>;
+export {
+  extractMetricValue,
+  extractScenarioMetric,
+  extractPhysicalInfoMetric,
+} from "./extractors";
+export { applyTransform, type MetricTransformer } from "./helpers";
 
 /** 공통 경로 정의 */
 const BASE_PATHS = {
@@ -27,6 +30,14 @@ const BASE_PATHS = {
   ptpxpower: "get_ptpxpower.ptpxpower_data",
   /** Timing 시나리오 데이터 기본 경로 (시나리오 이름이 동적으로 삽입됨) */
   timingSummary: "get_timing_summary.timing_summary_data",
+  /** Physical Info 데이터 기본 경로 (input_date가 동적으로 삽입됨) */
+  physical_info: "get_layoutpnrdrcsummary.layoutpnrdrcsummary_data",
+  /** Layout Wiring Total 데이터 기본 경로 (input_date가 동적으로 삽입됨) */
+  layoutWiringTotal: "get_layoutwiringtotal.layoutwiringtotal_data",
+  /** Layout Runtime 데이터 기본 경로 */
+  layoutRuntime: "get_layoutruntime.layoutruntime_data",
+  /** Layout Data (Cell Usage) 기본 경로 */
+  layoutData: "get_layoutcellusage.layoutcellusage_data",
 };
 
 /**
@@ -41,15 +52,7 @@ const BASE_PATHS = {
  * "Order!TotalAmount": "api.order.data.totalAmount"
  * "Power!TotalPower": "get_ptpxpower.ptpxpower_data.${SCENARIO}.total_power"
  */
-const METRIC_EXTRACTORS: Record<string, string> = {
-  "User!Name": "user.name",
-  "User!Email": "user.email",
-  "Order!TotalAmount": `${BASE_PATHS.order}.totalAmount`,
-  "Order!ItemCount": `${BASE_PATHS.order}.itemCount`,
-  "Order!Status": `${BASE_PATHS.order}.status`,
-  "Product!Price": `${BASE_PATHS.product}.price`,
-  "Product!Stock": `${BASE_PATHS.product}.stock`,
-
+export const METRIC_EXTRACTORS: Record<string, string> = {
   // ============================================================
   // Power Page Metrics (10 rows × 4 columns = 40 metrics)
   // Format: "Power(mW)!{RowName}_{ColumnName}"
@@ -158,226 +161,74 @@ const METRIC_EXTRACTORS: Record<string, string> = {
   "Timing!gnoise_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.WNS`,
   "Timing!gnoise_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.TNS`,
   "Timing!gnoise_NVP": `${BASE_PATHS.timingSummary}.\${SCENARIO}.gnoise.NVP`,
+
+  // ============================================================
+  // Physical Info Metrics (4 metrics)
+  // Format: "PhysicalInfo!{MetricName}"
+  // Path: ${BASE_PATHS.physical_info}.${input_date}.DATA.{TYPE_or_VALUE}
+  // Note: Uses dynamic input_date extraction with type-based value lookup
+  // ============================================================
+  "Physical Info!DRCs": `${BASE_PATHS.physical_info}.\${INPUT_DATE}.DATA`,
+  "Physical Info!Short": `${BASE_PATHS.physical_info}.\${INPUT_DATE}.DATA`,
+  "Physical Info!Total Wire Length": `${BASE_PATHS.layoutWiringTotal}.\${INPUT_DATE}.DATA.WIRE`,
+  "Physical Info!ECO Runtime": `${BASE_PATHS.layoutRuntime}.RUNTIME`,
+
+  // ============================================================
+  // Layout Data Metrics - Area(G/C) group (6 metrics)
+  // Format: "LayoutData!Area(G/C)_{Entry}"
+  // Path: ${BASE_PATHS.layoutData}.{GATE_COUNT_*}
+  // ============================================================
+  "Area(G/C)!SRAM": `${BASE_PATHS.layoutData}.GATE_COUNT_MEORY`,
+  "Area(G/C)!F/F": `${BASE_PATHS.layoutData}.GATE_COUNT_SEQUENTIAL`,
+  "Area(G/C)!Combi": `${BASE_PATHS.layoutData}.GATE_COUNT_COMBINATIONAL`,
+  "Area(G/C)!HM": `${BASE_PATHS.layoutData}.GATE_COUNT_HM`,
+  "Area(G/C)!IO": `${BASE_PATHS.layoutData}.GATE_COUNT_IO`,
+  "Area(G/C)!Total": `${BASE_PATHS.layoutData}.GATE_COUNT_TOTAL`,
+
+  // ============================================================
+  // Layout Data Metrics - Area(um^2) group (6 metrics)
+  // Format: "LayoutData!Area(um^2)_{Entry}"
+  // Path: ${BASE_PATHS.layoutData}.{AREA_*} (references GATE_COUNT_*)
+  // ============================================================
+  "Area(um^2)!SRAM": `${BASE_PATHS.layoutData}.AREA_MEORY`,
+  "Area(um^2)!F/F": `${BASE_PATHS.layoutData}.AREA_SEQUENTIAL`,
+  "Area(um^2)!Combi": `${BASE_PATHS.layoutData}.AREA_COMBINATIONAL`,
+  "Area(um^2)!HM": `${BASE_PATHS.layoutData}.AREA_HM`,
+  "Area(um^2)!IO": `${BASE_PATHS.layoutData}.AREA_IO`,
+  "Area(um^2)!Total": `${BASE_PATHS.layoutData}.AREA_TOTAL`,
+
+  // ============================================================
+  // Layout Data Metrics - VTH_RATIO(Area) group (6 metrics)
+  // Format: "LayoutData!VTH_RATIO(Area)_{Entry}"
+  // Path: ${BASE_PATHS.layoutData}.VTH_RATIO_{ENTRY}
+  // ============================================================
+  "VTH_RATIO(Area)!LVT": `${BASE_PATHS.layoutData}.VTH_RATIO_LVT`,
+  "VTH_RATIO(Area)!LVT_LLP": `${BASE_PATHS.layoutData}.VTH_RATIO_LVT_LLP`,
+  "VTH_RATIO(Area)!HVT": `${BASE_PATHS.layoutData}.VTH_RATIO_HVT`,
+  "VTH_RATIO(Area)!HVT_LLP": `${BASE_PATHS.layoutData}.VTH_RATIO_HVT_LLP`,
+  "VTH_RATIO(Area)!RVT": `${BASE_PATHS.layoutData}.VTH_RATIO_RVT`,
+  "VTH_RATIO(Area)!RVT_LLP": `${BASE_PATHS.layoutData}.VTH_RATIO_RVT_LLP`,
+
+  // ============================================================
+  // QOR Compare Page - Power Metrics (4 metrics)
+  // Format: "Power(mW)!{Entry}"
+  // Path: ${BASE_PATHS.ptpxpower}.${SCENARIO}.{PowerType}.Total
+  // ============================================================
+  "Power(mW)!Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.Total`,
+  "Power(mW)!Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.Total`,
+  "Power(mW)!Leakage": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Leakage_power.Total`,
+  "Power(mW)!Total": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Total_power.Total`,
 };
 
 /**
- * 메트릭 값 변환 함수 타입
- */
-type MetricTransformer = (value: unknown) => unknown;
-
-/**
- * 메트릭 키별 값 변환 함수 매핑
- * 특정 메트릭에 대해 값을 변환할 때 사용 (예: 100 곱하기, 소수점 자리수 조정 등)
+ * Physical Info 메트릭 이름과 실제 데이터의 TYPE 값 매핑
+ * 메트릭 이름 -> 데이터의 TYPE 필드 값
  *
  * @example
- * "Power!TotalPower": (v) => typeof v === "number" ? v * 100 : v
+ * "DRCs" -> "@@@@@@@ TOTAL VIOLATIONS"
+ * "Short" -> "Shorts"
  */
-const METRIC_TRANSFORMERS: Record<string, MetricTransformer> = {
-  // Power 관련 메트릭에 100을 곱함 (예시)
-  // "Power!TotalPower": (v) => (typeof v === "number" ? v * 100 : v),
-  // "Power!LeakagePower": (v) => (typeof v === "number" ? v * 100 : v),
-  // "Power!DynamicPower": (v) => (typeof v === "number" ? v * 100 : v),
-};
-
-/**
- * 특정 그룹의 모든 메트릭에 동일한 변환 적용
- * 그룹 이름 (예: "Power")을 키로 사용
- */
-const GROUP_TRANSFORMERS: Record<string, MetricTransformer> = {
-  // Power 그룹의 모든 메트릭: W -> mW 변환 (1000 곱함) 후 소수점 3자리로 포맷
-  "Power(mW)": (v) => {
-    if (typeof v === "number") {
-      const mW = v * 1000; // W to mW
-      return Number(mW.toFixed(3)); // 소수점 3자리
-    }
-    return v;
-  },
-};
-
-/**
- * 메트릭 값에 변환 함수를 적용합니다.
- *
- * @param metricKey - 메트릭 키 (형식: "Group!Label")
- * @param value - 변환할 값
- * @returns 변환된 값
- */
-const applyTransform = (metricKey: string, value: unknown): unknown => {
-  // 1. 메트릭별 변환 함수 확인
-  if (METRIC_TRANSFORMERS[metricKey]) {
-    return METRIC_TRANSFORMERS[metricKey](value);
-  }
-
-  // 2. 그룹별 변환 함수 확인 (metricKey에서 그룹 추출: "Group!Label" -> "Group")
-  const groupName = metricKey.split("!")[0];
-  if (groupName && GROUP_TRANSFORMERS[groupName]) {
-    return GROUP_TRANSFORMERS[groupName](value);
-  }
-
-  // 변환 없이 원본 반환
-  return value;
-};
-
-/** 시나리오 플레이스홀더 */
-const SCENARIO_PLACEHOLDER = "${SCENARIO}";
-
-/**
- * 경로에서 시나리오 플레이스홀더가 있는지 확인합니다.
- */
-const hasScenarioPlaceholder = (path: string): boolean => {
-  return path.includes(SCENARIO_PLACEHOLDER);
-};
-
-/**
- * Power Scenario 기반의 동적 경로에서 메트릭 값을 추출합니다.
- * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
- * METRIC_EXTRACTORS에 정의되지 않은 동적 경로도 지원합니다.
- *
- * @param basePath - 기본 경로 (예: "get_ptpxpower.ptpxpower_data")
- * @param scenarioName - 시나리오 이름 (점이 포함될 수 있음, 예: "tt_0.85v_25c")
- * @param metricPath - 시나리오 하위 메트릭 경로 (예: "total_power")
- * @param dataset - 데이터셋 객체
- * @returns 추출된 값 또는 undefined
- *
- * @example
- * const value = extractScenarioMetric(
- *   "get_ptpxpower.ptpxpower_data",
- *   "tt_0.85v_25c",  // 점이 포함된 시나리오 이름
- *   "total_power",
- *   dataset
- * );
- */
-export const extractScenarioMetric = (
-  basePath: string,
-  scenarioName: string,
-  metricPath: string,
-  dataset: DatasetRecord = {}
-): unknown => {
-  if (!scenarioName) return undefined;
-
-  // 1. basePath로 ptpxpower_data까지 탐색 (점으로 split)
-  let current: unknown = dataset;
-
-  for (const key of basePath.split(".")) {
-    if (typeof current === "object" && current !== null) {
-      current = (current as Record<string, unknown>)[key];
-    } else {
-      return undefined;
-    }
-  }
-
-  // 2. 시나리오 이름으로 직접 접근 (점으로 split하지 않음)
-  if (typeof current === "object" && current !== null) {
-    current = (current as Record<string, unknown>)[scenarioName];
-  } else {
-    return undefined;
-  }
-
-  if (current === undefined) {
-    return undefined;
-  }
-
-  // 3. metricPath로 나머지 탐색 (점으로 split)
-  if (metricPath) {
-    for (const key of metricPath.split(".")) {
-      if (typeof current === "object" && current !== null) {
-        current = (current as Record<string, unknown>)[key];
-      } else {
-        return undefined;
-      }
-    }
-  }
-
-  return current;
-};
-
-/**
- * 시나리오 플레이스홀더가 있는 경로에서 값을 추출합니다.
- * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
- *
- * @param path - 플레이스홀더가 포함된 경로 (예: "get_ptpxpower.ptpxpower_data.${SCENARIO}.metric")
- * @param scenarioName - 시나리오 이름 (점이 포함될 수 있음)
- * @param dataset - 데이터셋 객체
- * @param metricKey - 메트릭 키 (변환 적용을 위해 필요)
- * @returns 추출된 값 또는 undefined
- */
-const extractWithScenario = (
-  path: string,
-  scenarioName: string,
-  dataset: DatasetRecord,
-  metricKey: string
-): unknown => {
-  // 경로를 ${SCENARIO}를 기준으로 분리
-  const [beforeScenario, afterScenario] = path.split(SCENARIO_PLACEHOLDER);
-
-  // beforeScenario에서 마지막 점 제거 (예: "get_ptpxpower.ptpxpower_data." -> "get_ptpxpower.ptpxpower_data")
-  const basePath = beforeScenario.endsWith(".")
-    ? beforeScenario.slice(0, -1)
-    : beforeScenario;
-
-  // afterScenario에서 첫 번째 점 제거 (예: ".metric" -> "metric")
-  const metricPath = afterScenario.startsWith(".")
-    ? afterScenario.slice(1)
-    : afterScenario;
-
-  // extractScenarioMetric 사용하여 추출
-  const rawValue = extractScenarioMetric(
-    basePath,
-    scenarioName,
-    metricPath,
-    dataset
-  );
-
-  // 변환 적용
-  const transformedValue = applyTransform(metricKey, rawValue);
-
-  return transformedValue;
-};
-
-/**
- * 데이터셋에서 특정 메트릭 값을 추출합니다.
- * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
- *
- * @param metricKey - 메트릭 키 (형식: "Group!Label")
- * @param dataset - 데이터셋 객체
- * @param scenarioName - Power Scenario 이름 (선택적, ${SCENARIO} 플레이스홀더 대체용)
- * @returns 추출된 값 또는 undefined
- *
- * @example
- * // 일반 메트릭 추출
- * const value = extractMetricValue("User!Name", dataset);
- *
- * // Power Scenario 메트릭 추출 (시나리오 이름에 점 포함 가능)
- * const powerValue = extractMetricValue("Power!TotalPower", dataset, "tt_0.85v_25c");
- */
-export const extractMetricValue = (
-  metricKey: string,
-  dataset: DatasetRecord = {},
-  scenarioName?: string
-): unknown => {
-  const basePath = METRIC_EXTRACTORS[metricKey];
-
-  if (!basePath) {
-    return undefined;
-  }
-
-  // 시나리오 플레이스홀더가 있고 시나리오 이름이 제공된 경우
-  // 특별 처리하여 시나리오 이름의 점을 보존
-  if (scenarioName && hasScenarioPlaceholder(basePath)) {
-    return extractWithScenario(basePath, scenarioName, dataset, metricKey);
-  }
-
-  // 일반 경로 처리 (시나리오 플레이스홀더 없음)
-  const path = basePath;
-
-  const rawResult = path.split(".").reduce((current, key) => {
-    if (typeof current === "object" && current !== null) {
-      return (current as Record<string, unknown>)[key];
-    }
-    return undefined;
-  }, dataset as unknown);
-
-  // 변환 적용
-  const transformedResult = applyTransform(metricKey, rawResult);
-
-  return transformedResult;
+export const PHYSICAL_INFO_TYPE_MAPPING: Record<string, string> = {
+  DRCs: "@@@@@@@ TOTAL VIOLATIONS",
+  Short: "Short",
 };
