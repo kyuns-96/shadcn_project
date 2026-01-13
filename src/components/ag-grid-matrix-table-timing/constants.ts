@@ -19,13 +19,16 @@ import { AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from "lucide-react";
 // Row Height Configuration
 // ============================================================
 
-export const ROW_HEIGHT_CONFIG = {
-  compact: { height: 24, label: "Compact" },
-  normal: { height: 32, label: "Normal" },
-  comfortable: { height: 40, label: "Comfortable" },
-} as const;
+export type RowHeightOption = "compact" | "normal" | "comfortable";
 
-export type RowHeightOption = keyof typeof ROW_HEIGHT_CONFIG;
+export const ROW_HEIGHT_CONFIG: Record<
+  RowHeightOption,
+  { label: string; height: number }
+> = {
+  compact: { label: "Compact", height: 20 },
+  normal: { label: "Normal", height: 28 },
+  comfortable: { label: "Comfortable", height: 36 },
+};
 
 // ============================================================
 // Text Alignment Configuration

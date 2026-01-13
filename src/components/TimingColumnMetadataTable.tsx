@@ -21,8 +21,8 @@
 
 "use client";
 
-import { useCallback } from "react";
-import { Trash2Icon } from "lucide-react";
+import { useCallback, useState } from "react";
+import { Trash2Icon, CopyIcon, CheckIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -50,9 +50,6 @@ import {
   EMPTY_VALUE_PLACEHOLDER,
 } from "@/variables/defaultTimingMatrixTemplate";
 
-/** 데이터가 없을 때 표시되는 기본값 */
-const EMPTY_PLACEHOLDER = "-";
-
 /**
  * Timing 페이지 전용 DoE 메타데이터 테이블 컴포넌트
  *
@@ -61,6 +58,7 @@ const EMPTY_PLACEHOLDER = "-";
  */
 const TimingColumnMetadataTable = () => {
   const dispatch = useAppDispatch();
+  const [isCopied, setIsCopied] = useState<boolean>(false);
 
   // Redux에서 DoE 레지스트리 조회
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
@@ -149,91 +147,146 @@ const TimingColumnMetadataTable = () => {
     [handleScenarioChange]
   );
 
+  /**
+   * 테이블 데이터를 TSV 형식으로 복사 (엑셀용)
+   */
+  const handleCopyTable = useCallback(async () => {
+    // 헤더 행
+    const headers = [
+      "DoE Name",
+      "PROJECT",
+      "BLOCK",
+      "NET_VER",
+      "REVISION",
+      "ECO_NUM",
+      "Timing Scenario",
+    ];
+    const headerLine = headers.join("\t");
+
+    // 데이터 행들
+    const dataLines = timingDoeEntries.map((doeEntry) =>
+      [
+        doeEntry.label,
+        doeEntry.PROJECT_NAME || "-",
+        doeEntry.BLOCK || "-",
+        doeEntry.NET_VER || "-",
+        doeEntry.REVISION || "-",
+        doeEntry.ECO_NUM || "-",
+        doeEntry.TIMING_SCENARIO || "-",
+      ].join("\t")
+    );
+
+    // 전체 텍스트 (헤더 + 데이터)
+    const tsvText = [headerLine, ...dataLines].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(tsvText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy table data:", error);
+    }
+  }, [timingDoeEntries]);
+
   // 데이터가 없을 때
   if (timingDoeEntries.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>추가된 데이터가 없습니다.</p>
+        추가된 데이터가 없습니다.
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader className="bg-muted">
-          <TableRow>
-            <TableHead className="w-[150px]">DoE Name</TableHead>
-            <TableHead className="w-[120px]">Project</TableHead>
-            <TableHead className="w-[100px]">Block</TableHead>
-            <TableHead className="w-[100px]">NetVer</TableHead>
-            <TableHead className="w-[100px]">Revision</TableHead>
-            <TableHead className="w-[100px]">EcoNum</TableHead>
-            <TableHead className="w-[200px]">Timing Scenario</TableHead>
-            <TableHead className="w-[50px] text-center">Delete</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {timingDoeEntries.map((doeEntry) => (
-            <TableRow key={doeEntry.id} className="hover:bg-muted/50">
-              {/* DoE Name */}
-              <TableCell className="font-medium">{doeEntry.label}</TableCell>
-
-              {/* Project Name */}
-              <TableCell className="text-sm">
-                {doeEntry.PROJECT_NAME || EMPTY_PLACEHOLDER}
-              </TableCell>
-
-              {/* Block */}
-              <TableCell className="text-sm">
-                {doeEntry.BLOCK || EMPTY_PLACEHOLDER}
-              </TableCell>
-
-              {/* NetVer */}
-              <TableCell className="text-sm">
-                {doeEntry.NET_VER || EMPTY_PLACEHOLDER}
-              </TableCell>
-
-              {/* Revision */}
-              <TableCell className="text-sm">
-                {doeEntry.REVISION || EMPTY_PLACEHOLDER}
-              </TableCell>
-
-              {/* EcoNum */}
-              <TableCell className="text-sm">
-                {doeEntry.ECO_NUM || EMPTY_PLACEHOLDER}
-              </TableCell>
-
-              {/* Timing Scenario Dropdown */}
-              <TableCell>
-                {(doeEntry.AVAILABLE_TIMING_SCENARIOS?.length ?? 0) > 0 ? (
-                  <div className="w-full">
-                    <FilterDropdownCombobox
-                      dropdownConfigs={[getScenarioDropdownConfig(doeEntry)]}
-                    />
-                  </div>
-                ) : (
-                  <span className="text-sm text-muted-foreground">
-                    {EMPTY_PLACEHOLDER}
-                  </span>
-                )}
-              </TableCell>
-
-              {/* Delete Button */}
-              <TableCell className="text-center">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleDeleteDoe(doeEntry.id)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Trash2Icon className="h-4 w-4 text-destructive" />
-                </Button>
-              </TableCell>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopyTable}
+          className="relative disabled:opacity-100"
+          disabled={isCopied}
+        >
+          <span
+            className={`transition-all ${
+              isCopied ? "scale-100 opacity-100" : "scale-0 opacity-0"
+            }`}
+          >
+            <CheckIcon className="h-4 w-4 stroke-green-600 dark:stroke-green-400" />
+          </span>
+          <span
+            className={`absolute left-3 transition-all ${
+              isCopied ? "scale-0 opacity-0" : "scale-100 opacity-100"
+            }`}
+          >
+            <CopyIcon className="h-4 w-4" />
+          </span>
+          <span className="ml-2">{isCopied ? "Copied!" : "Copy"}</span>
+        </Button>
+      </div>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">DoE Name</TableHead>
+              <TableHead className="w-[80px]">PROJECT</TableHead>
+              <TableHead className="w-[95px]">BLOCK</TableHead>
+              <TableHead className="w-[120px]">NET_VER</TableHead>
+              <TableHead className="w-[170px] truncate">REVISION</TableHead>
+              <TableHead className="w-[105px]">ECO_NUM</TableHead>
+              <TableHead className="w-[277px]">Timing Scenario</TableHead>
+              <TableHead className="w-[60px] text-center">Delete</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {timingDoeEntries.map((doeEntry) => (
+              <TableRow key={doeEntry.id}>
+                <TableCell className="font-medium w-[100px]">
+                  {doeEntry.label}
+                </TableCell>
+                <TableCell className="w-[80px]">
+                  {doeEntry.PROJECT_NAME || "-"}
+                </TableCell>
+                <TableCell className="w-[95px]">
+                  {doeEntry.BLOCK || "-"}
+                </TableCell>
+                <TableCell className="w-[120px]">
+                  {doeEntry.NET_VER || "-"}
+                </TableCell>
+                <TableCell className="w-[170px] truncate">
+                  {doeEntry.REVISION || "-"}
+                </TableCell>
+                <TableCell className="w-[105px]">
+                  {doeEntry.ECO_NUM || "-"}
+                </TableCell>
+                <TableCell>
+                  {(doeEntry.AVAILABLE_TIMING_SCENARIOS?.length ?? 0) > 0 ? (
+                    <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
+                      <FilterDropdownCombobox
+                        dropdownConfigs={[getScenarioDropdownConfig(doeEntry)]}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">
+                      No scenarios
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleDeleteDoe(doeEntry.id)}
+                  >
+                    <Trash2Icon className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

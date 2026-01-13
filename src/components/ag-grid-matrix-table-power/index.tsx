@@ -74,7 +74,7 @@ export default function AgGridPowerTable() {
     useState<RowHeightOption>("normal");
   const [textAlignOption, setTextAlignOption] =
     useState<TextAlignOption>("right");
-  const [decimalPlaces, setDecimalPlaces] = useState<number>(3);
+  const [decimalPlaces, setDecimalPlaces] = useState<number>(2);
   const [powerUnit, setPowerUnit] = useState<PowerUnit>("mW");
 
   // 단위 변환 배수: API 값은 W이므로, mW일 때 1000을 곱함
