@@ -136,13 +136,14 @@ const TimingDatasetColumnAddButton = () => {
     );
 
     // 3. QoRComparePage matrix에 컬럼 추가
-    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
+    // [WHY] _needsDataFetch: true - 다른 페이지로 이동 시 useRestoreColumnData가 데이터를 fetch하도록
+    // 현재 페이지(Timing)에서는 바로 데이터를 채우지만, QOR Compare는 나중에 방문 시 fetch 필요
     dispatch(
       addColumn({
         id: doeId,
         label: doeLabel,
         defaultValue: LOADING_PLACEHOLDER,
-        _needsDataFetch: false,
+        _needsDataFetch: true,
         meta: {
           PROJECT_NAME: selectedProject || undefined,
           BLOCK: selectedBlock || undefined,
@@ -154,13 +155,13 @@ const TimingDatasetColumnAddButton = () => {
     );
 
     // 4. PowerPage powerMatrix에 DoE 그룹 추가
-    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
+    // [WHY] _needsDataFetch: true - 다른 페이지로 이동 시 useRestoreDoeGroupData가 데이터를 fetch하도록
     dispatch(
       addDoeGroup({
         id: doeId,
         label: doeLabel,
         defaultValue: LOADING_PLACEHOLDER,
-        _needsDataFetch: false,
+        _needsDataFetch: true,
       })
     );
 

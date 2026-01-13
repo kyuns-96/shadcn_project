@@ -77,17 +77,15 @@ const timingMatrixSlice = createSlice({
         return;
       }
 
-      // [WHY] _needsDataFetch가 true일 경우 모든 셀을 LOADING 상태로 초기화
-      // 이렇게 하면 다른 페이지에서 추가된 DoE가 Timing 테이블에서 로딩 스피너를 표시함
+      // [WHY] 항상 LOADING 상태로 초기화하여 spinner가 표시되도록 함
+      // _needsDataFetch는 URL 복원 시 useRestoreTimingRowData가 데이터를 fetch할지 결정
       const initialData: Record<string, unknown> = {};
-      if (_needsDataFetch) {
-        TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
-          TIMING_METRICS.forEach((metric) => {
-            const columnId = generateTimingColumnKey(columnGroup, metric);
-            initialData[columnId] = LOADING_PLACEHOLDER;
-          });
+      TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
+        TIMING_METRICS.forEach((metric) => {
+          const columnId = generateTimingColumnKey(columnGroup, metric);
+          initialData[columnId] = LOADING_PLACEHOLDER;
         });
-      }
+      });
 
       state.rows.push({
         id,
