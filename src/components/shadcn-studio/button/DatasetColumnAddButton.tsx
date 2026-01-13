@@ -119,23 +119,23 @@ const DatasetColumnAddButton = () => {
     );
 
     // [WHY] powerMatrix.doeGroups에도 추가하여 PowerPage에서도 column이 보이도록 함
-    // _needsDataFetch: true로 설정하여 PowerPage의 useRestoreDoeGroupData가 자동으로 데이터를 가져오도록 함
+    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
     dispatch(
       addDoeGroup({
         id: columnId,
         label: columnLabel,
         defaultValue: LOADING_PLACEHOLDER,
-        _needsDataFetch: true,
+        _needsDataFetch: false,
       })
     );
 
     // [WHY] timingMatrix.rows에도 추가하여 TimingPage에서도 DoE가 보이도록 함
-    // _needsDataFetch: true로 설정하여 TimingPage의 useRestoreTimingRowData가 자동으로 데이터를 가져오도록 함
+    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
     dispatch(
       addTimingRow({
         id: columnId,
         label: columnLabel,
-        _needsDataFetch: true,
+        _needsDataFetch: false,
       })
     );
 

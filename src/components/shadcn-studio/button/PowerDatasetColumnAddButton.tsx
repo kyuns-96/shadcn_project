@@ -125,14 +125,14 @@ const PowerDatasetColumnAddButton = () => {
 
     // [WHY] matrix.columnHeaders에도 추가하여 QoRComparePage에서도 column이 보이도록 함
     // accessorKey와 meta를 함께 전달하여 QoRComparePage에서 데이터 fetch 가능하도록 함
-    // _needsDataFetch: true로 설정하여 useRestoreColumnData가 자동으로 데이터를 가져오도록 함
+    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
     dispatch(
       addColumn({
         id: doeId,
         label: doeLabel,
         accessorKey: doeId,
         defaultValue: LOADING_PLACEHOLDER,
-        _needsDataFetch: true,
+        _needsDataFetch: false,
         meta: {
           PROJECT_NAME: selectedProject || undefined,
           BLOCK: selectedBlock || undefined,
@@ -144,12 +144,12 @@ const PowerDatasetColumnAddButton = () => {
     );
 
     // [WHY] timingMatrix.rows에도 추가하여 TimingPage에서도 DoE가 보이도록 함
-    // _needsDataFetch: true로 설정하여 TimingPage의 useRestoreTimingRowData가 자동으로 데이터를 가져오도록 함
+    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
     dispatch(
       addTimingRow({
         id: doeId,
         label: doeLabel,
-        _needsDataFetch: true,
+        _needsDataFetch: false,
       })
     );
 

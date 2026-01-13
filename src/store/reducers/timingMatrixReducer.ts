@@ -34,6 +34,14 @@ export interface TimingRow {
   data: Record<string, unknown>;
   /** URL 복원 시 데이터 fetch 필요 여부 */
   _needsDataFetch?: boolean;
+  /** URL 복원용 metadata 필드들 (doeRegistry에도 저장되지만 타이밍 이슈 방지용) */
+  PROJECT_NAME?: string;
+  BLOCK?: string;
+  NET_VER?: string;
+  REVISION?: string;
+  ECO_NUM?: string;
+  TIMING_SCENARIO?: string;
+  AVAILABLE_TIMING_SCENARIOS?: string[];
 }
 
 /** Timing 매트릭스 상태 타입 */

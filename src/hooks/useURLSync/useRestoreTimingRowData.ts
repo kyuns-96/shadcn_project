@@ -12,9 +12,8 @@ import type { RootState, AppDispatch } from "@/store";
 import { restoreFromURL, setDoeName } from "@/store/reducers/selectedReducer";
 import { updateDoEMetadata } from "@/store/doeRegistry";
 import {
-  setTimingRows,
+  markTimingRowFetched,
   updateTimingCell,
-  type TimingRow,
 } from "@/store/reducers/timingMatrixReducer";
 import { fetchDataset } from "@/store/reducers/datasetReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
@@ -78,22 +77,16 @@ export function useRestoreTimingRowData() {
         // [WHY] Read metadata from row object directly (like useRestoreColumnData does)
         // This avoids timing issues with doeRegistry not being ready yet
         // Fallback to doeRegistry for backwards compatibility
-        const rowWithMeta = row as TimingRow & Record<string, unknown>;
         const metadata = doeRegistry.byId[row.id] || {};
 
-        const PROJECT_NAME = (rowWithMeta.PROJECT_NAME ??
-          metadata.PROJECT_NAME) as string | null;
-        const BLOCK = (rowWithMeta.BLOCK ?? metadata.BLOCK) as string | null;
-        const NET_VER = (rowWithMeta.NET_VER ?? metadata.NET_VER) as
+        const PROJECT_NAME = (row.PROJECT_NAME ?? metadata.PROJECT_NAME) as
           | string
           | null;
-        const REVISION = (rowWithMeta.REVISION ?? metadata.REVISION) as
-          | string
-          | null;
-        const ECO_NUM = (rowWithMeta.ECO_NUM ?? metadata.ECO_NUM) as
-          | string
-          | null;
-        const TIMING_SCENARIO = (rowWithMeta.TIMING_SCENARIO ??
+        const BLOCK = (row.BLOCK ?? metadata.BLOCK) as string | null;
+        const NET_VER = (row.NET_VER ?? metadata.NET_VER) as string | null;
+        const REVISION = (row.REVISION ?? metadata.REVISION) as string | null;
+        const ECO_NUM = (row.ECO_NUM ?? metadata.ECO_NUM) as string | null;
+        const TIMING_SCENARIO = (row.TIMING_SCENARIO ??
           metadata.TIMING_SCENARIO) as string | undefined;
 
         // [WHY] Skip if no PROJECT_NAME - can't fetch without it
@@ -174,13 +167,7 @@ export function useRestoreTimingRowData() {
         }
 
         // Mark this row as fetched
-        dispatch(
-          setTimingRows(
-            timingRows.map((r) =>
-              r.id === row.id ? { ...r, _needsDataFetch: false } : r
-            )
-          )
-        );
+        dispatch(markTimingRowFetched(row.id));
       }
 
       // Clear selection after restoration

@@ -124,23 +124,25 @@ const TimingDatasetColumnAddButton = () => {
       })
     );
 
-    // 2. timingMatrix에 새 DoE 행 추가 (로딩 상태로 초기화)
+    // 2. timingMatrix에 새 DoE 행 추가
+    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
+    // useRestoreTimingRowData가 다시 처리할 필요 없음
     dispatch(
       addTimingRow({
         id: doeId,
         label: doeLabel,
-        _needsDataFetch: true,
+        _needsDataFetch: false,
       })
     );
 
     // 3. QoRComparePage matrix에 컬럼 추가
-    // _needsDataFetch: true로 설정하여 QoRComparePage의 useRestoreColumnData가 자동으로 데이터를 가져오도록 함
+    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
     dispatch(
       addColumn({
         id: doeId,
         label: doeLabel,
         defaultValue: LOADING_PLACEHOLDER,
-        _needsDataFetch: true,
+        _needsDataFetch: false,
         meta: {
           PROJECT_NAME: selectedProject || undefined,
           BLOCK: selectedBlock || undefined,
@@ -152,13 +154,13 @@ const TimingDatasetColumnAddButton = () => {
     );
 
     // 4. PowerPage powerMatrix에 DoE 그룹 추가
-    // _needsDataFetch: true로 설정하여 PowerPage의 useRestoreDoeGroupData가 자동으로 데이터를 가져오도록 함
+    // [WHY] _needsDataFetch: false - 바로 fetchDataset()을 호출하여 데이터를 채우므로
     dispatch(
       addDoeGroup({
         id: doeId,
         label: doeLabel,
         defaultValue: LOADING_PLACEHOLDER,
-        _needsDataFetch: true,
+        _needsDataFetch: false,
       })
     );
 
