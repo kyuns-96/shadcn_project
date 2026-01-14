@@ -125,8 +125,15 @@ export function buildColumnDefs(args: {
 
       // Physical Info 메트릭인 경우 decimal 포맷팅 스킵 (ECO Runtime 포함)
       const rowGroup = params.data?.rowGroup;
+      const rowHeader = params.data?.rowHeader;
       if (rowGroup === "Physical Info") {
-        return String(value);
+        const formatted = String(value);
+        if (rowHeader === "ECO Runtime") {
+          console.log(`[valueFormatter] ECO Runtime:`);
+          console.log(`  input value:`, value);
+          console.log(`  formatted output:`, formatted);
+        }
+        return formatted;
       }
 
       // 다른 메트릭은 decimal 포맷팅 적용

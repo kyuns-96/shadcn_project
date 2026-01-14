@@ -466,5 +466,12 @@ export const extractMetricValue = (
   // 변환 적용
   const transformedResult = applyTransform(metricKey, rawResult);
 
+  // ECO Runtime 디버깅
+  if (metricKey === "Physical Info!ECO Runtime") {
+    console.log(`[extractMetricValue] ${metricKey}:`);
+    console.log(`  rawResult:`, rawResult);
+    console.log(`  transformedResult:`, transformedResult);
+  }
+
   return transformedResult;
 };
