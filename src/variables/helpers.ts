@@ -89,7 +89,10 @@ export const applyTransform = (metricKey: string, value: unknown): unknown => {
  * "number": 숫자 포맷팅 적용 (decimal 포맷팅)
  * "string-only": 문자열만 사용 (parseFloat 스킵)
  */
-export const METRIC_CELL_FORMAT_STRATEGY: Record<string, "skip-decimal" | "number" | "string-only"> = {
+export const METRIC_CELL_FORMAT_STRATEGY: Record<
+  string,
+  "skip-decimal" | "number" | "string-only"
+> = {
   // ECO Runtime: 시간 형식이므로 문자열만 사용 (parseFloat 스킵)
   "Physical Info!ECO Runtime": "string-only",
   // 다른 메트릭별 포맷팅 전략 추가 시 여기에 작성
@@ -98,7 +101,10 @@ export const METRIC_CELL_FORMAT_STRATEGY: Record<string, "skip-decimal" | "numbe
 /**
  * 그룹별 기본 포맷팅 전략
  */
-export const GROUP_FORMAT_STRATEGY: Record<string, "skip-decimal" | "number" | "string-only"> = {
+export const GROUP_FORMAT_STRATEGY: Record<
+  string,
+  "skip-decimal" | "number" | "string-only"
+> = {
   "Physical Info": "skip-decimal",
   // 다른 그룹 추가 시 여기에 작성
 };

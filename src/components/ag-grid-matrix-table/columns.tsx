@@ -150,7 +150,7 @@ export function buildColumnDefs(args: {
         const num = parseFloat(String(value));
         const result = isNaN(num) ? String(value) : String(Math.floor(num));
         if (isEcoRuntime) {
-          console.log(`  skip-decimal 적용, parseFloat:`, num, "결과:`, result);
+          console.log(`  skip-decimal 적용, parseFloat:`, num, "결과:", result);
         }
         return result;
       }
@@ -160,11 +160,11 @@ export function buildColumnDefs(args: {
       if (!isNaN(num)) {
         const result = num.toFixed(decimalPlaces);
         if (isEcoRuntime) {
-          console.log(`  number 적용, parseFloat:`, num, "결과:`, result);
+          console.log(`  number 적용, parseFloat:`, num, "결과:", result);
         }
         return result;
       }
-      
+
       const result = String(value);
       if (isEcoRuntime) {
         console.log(`  기본값, 결과:`, result);
