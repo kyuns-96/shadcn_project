@@ -56,13 +56,13 @@ export const DEFAULT_MATRIX_TEMPLATE = {
     createMatrixRow("row-4", "HM", "Area(G/C)"),
     createMatrixRow("row-5", "IO", "Area(G/C)"),
     createMatrixRow("row-6", "Total", "Area(G/C)"),
-    // VTH_RATIO(Area) group (6 metrics)
+    // VTH_RATIO(Area) group (6 metrics) - LVT -> RVT -> HVT 순
     createMatrixRow("row-7", "LVT", "VTH_RATIO(Area)"),
     createMatrixRow("row-8", "LVT_LLP", "VTH_RATIO(Area)"),
-    createMatrixRow("row-9", "HVT", "VTH_RATIO(Area)"),
-    createMatrixRow("row-10", "HVT_LLP", "VTH_RATIO(Area)"),
-    createMatrixRow("row-11", "RVT", "VTH_RATIO(Area)"),
-    createMatrixRow("row-12", "RVT_LLP", "VTH_RATIO(Area)"),
+    createMatrixRow("row-9", "RVT", "VTH_RATIO(Area)"),
+    createMatrixRow("row-10", "RVT_LLP", "VTH_RATIO(Area)"),
+    createMatrixRow("row-11", "HVT", "VTH_RATIO(Area)"),
+    createMatrixRow("row-12", "HVT_LLP", "VTH_RATIO(Area)"),
     // Power(mW) group (4 metrics)
     createMatrixRow("row-13", "Internal", "Power(mW)"),
     createMatrixRow("row-14", "Switching", "Power(mW)"),

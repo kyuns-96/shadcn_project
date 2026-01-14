@@ -124,10 +124,6 @@ export const extractPhysicalInfoMetric = (
   metricName: string,
   dataset: DatasetRecord = {}
 ): unknown => {
-  console.log(
-    `[extractPhysicalInfoMetric] metricName: "${metricName}", basePath: "${basePath}"`
-  );
-
   // 1. basePath로 physical info 데이터까지 탐색
   let current: unknown = dataset;
 
@@ -135,14 +131,12 @@ export const extractPhysicalInfoMetric = (
     if (typeof current === "object" && current !== null) {
       current = (current as Record<string, unknown>)[key];
     } else {
-      console.log(`  Could not find key: "${key}"`);
       return undefined;
     }
   }
 
   // 2. 모든 input_date 키를 찾기
   if (typeof current !== "object" || current === null) {
-    console.log(`  current is null after basePath traversal`);
     return undefined;
   }
 
@@ -159,10 +153,7 @@ export const extractPhysicalInfoMetric = (
     .sort()
     .reverse(); // 내림차순으로 정렬하여 가장 최근 날짜가 첫번째
 
-  console.log(`  available dates:`, allDates);
-
   if (allDates.length === 0) {
-    console.log(`  No valid dates found`);
     return undefined;
   }
 
@@ -170,28 +161,20 @@ export const extractPhysicalInfoMetric = (
   const latestDate = allDates[0];
   const dataNode = (current as Record<string, unknown>)[latestDate];
 
-  console.log(`  latestDate: "${latestDate}"`);
-
   if (typeof dataNode !== "object" || dataNode === null) {
-    console.log(`  dataNode is null for latestDate`);
     return undefined;
   }
 
   const dataArray = (dataNode as Record<string, unknown>).DATA;
 
   if (!Array.isArray(dataArray)) {
-    console.log(`  DATA is not an array`);
     return undefined;
   }
 
-  console.log(`  dataArray length: ${dataArray.length}`);
-
   // 4. PHYSICAL_INFO_TYPE_MAPPING에서 실제 TYPE 값 조회
   const actualType = PHYSICAL_INFO_TYPE_MAPPING[metricName];
-  console.log(`  actualType for "${metricName}": "${actualType}"`);
 
   if (!actualType) {
-    console.log(`  No actualType mapping found for "${metricName}"`);
     return undefined;
   }
 
@@ -204,16 +187,12 @@ export const extractPhysicalInfoMetric = (
     );
   });
 
-  console.log(`  dataItem found:`, dataItem);
-
   if (!dataItem || typeof dataItem !== "object") {
-    console.log(`  dataItem not found or not an object`);
     return undefined;
   }
 
   // 6. 해당 항목의 VALUE 반환
   const value = (dataItem as Record<string, unknown>).VALUE;
-  console.log(`  VALUE:`, value);
 
   return value;
 };
@@ -274,9 +253,6 @@ const extractWithInputDate = (
     .reverse(); // 내림차순으로 정렬하여 가장 최근 날짜가 첫번째
 
   if (allDates.length === 0) {
-    console.log(
-      `[extractWithInputDate] ${metricKey}: No dates found at basePath "${basePath}"`
-    );
     return undefined;
   }
 
@@ -285,23 +261,12 @@ const extractWithInputDate = (
   // 3. 경로에서 ${INPUT_DATE}를 latestDate로 치환
   const resolvedPath = path.replace(INPUT_DATE_PLACEHOLDER, latestDate);
 
-  console.log(`[extractWithInputDate] ${metricKey}:`);
-  console.log(`  basePath: "${basePath}"`);
-  console.log(`  latestDate: "${latestDate}"`);
-  console.log(`  resolvedPath: "${resolvedPath}"`);
-  console.log(
-    `  current object keys:`,
-    Object.keys(current as Record<string, unknown>)
-  );
-
-  // 4. 치환된 경로로 값 추출 (단계별 로깅, 배열 인덱스 처리)
+  // 4. 치환된 경로로 값 추출 (배열 인덱스 처리)
   const pathKeys = resolvedPath.split(".");
   let curr: unknown = dataset;
 
-  console.log(`  Path traversal (${pathKeys.length} keys):`);
   for (let i = 0; i < pathKeys.length; i++) {
     let key = pathKeys[i];
-    console.log(`    [${i}] key: "${key}", current type:`, typeof curr);
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
     const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
@@ -309,29 +274,16 @@ const extractWithInputDate = (
       const arrayKey = arrayMatch[1];
       const arrayIndex = parseInt(arrayMatch[2], 10);
 
-      console.log(
-        `        -> array index detected: key="${arrayKey}", index=${arrayIndex}`
-      );
-
       if (typeof curr === "object" && curr !== null) {
         const arrayValue = (curr as Record<string, unknown>)[arrayKey];
-        console.log(
-          `        -> found array at [${arrayKey}]:`,
-          Array.isArray(arrayValue)
-            ? `Array(${(arrayValue as unknown[]).length})`
-            : arrayValue
-        );
 
         if (Array.isArray(arrayValue) && arrayValue[arrayIndex] !== undefined) {
           curr = arrayValue[arrayIndex];
-          console.log(`        -> accessed index [${arrayIndex}]:`, curr);
         } else {
-          console.log(`        -> ERROR: array access failed`);
           curr = undefined;
           break;
         }
       } else {
-        console.log(`        -> ERROR: current is not an object`);
         curr = undefined;
         break;
       }
@@ -339,10 +291,8 @@ const extractWithInputDate = (
       // 일반 키 접근
       if (typeof curr === "object" && curr !== null) {
         const nextValue = (curr as Record<string, unknown>)[key];
-        console.log(`        -> found at [${key}]:`, nextValue);
         curr = nextValue;
       } else {
-        console.log(`        -> ERROR: current is not an object`);
         curr = undefined;
         break;
       }
@@ -350,12 +300,9 @@ const extractWithInputDate = (
   }
 
   const rawResult = curr;
-  console.log(`  rawResult:`, rawResult);
 
   // 5. 변환 적용
   const transformedResult = applyTransform(metricKey, rawResult);
-
-  console.log(`  transformedResult:`, transformedResult);
 
   return transformedResult;
 };
@@ -477,16 +424,11 @@ export const extractMetricValue = (
   // 일반 경로 처리 (시나리오 플레이스홀더 없음)
   const path = basePath;
 
-  console.log(`[extractMetricValue - general path] ${metricKey}:`);
-  console.log(`  path: "${path}"`);
-
   const pathKeys = path.split(".");
   let current: unknown = dataset;
 
-  console.log(`  Path traversal (${pathKeys.length} keys):`);
   for (let i = 0; i < pathKeys.length; i++) {
     let key = pathKeys[i];
-    console.log(`    [${i}] key: "${key}", current type:`, typeof current);
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
     const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
@@ -494,29 +436,16 @@ export const extractMetricValue = (
       const arrayKey = arrayMatch[1];
       const arrayIndex = parseInt(arrayMatch[2], 10);
 
-      console.log(
-        `        -> array index detected: key="${arrayKey}", index=${arrayIndex}`
-      );
-
       if (typeof current === "object" && current !== null) {
         const arrayValue = (current as Record<string, unknown>)[arrayKey];
-        console.log(
-          `        -> found array at [${arrayKey}]:`,
-          Array.isArray(arrayValue)
-            ? `Array(${(arrayValue as unknown[]).length})`
-            : arrayValue
-        );
 
         if (Array.isArray(arrayValue) && arrayValue[arrayIndex] !== undefined) {
           current = arrayValue[arrayIndex];
-          console.log(`        -> accessed index [${arrayIndex}]:`, current);
         } else {
-          console.log(`        -> ERROR: array access failed`);
           current = undefined;
           break;
         }
       } else {
-        console.log(`        -> ERROR: current is not an object`);
         current = undefined;
         break;
       }
@@ -524,10 +453,8 @@ export const extractMetricValue = (
       // 일반 키 접근
       if (typeof current === "object" && current !== null) {
         const nextValue = (current as Record<string, unknown>)[key];
-        console.log(`        -> found at [${key}]:`, nextValue);
         current = nextValue;
       } else {
-        console.log(`        -> ERROR: current is not an object`);
         current = undefined;
         break;
       }
@@ -535,12 +462,9 @@ export const extractMetricValue = (
   }
 
   const rawResult = current;
-  console.log(`  rawResult:`, rawResult);
 
   // 변환 적용
   const transformedResult = applyTransform(metricKey, rawResult);
-
-  console.log(`  transformedResult:`, transformedResult);
 
   return transformedResult;
 };

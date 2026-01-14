@@ -40,6 +40,15 @@ export const GROUP_TRANSFORMERS: Record<string, MetricTransformer> = {
     }
     return v;
   },
+
+  // Physical Info 그룹: DRCs, Short, Total Wire Length는 정수만 표시
+  "Physical Info": (v) => {
+    if (typeof v === "number") {
+      return Math.floor(v); // 정수로 변환
+    }
+    // ECO Runtime은 문자열이므로 그대로 반환
+    return v;
+  },
 };
 
 /**
