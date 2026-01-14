@@ -424,11 +424,22 @@ export const extractMetricValue = (
   // 일반 경로 처리 (시나리오 플레이스홀더 없음)
   const path = basePath;
 
+  if (metricKey === "Physical Info!ECO Runtime") {
+    console.log(`[extractMetricValue] 일반 경로 처리 시작`);
+    console.log(`  basePath:`, basePath);
+    console.log(`  path:`, path);
+    console.log(`  dataset:`, dataset);
+  }
+
   const pathKeys = path.split(".");
   let current: unknown = dataset;
 
   for (let i = 0; i < pathKeys.length; i++) {
     let key = pathKeys[i];
+
+    if (metricKey === "Physical Info!ECO Runtime") {
+      console.log(`  [step ${i}] key:`, key, "current:`, current);
+    }
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
     const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
@@ -468,7 +479,7 @@ export const extractMetricValue = (
 
   // ECO Runtime 디버깅
   if (metricKey === "Physical Info!ECO Runtime") {
-    console.log(`[extractMetricValue] ${metricKey}:`);
+    console.log(`[extractMetricValue] 일반 경로 처리 완료`);
     console.log(`  rawResult:`, rawResult);
     console.log(`  transformedResult:`, transformedResult);
   }
