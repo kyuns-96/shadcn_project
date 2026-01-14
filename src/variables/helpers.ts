@@ -21,6 +21,8 @@ export type MetricTransformer = (value: unknown) => unknown;
  * "Power!TotalPower": (v) => typeof v === "number" ? v * 100 : v
  */
 export const METRIC_TRANSFORMERS: Record<string, MetricTransformer> = {
+  // ECO Runtime은 아무런 변환 없이 그대로 반환
+  "Physical Info!ECO Runtime": (v) => v,
   // Power 관련 메트릭에 100을 곱함 (예시)
   // "Power!TotalPower": (v) => (typeof v === "number" ? v * 100 : v),
   // "Power!LeakagePower": (v) => (typeof v === "number" ? v * 100 : v),
@@ -32,21 +34,12 @@ export const METRIC_TRANSFORMERS: Record<string, MetricTransformer> = {
  * 그룹 이름 (예: "Power")을 키로 사용
  */
 export const GROUP_TRANSFORMERS: Record<string, MetricTransformer> = {
-  // Power 그룹의 모든 메트릭: W -> mW 변환 (1000 곱함) 후 소수점 3자리로 포맷
-  "Power(mW)": (v) => {
-    if (typeof v === "number") {
-      const mW = v * 1000; // W to mW
-      return Number(mW.toFixed(3)); // 소수점 3자리
-    }
-    return v;
-  },
-
   // Physical Info 그룹: DRCs, Short, Total Wire Length는 정수만 표시
+  // ECO Runtime은 METRIC_TRANSFORMERS에서 별도 처리됨
   "Physical Info": (v) => {
     if (typeof v === "number") {
       return Math.floor(v); // 정수로 변환
     }
-    // ECO Runtime은 문자열이므로 그대로 반환
     return v;
   },
 };
