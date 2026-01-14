@@ -124,7 +124,9 @@ export const extractPhysicalInfoMetric = (
   metricName: string,
   dataset: DatasetRecord = {}
 ): unknown => {
-  console.log(`[extractPhysicalInfoMetric] metricName: "${metricName}", basePath: "${basePath}"`);
+  console.log(
+    `[extractPhysicalInfoMetric] metricName: "${metricName}", basePath: "${basePath}"`
+  );
 
   // 1. basePath로 physical info 데이터까지 탐색
   let current: unknown = dataset;
@@ -261,7 +263,9 @@ const extractWithInputDate = (
 
   // 2. 모든 input_date 키를 찾기 (가장 최근 날짜 선택)
   if (typeof current !== "object" || current === null) {
-    console.log(`[extractWithInputDate] ${metricKey}: current is null at basePath "${basePath}"`);
+    console.log(
+      `[extractWithInputDate] ${metricKey}: current is null at basePath "${basePath}"`
+    );
     return undefined;
   }
 
@@ -270,7 +274,9 @@ const extractWithInputDate = (
     .reverse(); // 내림차순으로 정렬하여 가장 최근 날짜가 첫번째
 
   if (allDates.length === 0) {
-    console.log(`[extractWithInputDate] ${metricKey}: No dates found at basePath "${basePath}"`);
+    console.log(
+      `[extractWithInputDate] ${metricKey}: No dates found at basePath "${basePath}"`
+    );
     return undefined;
   }
 
@@ -283,25 +289,63 @@ const extractWithInputDate = (
   console.log(`  basePath: "${basePath}"`);
   console.log(`  latestDate: "${latestDate}"`);
   console.log(`  resolvedPath: "${resolvedPath}"`);
-  console.log(`  current object keys:`, Object.keys(current as Record<string, unknown>));
+  console.log(
+    `  current object keys:`,
+    Object.keys(current as Record<string, unknown>)
+  );
 
-  // 4. 치환된 경로로 값 추출 (단계별 로깅)
+  // 4. 치환된 경로로 값 추출 (단계별 로깅, 배열 인덱스 처리)
   const pathKeys = resolvedPath.split(".");
   let curr: unknown = dataset;
-  
+
   console.log(`  Path traversal (${pathKeys.length} keys):`);
   for (let i = 0; i < pathKeys.length; i++) {
-    const key = pathKeys[i];
+    let key = pathKeys[i];
     console.log(`    [${i}] key: "${key}", current type:`, typeof curr);
-    
-    if (typeof curr === "object" && curr !== null) {
-      const nextValue = (curr as Record<string, unknown>)[key];
-      console.log(`        -> found at [${key}]:`, nextValue);
-      curr = nextValue;
+
+    // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
+    const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
+    if (arrayMatch) {
+      const arrayKey = arrayMatch[1];
+      const arrayIndex = parseInt(arrayMatch[2], 10);
+
+      console.log(
+        `        -> array index detected: key="${arrayKey}", index=${arrayIndex}`
+      );
+
+      if (typeof curr === "object" && curr !== null) {
+        const arrayValue = (curr as Record<string, unknown>)[arrayKey];
+        console.log(
+          `        -> found array at [${arrayKey}]:`,
+          Array.isArray(arrayValue)
+            ? `Array(${(arrayValue as unknown[]).length})`
+            : arrayValue
+        );
+
+        if (Array.isArray(arrayValue) && arrayValue[arrayIndex] !== undefined) {
+          curr = arrayValue[arrayIndex];
+          console.log(`        -> accessed index [${arrayIndex}]:`, curr);
+        } else {
+          console.log(`        -> ERROR: array access failed`);
+          curr = undefined;
+          break;
+        }
+      } else {
+        console.log(`        -> ERROR: current is not an object`);
+        curr = undefined;
+        break;
+      }
     } else {
-      console.log(`        -> ERROR: current is not an object`);
-      curr = undefined;
-      break;
+      // 일반 키 접근
+      if (typeof curr === "object" && curr !== null) {
+        const nextValue = (curr as Record<string, unknown>)[key];
+        console.log(`        -> found at [${key}]:`, nextValue);
+        curr = nextValue;
+      } else {
+        console.log(`        -> ERROR: current is not an object`);
+        curr = undefined;
+        break;
+      }
     }
   }
 
@@ -441,17 +485,52 @@ export const extractMetricValue = (
 
   console.log(`  Path traversal (${pathKeys.length} keys):`);
   for (let i = 0; i < pathKeys.length; i++) {
-    const key = pathKeys[i];
+    let key = pathKeys[i];
     console.log(`    [${i}] key: "${key}", current type:`, typeof current);
 
-    if (typeof current === "object" && current !== null) {
-      const nextValue = (current as Record<string, unknown>)[key];
-      console.log(`        -> found at [${key}]:`, nextValue);
-      current = nextValue;
+    // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
+    const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
+    if (arrayMatch) {
+      const arrayKey = arrayMatch[1];
+      const arrayIndex = parseInt(arrayMatch[2], 10);
+
+      console.log(
+        `        -> array index detected: key="${arrayKey}", index=${arrayIndex}`
+      );
+
+      if (typeof current === "object" && current !== null) {
+        const arrayValue = (current as Record<string, unknown>)[arrayKey];
+        console.log(
+          `        -> found array at [${arrayKey}]:`,
+          Array.isArray(arrayValue)
+            ? `Array(${(arrayValue as unknown[]).length})`
+            : arrayValue
+        );
+
+        if (Array.isArray(arrayValue) && arrayValue[arrayIndex] !== undefined) {
+          current = arrayValue[arrayIndex];
+          console.log(`        -> accessed index [${arrayIndex}]:`, current);
+        } else {
+          console.log(`        -> ERROR: array access failed`);
+          current = undefined;
+          break;
+        }
+      } else {
+        console.log(`        -> ERROR: current is not an object`);
+        current = undefined;
+        break;
+      }
     } else {
-      console.log(`        -> ERROR: current is not an object`);
-      current = undefined;
-      break;
+      // 일반 키 접근
+      if (typeof current === "object" && current !== null) {
+        const nextValue = (current as Record<string, unknown>)[key];
+        console.log(`        -> found at [${key}]:`, nextValue);
+        current = nextValue;
+      } else {
+        console.log(`        -> ERROR: current is not an object`);
+        current = undefined;
+        break;
+      }
     }
   }
 

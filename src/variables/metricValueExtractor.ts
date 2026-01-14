@@ -168,7 +168,7 @@ export const METRIC_EXTRACTORS: Record<string, string> = {
   // ============================================================
   "Physical Info!DRCs": `${BASE_PATHS.physical_info}.\${INPUT_DATE}.DATA`,
   "Physical Info!Short": `${BASE_PATHS.physical_info}.\${INPUT_DATE}.DATA`,
-  "Physical Info!Total Wire Length": `${BASE_PATHS.layoutWiringTotal}.\${INPUT_DATE}.DATA.WIRE`,
+  "Physical Info!Total Wire Length": `${BASE_PATHS.layoutWiringTotal}.\${INPUT_DATE}.DATA[0].WIRE`,
   "Physical Info!ECO Runtime": `${BASE_PATHS.layoutRuntime}.RUNTIME`,
 
   // ============================================================
