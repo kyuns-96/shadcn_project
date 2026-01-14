@@ -438,7 +438,7 @@ export const extractMetricValue = (
     let key = pathKeys[i];
 
     if (metricKey === "Physical Info!ECO Runtime") {
-      console.log(`  [step ${i}] key:`, key, "current:`, current);
+      console.log(`  [step ${i}] key:`, key, "current:", current);
     }
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
