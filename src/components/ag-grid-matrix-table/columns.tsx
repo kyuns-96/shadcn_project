@@ -5,6 +5,7 @@ import ColumnHeaderWithPopup, {
 import { Spinner } from "@/components/ui/spinner";
 import type { RowData, PowerUnit } from "./types";
 import type { TextAlignOption } from "./constants";
+import { getMetricFormatStrategy } from "@/variables/helpers";
 
 export function buildColumnDefs(args: {
   columnHeaders: Array<{ id: string; label: string } & Partial<ColumnMetadata>>;
@@ -123,20 +124,24 @@ export function buildColumnDefs(args: {
       const value = params.value;
       if (value === null || value === undefined || value === "") return "";
 
-      // Physical Info 메트릭인 경우 decimal 포맷팅 스킵 (ECO Runtime 포함)
       const rowGroup = params.data?.rowGroup;
       const rowHeader = params.data?.rowHeader;
-      if (rowGroup === "Physical Info") {
-        const formatted = String(value);
-        if (rowHeader === "ECO Runtime") {
-          console.log(`[valueFormatter] ECO Runtime:`);
-          console.log(`  input value:`, value);
-          console.log(`  formatted output:`, formatted);
-        }
-        return formatted;
+      const metricKey = `${rowGroup}!${rowHeader}`;
+
+      const strategy = getMetricFormatStrategy(metricKey);
+
+      // string-only: 문자열 그대로 반환 (숫자 처리 스킵)
+      if (strategy === "string-only") {
+        return String(value);
       }
 
-      // 다른 메트릭은 decimal 포맷팅 적용
+      // skip-decimal: 문자열로 반환하되, 숫자인 경우 정수로 변환
+      if (strategy === "skip-decimal") {
+        const num = parseFloat(String(value));
+        return isNaN(num) ? String(value) : String(Math.floor(num));
+      }
+
+      // number: 일반 숫자 포맷팅 (decimal 적용)
       const num = parseFloat(String(value));
       if (!isNaN(num)) return num.toFixed(decimalPlaces);
       return String(value);

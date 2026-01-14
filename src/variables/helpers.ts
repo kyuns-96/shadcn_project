@@ -67,6 +67,50 @@ export const applyTransform = (metricKey: string, value: unknown): unknown => {
   return value;
 };
 
+/**
+ * 메트릭 키별 셀 포맷팅 전략
+ * "skip-decimal": decimal 포맷팅 스킵, 문자열로 그대로 표시
+ * "number": 숫자 포맷팅 적용 (decimal 포맷팅)
+ * "string-only": 문자열만 사용 (parseFloat 스킵)
+ */
+export const METRIC_CELL_FORMAT_STRATEGY: Record<string, "skip-decimal" | "number" | "string-only"> = {
+  // ECO Runtime: 시간 형식이므로 문자열만 사용 (parseFloat 스킵)
+  "Physical Info!ECO Runtime": "string-only",
+  // 다른 메트릭별 포맷팅 전략 추가 시 여기에 작성
+};
+
+/**
+ * 그룹별 기본 포맷팅 전략
+ */
+export const GROUP_FORMAT_STRATEGY: Record<string, "skip-decimal" | "number" | "string-only"> = {
+  "Physical Info": "skip-decimal",
+  // 다른 그룹 추가 시 여기에 작성
+};
+
+/**
+ * 메트릭의 포맷팅 전략을 반환합니다.
+ * 1. 메트릭별 설정 확인
+ * 2. 그룹별 기본값 확인
+ * 3. 기본값: 숫자 포맷팅
+ */
+export const getMetricFormatStrategy = (
+  metricKey: string
+): "skip-decimal" | "number" | "string-only" => {
+  // 메트릭별 설정 확인
+  if (METRIC_CELL_FORMAT_STRATEGY[metricKey]) {
+    return METRIC_CELL_FORMAT_STRATEGY[metricKey];
+  }
+
+  // 그룹별 기본값
+  const groupName = metricKey.split("!")[0];
+  if (GROUP_FORMAT_STRATEGY[groupName]) {
+    return GROUP_FORMAT_STRATEGY[groupName];
+  }
+
+  // 기본값: 숫자 포맷팅
+  return "number";
+};
+
 /** 시나리오 플레이스홀더 */
 export const SCENARIO_PLACEHOLDER = "${SCENARIO}";
 
