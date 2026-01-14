@@ -285,14 +285,27 @@ const extractWithInputDate = (
   console.log(`  resolvedPath: "${resolvedPath}"`);
   console.log(`  current object keys:`, Object.keys(current as Record<string, unknown>));
 
-  // 4. 치환된 경로로 값 추출
-  const rawResult = resolvedPath.split(".").reduce((curr, key) => {
+  // 4. 치환된 경로로 값 추출 (단계별 로깅)
+  const pathKeys = resolvedPath.split(".");
+  let curr: unknown = dataset;
+  
+  console.log(`  Path traversal (${pathKeys.length} keys):`);
+  for (let i = 0; i < pathKeys.length; i++) {
+    const key = pathKeys[i];
+    console.log(`    [${i}] key: "${key}", current type:`, typeof curr);
+    
     if (typeof curr === "object" && curr !== null) {
-      return (curr as Record<string, unknown>)[key];
+      const nextValue = (curr as Record<string, unknown>)[key];
+      console.log(`        -> found at [${key}]:`, nextValue);
+      curr = nextValue;
+    } else {
+      console.log(`        -> ERROR: current is not an object`);
+      curr = undefined;
+      break;
     }
-    return undefined;
-  }, dataset as unknown);
+  }
 
+  const rawResult = curr;
   console.log(`  rawResult:`, rawResult);
 
   // 5. 변환 적용
@@ -420,15 +433,35 @@ export const extractMetricValue = (
   // 일반 경로 처리 (시나리오 플레이스홀더 없음)
   const path = basePath;
 
-  const rawResult = path.split(".").reduce((current, key) => {
+  console.log(`[extractMetricValue - general path] ${metricKey}:`);
+  console.log(`  path: "${path}"`);
+
+  const pathKeys = path.split(".");
+  let current: unknown = dataset;
+
+  console.log(`  Path traversal (${pathKeys.length} keys):`);
+  for (let i = 0; i < pathKeys.length; i++) {
+    const key = pathKeys[i];
+    console.log(`    [${i}] key: "${key}", current type:`, typeof current);
+
     if (typeof current === "object" && current !== null) {
-      return (current as Record<string, unknown>)[key];
+      const nextValue = (current as Record<string, unknown>)[key];
+      console.log(`        -> found at [${key}]:`, nextValue);
+      current = nextValue;
+    } else {
+      console.log(`        -> ERROR: current is not an object`);
+      current = undefined;
+      break;
     }
-    return undefined;
-  }, dataset as unknown);
+  }
+
+  const rawResult = current;
+  console.log(`  rawResult:`, rawResult);
 
   // 변환 적용
   const transformedResult = applyTransform(metricKey, rawResult);
+
+  console.log(`  transformedResult:`, transformedResult);
 
   return transformedResult;
 };
