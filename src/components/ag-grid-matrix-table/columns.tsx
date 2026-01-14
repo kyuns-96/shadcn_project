@@ -122,7 +122,14 @@ export function buildColumnDefs(args: {
     valueFormatter: (params) => {
       const value = params.value;
       if (value === null || value === undefined || value === "") return "";
-      // Apply decimal formatting to all numbers
+      
+      // Physical Info 메트릭인 경우 decimal 포맷팅 스킵
+      const rowGroup = params.data?.rowGroup;
+      if (rowGroup === "Physical Info") {
+        return String(value);
+      }
+      
+      // 다른 메트릭은 decimal 포맷팅 적용
       const num = parseFloat(String(value));
       if (!isNaN(num)) return num.toFixed(decimalPlaces);
       return String(value);
