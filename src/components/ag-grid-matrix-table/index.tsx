@@ -114,13 +114,13 @@ export default function AgGridMatrixTable() {
       const formatValue = (value: unknown, rowGroup: string): string => {
         if (value === null || value === undefined || value === "") return "";
         if (value === "___LOADING___") return "";
-        
+
         // Only apply unit conversion to Power-related row groups
         const isPowerRow = rowGroup.toLowerCase().includes("power");
-        
+
         const num = parseFloat(String(value));
         if (isNaN(num)) return String(value);
-        
+
         // Apply unit multiplier only for power rows
         const converted = isPowerRow ? num * unitMultiplier : num;
         return converted.toFixed(decimalPlaces);
@@ -156,7 +156,7 @@ export default function AgGridMatrixTable() {
         const rowValues = [
           groupValue,
           originalRow.label,
-          ...dataColumnOrder.map((colId) => 
+          ...dataColumnOrder.map((colId) =>
             formatValue(originalRow.data[colId], originalRow.rowGroup)
           ),
         ];
@@ -261,7 +261,7 @@ export default function AgGridMatrixTable() {
     return rowHeaders.map((row) => {
       // Only apply unit conversion to Power-related row groups
       const isPowerRow = row.rowGroup.toLowerCase().includes("power");
-      
+
       // Transform data with unit conversion applied only to Power rows
       const transformedData: Record<string, string | number> = {};
       for (const key in row.data) {
@@ -283,7 +283,7 @@ export default function AgGridMatrixTable() {
           }
         }
       }
-      
+
       return {
         id: row.id,
         rowGroup: row.rowGroup,

@@ -60,7 +60,6 @@ export const METRIC_EXTRACTORS: Record<string, string> = {
   //
   // [MODIFY HERE] Update the paths below to match your actual data structure
   // ============================================================
-
   // Clock Network row
   "Power(mW)!clock_network_Internal": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Internal_power.clock_network`,
   "Power(mW)!clock_network_Switching": `${BASE_PATHS.ptpxpower}.\${SCENARIO}.Switching_power.clock_network`,
@@ -126,7 +125,6 @@ export const METRIC_EXTRACTORS: Record<string, string> = {
   // Format: "Timing!{ColumnGroup}_{Metric}"
   // Path: ${BASE_PATHS.timingSummary}.${SCENARIO}.{column_group}.{metric}
   // ============================================================
-
   // Setup(r2r) group
   "Timing!setup(r2r)_WNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).WNS`,
   "Timing!setup(r2r)_TNS": `${BASE_PATHS.timingSummary}.\${SCENARIO}.setup(r2r).TNS`,

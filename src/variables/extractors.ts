@@ -124,6 +124,8 @@ export const extractPhysicalInfoMetric = (
   metricName: string,
   dataset: DatasetRecord = {}
 ): unknown => {
+  console.log(`[extractPhysicalInfoMetric] metricName: "${metricName}", basePath: "${basePath}"`);
+
   // 1. basePath로 physical info 데이터까지 탐색
   let current: unknown = dataset;
 
@@ -131,12 +133,14 @@ export const extractPhysicalInfoMetric = (
     if (typeof current === "object" && current !== null) {
       current = (current as Record<string, unknown>)[key];
     } else {
+      console.log(`  Could not find key: "${key}"`);
       return undefined;
     }
   }
 
   // 2. 모든 input_date 키를 찾기
   if (typeof current !== "object" || current === null) {
+    console.log(`  current is null after basePath traversal`);
     return undefined;
   }
 
@@ -153,7 +157,10 @@ export const extractPhysicalInfoMetric = (
     .sort()
     .reverse(); // 내림차순으로 정렬하여 가장 최근 날짜가 첫번째
 
+  console.log(`  available dates:`, allDates);
+
   if (allDates.length === 0) {
+    console.log(`  No valid dates found`);
     return undefined;
   }
 
@@ -161,19 +168,28 @@ export const extractPhysicalInfoMetric = (
   const latestDate = allDates[0];
   const dataNode = (current as Record<string, unknown>)[latestDate];
 
+  console.log(`  latestDate: "${latestDate}"`);
+
   if (typeof dataNode !== "object" || dataNode === null) {
+    console.log(`  dataNode is null for latestDate`);
     return undefined;
   }
 
   const dataArray = (dataNode as Record<string, unknown>).DATA;
 
   if (!Array.isArray(dataArray)) {
+    console.log(`  DATA is not an array`);
     return undefined;
   }
 
+  console.log(`  dataArray length: ${dataArray.length}`);
+
   // 4. PHYSICAL_INFO_TYPE_MAPPING에서 실제 TYPE 값 조회
   const actualType = PHYSICAL_INFO_TYPE_MAPPING[metricName];
+  console.log(`  actualType for "${metricName}": "${actualType}"`);
+
   if (!actualType) {
+    console.log(`  No actualType mapping found for "${metricName}"`);
     return undefined;
   }
 
@@ -186,12 +202,18 @@ export const extractPhysicalInfoMetric = (
     );
   });
 
+  console.log(`  dataItem found:`, dataItem);
+
   if (!dataItem || typeof dataItem !== "object") {
+    console.log(`  dataItem not found or not an object`);
     return undefined;
   }
 
   // 6. 해당 항목의 VALUE 반환
-  return (dataItem as Record<string, unknown>).VALUE;
+  const value = (dataItem as Record<string, unknown>).VALUE;
+  console.log(`  VALUE:`, value);
+
+  return value;
 };
 
 /**
@@ -239,6 +261,7 @@ const extractWithInputDate = (
 
   // 2. 모든 input_date 키를 찾기 (가장 최근 날짜 선택)
   if (typeof current !== "object" || current === null) {
+    console.log(`[extractWithInputDate] ${metricKey}: current is null at basePath "${basePath}"`);
     return undefined;
   }
 
@@ -247,6 +270,7 @@ const extractWithInputDate = (
     .reverse(); // 내림차순으로 정렬하여 가장 최근 날짜가 첫번째
 
   if (allDates.length === 0) {
+    console.log(`[extractWithInputDate] ${metricKey}: No dates found at basePath "${basePath}"`);
     return undefined;
   }
 
@@ -254,6 +278,12 @@ const extractWithInputDate = (
 
   // 3. 경로에서 ${INPUT_DATE}를 latestDate로 치환
   const resolvedPath = path.replace(INPUT_DATE_PLACEHOLDER, latestDate);
+
+  console.log(`[extractWithInputDate] ${metricKey}:`);
+  console.log(`  basePath: "${basePath}"`);
+  console.log(`  latestDate: "${latestDate}"`);
+  console.log(`  resolvedPath: "${resolvedPath}"`);
+  console.log(`  current object keys:`, Object.keys(current as Record<string, unknown>));
 
   // 4. 치환된 경로로 값 추출
   const rawResult = resolvedPath.split(".").reduce((curr, key) => {
@@ -263,8 +293,12 @@ const extractWithInputDate = (
     return undefined;
   }, dataset as unknown);
 
+  console.log(`  rawResult:`, rawResult);
+
   // 5. 변환 적용
   const transformedResult = applyTransform(metricKey, rawResult);
+
+  console.log(`  transformedResult:`, transformedResult);
 
   return transformedResult;
 };
