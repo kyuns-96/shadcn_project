@@ -195,6 +195,21 @@ const powerMatrixSlice = createSlice({
     },
 
     /**
+     * DoE 그룹의 라벨을 업데이트합니다.
+     * [WHY] Cross-page sync를 위해 doeThunks에서 사용됨
+     */
+    updateDoeGroupLabel: (
+      state,
+      action: PayloadAction<{ doeId: string; label: string }>
+    ) => {
+      const { doeId, label } = action.payload;
+      const doeGroup = state.doeGroups.find((doe) => doe.id === doeId);
+      if (doeGroup) {
+        doeGroup.label = label;
+      }
+    },
+
+    /**
      * DoE 그룹을 삭제합니다.
      */
     removeDoeGroup: (state, action: PayloadAction<string>) => {
@@ -262,6 +277,7 @@ export const {
   setPowerRowHeaders,
   updatePowerCell,
   updateDoeScenario,
+  updateDoeGroupLabel,
   removeDoeGroup,
   markDoeFetched,
   restoreDoeGroupsFromURL,

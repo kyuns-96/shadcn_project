@@ -252,6 +252,20 @@ const matrixSlice = createSlice({
         delete row.data[columnId];
       });
     },
+    /**
+     * 컬럼의 라벨을 업데이트합니다.
+     * [WHY] Cross-page sync를 위해 doeThunks에서 사용됨
+     */
+    updateColumnLabel: (
+      state,
+      action: PayloadAction<{ columnId: string; label: string }>
+    ) => {
+      const { columnId, label } = action.payload;
+      const column = state.columnHeaders.find((col) => col.id === columnId);
+      if (column) {
+        column.label = label;
+      }
+    },
     updateColumnScenario: (
       _state,
       _action: PayloadAction<{
@@ -280,6 +294,7 @@ export const {
   updateCell,
   deleteRows,
   removeColumn,
+  updateColumnLabel,
   updateColumnScenario,
 } = matrixSlice.actions;
 export default matrixSlice.reducer;
