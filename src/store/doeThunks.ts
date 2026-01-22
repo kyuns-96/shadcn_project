@@ -1,17 +1,19 @@
 import type { AppDispatch, RootState } from "@/store";
-import { removeColumn, updateColumnLabel, addColumn } from "@/store/matrixSlice";
-import { removeDoE, updateDoELabel, addDoE } from "@/store/doeRegistry";
+import { removeColumn, updateColumnLabel, addColumn, resetMatrix } from "@/store/matrixSlice";
+import { removeDoE, updateDoELabel, addDoE, resetDoERegistry } from "@/store/doeRegistry";
 import {
   removeDoeGroup,
   updateDoeGroupLabel,
   addDoeGroup,
+  resetPowerMatrix,
 } from "@/store/reducers/powerMatrixReducer";
 import {
   removeTimingRow,
   updateTimingRowLabel,
   addTimingRow,
+  resetTimingMatrix,
 } from "@/store/reducers/timingMatrixReducer";
-import { clearColumnPowerScenario } from "@/store/reducers/selectedReducer";
+import { clearColumnPowerScenario, resetColumnPowerScenarios } from "@/store/reducers/selectedReducer";
 
 export type AppThunk<ReturnType = void> = (
   dispatch: AppDispatch,
@@ -69,3 +71,15 @@ export const updateDoELabelAll =
     dispatch(updateDoeGroupLabel({ doeId, label: newLabel }));
     dispatch(updateTimingRowLabel({ rowId: doeId, label: newLabel }));
   };
+
+/**
+ * Clears all DoE-related state across all slices.
+ * Used by Reset button in metadata tables.
+ */
+export const resetAllDoEs = (): AppThunk => (dispatch) => {
+  dispatch(resetDoERegistry());
+  dispatch(resetMatrix());
+  dispatch(resetPowerMatrix());
+  dispatch(resetTimingMatrix());
+  dispatch(resetColumnPowerScenarios());
+};
