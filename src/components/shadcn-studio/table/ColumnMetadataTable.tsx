@@ -23,7 +23,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Trash2Icon, CopyIcon, CheckIcon } from "lucide-react";
+import { Trash2Icon, CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -32,14 +32,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import FilterDropdownCombobox, {
   type DropdownConfig,
 } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { updateCell } from "@/store/matrixSlice";
 import { updateDoEMetadata } from "@/store/doeRegistry";
-import { removeDoEFromAll } from "@/store/doeThunks";
+import { removeDoEFromAll, resetAllDoEs } from "@/store/doeThunks";
 import {
   setColumnPowerScenario,
   clearColumnPowerScenario,
@@ -188,20 +199,40 @@ const ColumnMetadataTable = () => {
     } catch (error) {
       console.error("Failed to copy table data:", error);
     }
-  }, [enrichedColumnHeaders, columnPowerScenarios]);
+   }, [enrichedColumnHeaders, columnPowerScenarios]);
 
-  // 컬럼이 없으면 안내 메시지 표시
-  if (enrichedColumnHeaders.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        추가된 데이터가 없습니다.
-      </div>
-    );
-  }
+   const isEmpty = enrichedColumnHeaders.length === 0;
 
-  return (
-    <div className="space-y-3">
-      <div className="flex justify-end">
+   return (
+     <div className="space-y-3">
+       <div className="flex justify-end gap-2">
+         {/* Reset Button with AlertDialog */}
+         <AlertDialog>
+           <AlertDialogTrigger asChild>
+             <Button variant="outline" size="sm" disabled={isEmpty}>
+               <RotateCcw className="h-4 w-4" />
+               <span className="ml-2">Reset</span>
+             </Button>
+           </AlertDialogTrigger>
+           <AlertDialogContent>
+             <AlertDialogHeader>
+               <AlertDialogTitle>Reset All DoEs?</AlertDialogTitle>
+               <AlertDialogDescription>
+                 This will remove all {enrichedColumnHeaders.length} DoE(s). This action cannot be undone.
+               </AlertDialogDescription>
+             </AlertDialogHeader>
+             <AlertDialogFooter>
+               <AlertDialogCancel>Cancel</AlertDialogCancel>
+               <AlertDialogAction
+                 className={buttonVariants({ variant: "destructive" })}
+                 onClick={() => dispatch(resetAllDoEs())}
+               >
+                 Reset
+               </AlertDialogAction>
+             </AlertDialogFooter>
+           </AlertDialogContent>
+         </AlertDialog>
+         {/* Copy Button */}
         <Button
           variant="outline"
           size="sm"
@@ -224,71 +255,77 @@ const ColumnMetadataTable = () => {
             <CopyIcon className="h-4 w-4" />
           </span>
           <span className="ml-2">{isCopied ? "Copied!" : "Copy"}</span>
-        </Button>
-      </div>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[65px]">Label</TableHead>
-              <TableHead className="w-[80px]">PROJECT</TableHead>
-              <TableHead className="w-[95px]">BLOCK</TableHead>
-              <TableHead className="w-[120px]">NET_VER</TableHead>
-              <TableHead className="w-[170px] truncate">REVISION</TableHead>
-              <TableHead className="w-[105px]">ECO_NUM</TableHead>
-              <TableHead className="w-[277px]">Power Scenario</TableHead>
-              <TableHead className="w-[60px] text-center">Delete</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {enrichedColumnHeaders.map((column) => (
-              <TableRow key={column.id}>
-                <TableCell className="font-medium w-[65px]">
-                  {column.label}
-                </TableCell>
-                <TableCell className="w-[80px]">
-                  {column.PROJECT_NAME || "-"}
-                </TableCell>
-                <TableCell className="w-[95px]">
-                  {column.BLOCK || "-"}
-                </TableCell>
-                <TableCell className="w-[120px]">
-                  {column.NET_VER || "-"}
-                </TableCell>
-                <TableCell className="w-[170px] truncate">
-                  {column.REVISION || "-"}
-                </TableCell>
-                <TableCell className="w-[105px]">
-                  {column.ECO_NUM || "-"}
-                </TableCell>
-                <TableCell>
-                  {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
-                    <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
-                      <FilterDropdownCombobox
-                        dropdownConfigs={[getScenarioDropdownConfig(column)]}
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      No scenarios
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDeleteColumn(column.id)}
-                  >
-                    <Trash2Icon className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+         </Button>
+       </div>
+       {isEmpty ? (
+         <div className="text-center py-8 text-muted-foreground">
+           추가된 데이터가 없습니다.
+         </div>
+       ) : (
+         <div className="overflow-x-auto">
+           <Table>
+             <TableHeader>
+               <TableRow>
+                 <TableHead className="w-[65px]">Label</TableHead>
+                 <TableHead className="w-[80px]">PROJECT</TableHead>
+                 <TableHead className="w-[95px]">BLOCK</TableHead>
+                 <TableHead className="w-[120px]">NET_VER</TableHead>
+                 <TableHead className="w-[170px] truncate">REVISION</TableHead>
+                 <TableHead className="w-[105px]">ECO_NUM</TableHead>
+                 <TableHead className="w-[277px]">Power Scenario</TableHead>
+                 <TableHead className="w-[60px] text-center">Delete</TableHead>
+               </TableRow>
+             </TableHeader>
+             <TableBody>
+               {enrichedColumnHeaders.map((column) => (
+                 <TableRow key={column.id}>
+                   <TableCell className="font-medium w-[65px]">
+                     {column.label}
+                   </TableCell>
+                   <TableCell className="w-[80px]">
+                     {column.PROJECT_NAME || "-"}
+                   </TableCell>
+                   <TableCell className="w-[95px]">
+                     {column.BLOCK || "-"}
+                   </TableCell>
+                   <TableCell className="w-[120px]">
+                     {column.NET_VER || "-"}
+                   </TableCell>
+                   <TableCell className="w-[170px] truncate">
+                     {column.REVISION || "-"}
+                   </TableCell>
+                   <TableCell className="w-[105px]">
+                     {column.ECO_NUM || "-"}
+                   </TableCell>
+                   <TableCell>
+                     {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
+                       <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
+                         <FilterDropdownCombobox
+                           dropdownConfigs={[getScenarioDropdownConfig(column)]}
+                         />
+                       </div>
+                     ) : (
+                       <span className="text-muted-foreground text-sm">
+                         No scenarios
+                       </span>
+                     )}
+                   </TableCell>
+                   <TableCell className="text-center">
+                     <Button
+                       variant="ghost"
+                       size="icon"
+                       className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                       onClick={() => handleDeleteColumn(column.id)}
+                     >
+                       <Trash2Icon className="h-4 w-4" />
+                     </Button>
+                   </TableCell>
+                 </TableRow>
+               ))}
+             </TableBody>
+           </Table>
+         </div>
+       )}
     </div>
   );
 };

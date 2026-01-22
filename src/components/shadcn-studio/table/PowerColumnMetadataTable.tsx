@@ -24,7 +24,7 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import { Trash2Icon, CopyIcon, CheckIcon } from "lucide-react";
+import { Trash2Icon, CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -33,7 +33,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import FilterDropdownCombobox, {
   type DropdownConfig,
 } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
@@ -44,7 +55,7 @@ import {
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
 import { updateDoEMetadata } from "@/store/doeRegistry";
-import { removeDoEFromAll } from "@/store/doeThunks";
+import { removeDoEFromAll, resetAllDoEs } from "@/store/doeThunks";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
   POWER_COLUMN_NAMES,
@@ -219,13 +230,7 @@ const PowerColumnMetadataTable = () => {
   }, [enrichedDoeGroups]);
 
   // DoE가 없으면 안내 메시지 표시
-  if (enrichedDoeGroups.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        추가된 데이터가 없습니다.
-      </div>
-    );
-  }
+  const isEmpty = enrichedDoeGroups.length === 0;
 
   return (
     <div className="space-y-3">
@@ -236,7 +241,34 @@ const PowerColumnMetadataTable = () => {
         scenario={selectedScenario}
         envData={envData}
       />
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" size="sm" disabled={isEmpty}>
+              <RotateCcw className="h-4 w-4" />
+              <span className="ml-2">Reset</span>
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset All DoEs?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove all {enrichedDoeGroups.length} DoE(s). This
+                action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                onClick={() => dispatch(resetAllDoEs())}
+              >
+                Reset
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <Button
           variant="outline"
           size="sm"
@@ -261,72 +293,80 @@ const PowerColumnMetadataTable = () => {
           <span className="ml-2">{isCopied ? "Copied!" : "Copy"}</span>
         </Button>
       </div>
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">DoE Name</TableHead>
-              <TableHead className="w-[80px]">PROJECT</TableHead>
-              <TableHead className="w-[95px]">BLOCK</TableHead>
-              <TableHead className="w-[120px]">NET_VER</TableHead>
-              <TableHead className="w-[170px] truncate">REVISION</TableHead>
-              <TableHead className="w-[105px]">ECO_NUM</TableHead>
-              <TableHead className="w-[277px]">Power Scenario</TableHead>
-              <TableHead className="w-[60px] text-center">Delete</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {enrichedDoeGroups.map((doeGroup) => (
-              <TableRow key={doeGroup.id}>
-                <TableCell
-                  className="font-medium w-[100px] cursor-pointer hover:underline"
-                  onClick={() => handleDoeNameClick(doeGroup.id)}
-                >
-                  {doeGroup.label}
-                </TableCell>
-                <TableCell className="w-[80px]">
-                  {doeGroup.PROJECT_NAME || "-"}
-                </TableCell>
-                <TableCell className="w-[95px]">
-                  {doeGroup.BLOCK || "-"}
-                </TableCell>
-                <TableCell className="w-[120px]">
-                  {doeGroup.NET_VER || "-"}
-                </TableCell>
-                <TableCell className="w-[170px] truncate">
-                  {doeGroup.REVISION || "-"}
-                </TableCell>
-                <TableCell className="w-[105px]">
-                  {doeGroup.ECO_NUM || "-"}
-                </TableCell>
-                <TableCell>
-                  {(doeGroup.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
-                    <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
-                      <FilterDropdownCombobox
-                        dropdownConfigs={[getScenarioDropdownConfig(doeGroup)]}
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      No scenarios
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="text-center">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDeleteDoeGroup(doeGroup.id)}
-                  >
-                    <Trash2Icon className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+      {isEmpty ? (
+        <div className="text-center py-8 text-muted-foreground">
+          추가된 데이터가 없습니다.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">DoE Name</TableHead>
+                <TableHead className="w-[80px]">PROJECT</TableHead>
+                <TableHead className="w-[95px]">BLOCK</TableHead>
+                <TableHead className="w-[120px]">NET_VER</TableHead>
+                <TableHead className="w-[170px] truncate">REVISION</TableHead>
+                <TableHead className="w-[105px]">ECO_NUM</TableHead>
+                <TableHead className="w-[277px]">Power Scenario</TableHead>
+                <TableHead className="w-[60px] text-center">Delete</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {enrichedDoeGroups.map((doeGroup) => (
+                <TableRow key={doeGroup.id}>
+                  <TableCell
+                    className="font-medium w-[100px] cursor-pointer hover:underline"
+                    onClick={() => handleDoeNameClick(doeGroup.id)}
+                  >
+                    {doeGroup.label}
+                  </TableCell>
+                  <TableCell className="w-[80px]">
+                    {doeGroup.PROJECT_NAME || "-"}
+                  </TableCell>
+                  <TableCell className="w-[95px]">
+                    {doeGroup.BLOCK || "-"}
+                  </TableCell>
+                  <TableCell className="w-[120px]">
+                    {doeGroup.NET_VER || "-"}
+                  </TableCell>
+                  <TableCell className="w-[170px] truncate">
+                    {doeGroup.REVISION || "-"}
+                  </TableCell>
+                  <TableCell className="w-[105px]">
+                    {doeGroup.ECO_NUM || "-"}
+                  </TableCell>
+                  <TableCell>
+                    {(doeGroup.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
+                      <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
+                        <FilterDropdownCombobox
+                          dropdownConfigs={[
+                            getScenarioDropdownConfig(doeGroup),
+                          ]}
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        No scenarios
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteDoeGroup(doeGroup.id)}
+                    >
+                      <Trash2Icon className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 };
