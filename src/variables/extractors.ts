@@ -198,6 +198,76 @@ export const extractPhysicalInfoMetric = (
 };
 
 /**
+ * Formality 메트릭 값을 추출합니다.
+ * 가장 최근의 타임스탬프를 찾아서 해당 RESULT 값을 반환합니다.
+ *
+ * @param formalityType - Formality 타입 (예: "R2N", "R2UPF", "N2N_FUNC", "N2UPF_FUNC")
+ * @param dataset - 데이터셋 객체
+ * @returns RESULT 값 또는 "-" (데이터 없음)
+ *
+ * @example
+ * // 데이터 구조:
+ * // {
+ * //   get_formality: {
+ * //     formality_data: {
+ * //       "R2UPF,20251217_154302": { RESULT: "SUCCEEDED", EXPORT_PATH: "/path" },
+ * //       "R2UPF,20251217_140000": { RESULT: "FAILED", EXPORT_PATH: "/path" },
+ * //       "R2N,20250105": { RESULT: "FAILED" }
+ * //     }
+ * //   }
+ * // }
+ * const value = extractFormalityMetric("R2UPF", dataset);
+ * // 결과: "SUCCEEDED" (가장 최근 타임스탬프의 RESULT 값)
+ */
+export const extractFormalityMetric = (
+  formalityType: string,
+  dataset: DatasetRecord = {}
+): string => {
+  // 1. get_formality.formality_data로 탐색
+  let current: unknown = dataset;
+  const basePath = "get_formality.formality_data";
+
+  for (const key of basePath.split(".")) {
+    if (typeof current === "object" && current !== null) {
+      current = (current as Record<string, unknown>)[key];
+    } else {
+      return "-";
+    }
+  }
+
+  // 2. formality_data 객체 확인
+  if (typeof current !== "object" || current === null) {
+    return "-";
+  }
+
+  // 3. 해당 타입으로 시작하는 키 필터링
+  const allKeys = Object.keys(current as Record<string, unknown>);
+  const matchingKeys = allKeys.filter((key) => key.startsWith(`${formalityType},`));
+
+  if (matchingKeys.length === 0) {
+    return "-";
+  }
+
+  // 4. 타임스탬프 기준 정렬 (최신순)
+  const latestKey = matchingKeys.sort().reverse()[0];
+
+  // 5. RESULT 값 추출
+  const entry = (current as Record<string, unknown>)[latestKey];
+  if (typeof entry !== "object" || entry === null) {
+    return "-";
+  }
+
+  const result = (entry as Record<string, unknown>).RESULT;
+
+  // 6. null/undefined/empty string 처리
+  if (result === null || result === undefined || result === "") {
+    return "-";
+  }
+
+  return String(result);
+};
+
+/**
  * INPUT_DATE 플레이스홀더를 가장 최근 날짜로 치환하여 경로에서 값을 추출합니다.
  *
  * @param path - 플레이스홀더가 포함된 경로 (예: "get_layoutwiringtotal.layoutwiringtotal_data.${INPUT_DATE}.DATA.WIRE")
@@ -375,6 +445,15 @@ export const extractMetricValue = (
 
   if (!basePath) {
     return undefined;
+  }
+
+  // Formality 메트릭 처리
+  if (metricKey.startsWith("Formality!")) {
+    const formalityType = metricKey.split("!")[1];
+    if (!formalityType) {
+      return "-";
+    }
+    return extractFormalityMetric(formalityType, dataset);
   }
 
   // INPUT_DATE 플레이스홀더가 있는 경우
