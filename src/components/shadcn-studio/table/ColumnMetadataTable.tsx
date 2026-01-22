@@ -209,10 +209,10 @@ const ColumnMetadataTable = () => {
          {/* Reset Button with AlertDialog */}
          <AlertDialog>
            <AlertDialogTrigger asChild>
-             <Button variant="outline" size="sm" disabled={isEmpty}>
-               <RotateCcw className="h-4 w-4" />
-               <span className="ml-2">Reset</span>
-             </Button>
+<Button variant="destructive" size="sm" disabled={isEmpty}>
+                <RotateCcw className="h-4 w-4" />
+                <span className="ml-2">Reset</span>
+              </Button>
            </AlertDialogTrigger>
            <AlertDialogContent>
              <AlertDialogHeader>
