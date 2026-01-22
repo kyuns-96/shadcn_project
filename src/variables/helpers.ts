@@ -106,6 +106,7 @@ export const GROUP_FORMAT_STRATEGY: Record<
   "skip-decimal" | "number" | "string-only"
 > = {
   "Physical Info": "skip-decimal",
+  "Formality": "string-only",
   // 다른 그룹 추가 시 여기에 작성
 };
 

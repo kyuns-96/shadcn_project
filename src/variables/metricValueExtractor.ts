@@ -38,6 +38,8 @@ const BASE_PATHS = {
   layoutRuntime: "get_layoutruntime.layoutruntime_data",
   /** Layout Data (Cell Usage) 기본 경로 */
   layoutData: "get_layoutcellusage.layoutcellusage_data",
+  /** Formality 데이터 기본 경로 */
+  formality: "get_formality.formality_data",
 };
 
 /**
@@ -170,6 +172,17 @@ export const METRIC_EXTRACTORS: Record<string, string> = {
   "Physical Info!Short": `${BASE_PATHS.physical_info}.\${INPUT_DATE}.DATA`,
   "Physical Info!Total Wire Length": `${BASE_PATHS.layoutWiringTotal}.\${INPUT_DATE}.DATA[0].WIRE`,
   "Physical Info!ECO Runtime": `${BASE_PATHS.layoutRuntime}.RUNTIME`,
+
+  // ============================================================
+  // Formality Metrics (4 metrics)
+  // Format: "Formality!{Type}"
+  // Path: ${BASE_PATHS.formality}
+  // Note: Extracts latest RESULT value for each formality type
+  // ============================================================
+  "Formality!R2N": `${BASE_PATHS.formality}`,
+  "Formality!R2UPF": `${BASE_PATHS.formality}`,
+  "Formality!N2N_FUNC": `${BASE_PATHS.formality}`,
+  "Formality!N2UPF_FUNC": `${BASE_PATHS.formality}`,
 
   // ============================================================
   // Layout Data Metrics - Area(G/C) group (6 metrics)
