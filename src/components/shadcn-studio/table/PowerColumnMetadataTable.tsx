@@ -23,7 +23,7 @@
 
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Trash2Icon, CopyIcon, CheckIcon } from "lucide-react";
 import {
   Table,
@@ -37,6 +37,7 @@ import { Button } from "@/components/ui/button";
 import FilterDropdownCombobox, {
   type DropdownConfig,
 } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
+import EnvDataDialog from "@/components/shadcn-studio/dialog/EnvDataDialog";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
   removeDoeGroup,
@@ -62,18 +63,44 @@ const EMPTY_VALUE_PLACEHOLDER = "-";
 const PowerColumnMetadataTable = () => {
   const dispatch = useAppDispatch();
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
+  const [selectedDoeId, setSelectedDoeId] = useState<string>("");
 
-  // Redux에서 DoE 그룹 및 행 헤더, 데이터셋 조회
   const { rowHeaders } = useAppSelector((state) => state.powerMatrix);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const dataset = useAppSelector((state) => state.dataset);
 
-  // [WHY] doeRegistry의 모든 DoE를 enrichedDoeGroups로 사용
-  // 이렇게 하면 QoRComparePage에서 추가한 DoE도 PowerPage의 PowerColumnMetadataTable에 표시됨
   const enrichedDoeGroups = doeRegistry.allIds.map((doeId) => ({
     ...doeRegistry.byId[doeId],
     id: doeId,
   }));
+
+  const selectedDoeGroup = selectedDoeId
+    ? doeRegistry.byId[selectedDoeId]
+    : undefined;
+
+  const selectedScenario = selectedDoeGroup?.POWER_SCENARIO;
+
+  const envData = selectedDoeGroup
+    ? ((dataset?.[selectedDoeGroup.label]?.get_ptpxpower as Record<string, unknown>)
+        ?.ptpxpower_data as Record<string, Record<string, unknown>>)?.[
+        selectedScenario || ""
+      ]?.env as Record<string, unknown> | undefined
+    : undefined;
+
+  const handleDoeNameClick = useCallback((doeId: string) => {
+    setSelectedDoeId(doeId);
+    setIsDialogOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (isDialogOpen && selectedDoeId && selectedDoeGroup) {
+      const currentScenario = selectedDoeGroup.POWER_SCENARIO;
+      if (currentScenario !== selectedScenario) {
+        setIsDialogOpen(false);
+      }
+    }
+  }, [isDialogOpen, selectedDoeId, selectedDoeGroup, selectedScenario]);
 
   /**
    * Power Scenario 변경 핸들러
@@ -205,6 +232,13 @@ const PowerColumnMetadataTable = () => {
 
   return (
     <div className="space-y-3">
+      <EnvDataDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        doeName={selectedDoeGroup?.label || ""}
+        scenario={selectedScenario}
+        envData={envData}
+      />
       <div className="flex justify-end">
         <Button
           variant="outline"
@@ -247,7 +281,10 @@ const PowerColumnMetadataTable = () => {
           <TableBody>
             {enrichedDoeGroups.map((doeGroup) => (
               <TableRow key={doeGroup.id}>
-                <TableCell className="font-medium w-[100px]">
+                <TableCell
+                  className="font-medium w-[100px] cursor-pointer hover:underline"
+                  onClick={() => handleDoeNameClick(doeGroup.id)}
+                >
                   {doeGroup.label}
                 </TableCell>
                 <TableCell className="w-[80px]">
