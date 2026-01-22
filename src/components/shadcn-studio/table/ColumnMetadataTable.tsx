@@ -37,8 +37,9 @@ import FilterDropdownCombobox, {
   type DropdownConfig,
 } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { removeColumn, updateCell } from "@/store/matrixSlice";
-import { removeDoE, updateDoEMetadata } from "@/store/doeRegistry";
+import { updateCell } from "@/store/matrixSlice";
+import { updateDoEMetadata } from "@/store/doeRegistry";
+import { removeDoEFromAll } from "@/store/doeThunks";
 import {
   setColumnPowerScenario,
   clearColumnPowerScenario,
@@ -121,11 +122,7 @@ const ColumnMetadataTable = () => {
    */
   const handleDeleteColumn = useCallback(
     (columnId: string) => {
-      // matrix에서 컬럼 제거
-      dispatch(removeColumn(columnId));
-      // doeRegistry에서도 삭제 (모든 참조처에서 제거됨)
-      dispatch(removeDoE(columnId));
-      // Power Scenario 매핑도 제거
+      dispatch(removeDoEFromAll(columnId));
       dispatch(clearColumnPowerScenario(columnId));
     },
     [dispatch]

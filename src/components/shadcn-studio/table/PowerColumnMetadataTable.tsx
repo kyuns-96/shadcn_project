@@ -40,11 +40,11 @@ import FilterDropdownCombobox, {
 import EnvDataDialog from "@/components/shadcn-studio/dialog/EnvDataDialog";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
-  removeDoeGroup,
   updatePowerCell,
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
-import { updateDoEMetadata, removeDoE } from "@/store/doeRegistry";
+import { updateDoEMetadata } from "@/store/doeRegistry";
+import { removeDoEFromAll } from "@/store/doeThunks";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
   POWER_COLUMN_NAMES,
@@ -152,10 +152,7 @@ const PowerColumnMetadataTable = () => {
    */
   const handleDeleteDoeGroup = useCallback(
     (doeId: string) => {
-      // powerMatrix에서 삭제
-      dispatch(removeDoeGroup(doeId));
-      // doeRegistry에서도 삭제 (모든 참조처에서 제거됨)
-      dispatch(removeDoE(doeId));
+      dispatch(removeDoEFromAll(doeId));
     },
     [dispatch]
   );

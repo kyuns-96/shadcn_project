@@ -36,11 +36,9 @@ import FilterDropdownCombobox, {
   type DropdownConfig,
 } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { updateDoEMetadata, removeDoE } from "@/store/doeRegistry";
-import {
-  removeTimingRow,
-  updateTimingCell,
-} from "@/store/reducers/timingMatrixReducer";
+import { updateDoEMetadata } from "@/store/doeRegistry";
+import { removeDoEFromAll } from "@/store/doeThunks";
+import { updateTimingCell } from "@/store/reducers/timingMatrixReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
   TIMING_COLUMN_GROUPS,
@@ -119,10 +117,7 @@ const TimingColumnMetadataTable = () => {
    */
   const handleDeleteDoe = useCallback(
     (doeId: string) => {
-      // timingMatrix에서 행 삭제
-      dispatch(removeTimingRow(doeId));
-      // doeRegistry에서도 삭제
-      dispatch(removeDoE(doeId));
+      dispatch(removeDoEFromAll(doeId));
     },
     [dispatch]
   );
