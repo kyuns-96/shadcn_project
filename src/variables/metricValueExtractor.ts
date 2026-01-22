@@ -181,8 +181,8 @@ export const METRIC_EXTRACTORS: Record<string, string> = {
   // ============================================================
   "Formality!R2N": `${BASE_PATHS.formality}`,
   "Formality!R2UPF": `${BASE_PATHS.formality}`,
-  "Formality!N2N_FUNC": `${BASE_PATHS.formality}`,
-  "Formality!N2UPF_FUNC": `${BASE_PATHS.formality}`,
+  "Formality!N2N": `${BASE_PATHS.formality}`,
+  "Formality!N2UPF": `${BASE_PATHS.formality}`,
 
   // ============================================================
   // Layout Data Metrics - Area(G/C) group (6 metrics)
