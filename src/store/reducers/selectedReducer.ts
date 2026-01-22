@@ -83,6 +83,10 @@ const selectedSlice = createSlice({
     clearColumnPowerScenario: (state, action: PayloadAction<string>) => {
       delete state.columnPowerScenarios[action.payload];
     },
+    // Clear all Power Scenario mappings
+    resetColumnPowerScenarios: (state) => {
+      state.columnPowerScenarios = {};
+    },
   },
 });
 
@@ -96,6 +100,7 @@ export const {
   restoreFromURL,
   setColumnPowerScenario,
   clearColumnPowerScenario,
+  resetColumnPowerScenarios,
 } = selectedSlice.actions;
 
 export default selectedSlice.reducer;

@@ -252,6 +252,13 @@ const matrixSlice = createSlice({
         delete row.data[columnId];
       });
     },
+    resetMatrix: (state) => {
+      state.columnHeaders = [];
+      // Clear DoE column data from all rows, but keep rowHeaders themselves
+      state.rowHeaders.forEach((row) => {
+        row.data = {};
+      });
+    },
     /**
      * 컬럼의 라벨을 업데이트합니다.
      * [WHY] Cross-page sync를 위해 doeThunks에서 사용됨
@@ -294,6 +301,7 @@ export const {
   updateCell,
   deleteRows,
   removeColumn,
+  resetMatrix,
   updateColumnLabel,
   updateColumnScenario,
 } = matrixSlice.actions;
