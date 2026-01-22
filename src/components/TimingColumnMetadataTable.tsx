@@ -201,7 +201,7 @@ const TimingColumnMetadataTable = () => {
       <div className="flex justify-end gap-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm" disabled={isEmpty}>
+            <Button variant="outline" size="sm" disabled={isEmpty} className="text-destructive hover:text-destructive">
               <RotateCcw className="h-4 w-4" />
               <span className="ml-2">Reset</span>
             </Button>
