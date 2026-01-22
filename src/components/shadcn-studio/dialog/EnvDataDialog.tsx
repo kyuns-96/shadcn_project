@@ -89,15 +89,17 @@ const EnvDataDialog = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[40%]">Key</TableHead>
-                  <TableHead className="w-[60%]">Value</TableHead>
+                  <TableHead className="w-[30%]">Key</TableHead>
+                  <TableHead className="w-[70%]">Value</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {envEntries.map(([key, value]) => (
                   <TableRow key={key}>
-                    <TableCell className="font-medium">{key}</TableCell>
-                    <TableCell>{String(value)}</TableCell>
+                    <TableCell className="font-medium align-top">{key}</TableCell>
+                    <TableCell className="break-words whitespace-pre-wrap max-w-0">
+                      {String(value)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
