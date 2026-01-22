@@ -76,8 +76,8 @@ export const DEFAULT_MATRIX_TEMPLATE = {
     // Formality group (4 metrics)
     createMatrixRow("row-21", "R2N", "Formality"),
     createMatrixRow("row-22", "R2UPF", "Formality"),
-    createMatrixRow("row-23", "N2N_FUNC", "Formality"),
-    createMatrixRow("row-24", "N2UPF_FUNC", "Formality"),
+    createMatrixRow("row-23", "N2N", "Formality"),
+    createMatrixRow("row-24", "N2UPF", "Formality"),
   ] as MatrixRowDefinition[],
 };
 
