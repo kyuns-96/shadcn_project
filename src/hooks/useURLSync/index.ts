@@ -34,6 +34,7 @@ import {
   addDoeGroup,
   restoreDoeGroupsFromURL,
 } from "@/store/reducers/powerMatrixReducer";
+import { setRevisionMode } from "@/store/reducers/selectedReducer";
 
 import {
   URL_PARAMS,
@@ -85,6 +86,8 @@ export function useURLSync() {
     fcNetver,
     fcRevision,
     doeRegistry,
+    revisionMode,
+    isRestoringColumns,
   } = useSelector(
     (state: RootState) => ({
       currentPage: state.page.currentPage,
@@ -96,6 +99,8 @@ export function useURLSync() {
       fcNetver: state.fcCheckTool.selectedNetver,
       fcRevision: state.fcCheckTool.selectedRevision,
       doeRegistry: state.doeRegistry,
+      revisionMode: state.selected.revisionMode,
+      isRestoringColumns: state.selected.isRestoringColumns,
     }),
     shallowEqual
   );
@@ -117,7 +122,11 @@ export function useURLSync() {
 
     // Restore page-specific state
     if (effectivePage === "qor-compare") {
-      // Restore QOR Compare columns
+      const modeParam = params.get(URL_PARAMS.REVISION_MODE);
+      if (modeParam === 'PRE' || modeParam === 'POST') {
+        dispatch(setRevisionMode(modeParam));
+      }
+
       const columnsParam = params.get(URL_PARAMS.COLUMNS);
       if (columnsParam) {
         const columns = decodeColumns(columnsParam);
@@ -153,6 +162,7 @@ export function useURLSync() {
             ECO_NUM: col.ECO_NUM,
             POWER_SCENARIO: col.POWER_SCENARIO,
             AVAILABLE_SCENARIOS: col.AVAILABLE_SCENARIOS,
+            REVISION_MODE: col.REVISION_MODE,
           }));
           dispatch(setDoEs(doeMetadata));
 
@@ -364,8 +374,11 @@ export function useURLSync() {
 
     // Page-specific parameters
     if (currentPage === "qor-compare") {
-      // Save QOR Compare columns (only if there are any)
-      if (columnHeaders.length > 0) {
+      if (!isRestoringColumns) {
+        params.set(URL_PARAMS.REVISION_MODE, revisionMode);
+      }
+
+      if (columnHeaders.length > 0 && !isRestoringColumns) {
         const columnMeta: ColumnMeta[] = columnHeaders.map((col) => {
           const metadata = doeRegistry.byId[col.id];
           return {
@@ -378,6 +391,7 @@ export function useURLSync() {
             ECO_NUM: metadata?.ECO_NUM,
             POWER_SCENARIO: metadata?.POWER_SCENARIO,
             AVAILABLE_SCENARIOS: metadata?.AVAILABLE_SCENARIOS,
+            REVISION_MODE: metadata?.REVISION_MODE,
           };
         });
         const encoded = encodeColumns(columnMeta);
@@ -450,6 +464,8 @@ export function useURLSync() {
     fcBlock,
     fcNetver,
     fcRevision,
+    revisionMode,
+    isRestoringColumns,
   ]);
 }
 
