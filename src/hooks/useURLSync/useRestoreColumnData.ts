@@ -13,6 +13,8 @@ import {
   restoreFromURL,
   setDoeName,
   setColumnPowerScenario,
+  setRevisionMode,
+  setIsRestoringColumns,
 } from "@/store/reducers/selectedReducer";
 import { updateCell, markColumnFetched } from "@/store/matrixSlice";
 import { updateDoEMetadata } from "@/store/doeRegistry";
@@ -39,9 +41,10 @@ export function useRestoreColumnData() {
     shallowEqual
   );
 
-  const { doeRegistry } = useSelector(
+  const { doeRegistry, revisionMode } = useSelector(
     (state: RootState) => ({
       doeRegistry: state.doeRegistry,
+      revisionMode: state.selected.revisionMode,
     }),
     shallowEqual
   );
@@ -71,111 +74,106 @@ export function useRestoreColumnData() {
 
     // Fetch data for each column sequentially
     const fetchAllColumns = async () => {
-      for (const col of columnsToFetch) {
-        // [WHY] Mark column as being processed immediately to prevent duplicate fetches
-        fetchedColumnsRef.current.add(col.id);
+      const globalMode = revisionMode;
+      
+      dispatch(setIsRestoringColumns(true));
 
-        // [WHY] Set doeName first - fetchDataset uses this as the key for storing results
-        // Without this, data would be stored under empty string key
-        dispatch(setDoeName(col.label));
+      try {
+        for (const col of columnsToFetch) {
+          fetchedColumnsRef.current.add(col.id);
 
-        // Set selection state for this column
-        dispatch(
-          restoreFromURL({
-            selectedProject: (col.PROJECT_NAME as string) ?? null,
-            selectedBlock: (col.BLOCK as string) ?? null,
-            selectedNetver: (col.NET_VER as string) ?? null,
-            selectedRevision: (col.REVISION as string) ?? null,
-            selectedEconum: (col.ECO_NUM as string) ?? null,
-          })
-        );
-
-        // [WHY] Small delay to ensure Redux state is updated before fetch
-        // This prevents race condition where fetchDataset reads stale selection state
-        await new Promise((resolve) => setTimeout(resolve, 50));
-
-        // Fetch and update cells
-        const action = await dispatch(fetchDataset());
-        if (fetchDataset.fulfilled.match(action)) {
-          const data = (action.payload?.[col.label] ?? {}) as Record<
-            string,
-            unknown
-          >;
-
-          // [WHY] Get metadata from doeRegistry (more reliable than column metadata)
-          // This ensures we get the correct POWER_SCENARIO even when DoE was added from another page
           const metadata = doeRegistry.byId[col.id];
+          const columnMode = metadata?.REVISION_MODE || 'POST';
 
-          // [WHY] If POWER_SCENARIO is missing, extract available scenarios and set default
-          let scenarioName =
-            (metadata?.POWER_SCENARIO as string) ??
-            (col.POWER_SCENARIO as string) ??
-            "";
-          if (!scenarioName) {
-            const availableScenarios = extractAvailableScenarios(data);
-            const selectedProject =
-              (metadata?.PROJECT_NAME as string) ??
-              (col.PROJECT_NAME as string) ??
-              null;
-            scenarioName = getDefaultScenario(
-              selectedProject,
-              availableScenarios
-            );
+          dispatch(setRevisionMode(columnMode));
 
-            // Update doeRegistry with the scenario information
-            if (metadata) {
+          dispatch(setDoeName(col.label));
+
+          dispatch(
+            restoreFromURL({
+              selectedProject: (col.PROJECT_NAME as string) ?? null,
+              selectedBlock: (col.BLOCK as string) ?? null,
+              selectedNetver: (col.NET_VER as string) ?? null,
+              selectedRevision: (col.REVISION as string) ?? null,
+              selectedEconum: (col.ECO_NUM as string) ?? null,
+            })
+          );
+
+          await new Promise((resolve) => setTimeout(resolve, 50));
+
+          const action = await dispatch(fetchDataset());
+          if (fetchDataset.fulfilled.match(action)) {
+            const data = (action.payload?.[col.label] ?? {}) as Record<
+              string,
+              unknown
+            >;
+
+            let scenarioName =
+              (metadata?.POWER_SCENARIO as string) ??
+              (col.POWER_SCENARIO as string) ??
+              "";
+            if (!scenarioName) {
+              const availableScenarios = extractAvailableScenarios(data);
+              const selectedProject =
+                (metadata?.PROJECT_NAME as string) ??
+                (col.PROJECT_NAME as string) ??
+                null;
+              scenarioName = getDefaultScenario(
+                selectedProject,
+                availableScenarios
+              );
+
+              if (metadata) {
+                dispatch(
+                  updateDoEMetadata({
+                    doeId: col.id,
+                    POWER_SCENARIO: scenarioName,
+                    AVAILABLE_SCENARIOS: availableScenarios,
+                  })
+                );
+              }
+            }
+
+            if (scenarioName) {
               dispatch(
-                updateDoEMetadata({
-                  doeId: col.id,
-                  POWER_SCENARIO: scenarioName,
-                  AVAILABLE_SCENARIOS: availableScenarios,
+                setColumnPowerScenario({
+                  columnId: col.id,
+                  scenario: scenarioName,
                 })
               );
             }
+
+            currentRowHeaders.forEach((row) => {
+              const metricKey = `${row.rowGroup}!${row.label}`;
+              let value = extractMetricValue(metricKey, data, scenarioName, columnMode);
+              if (value === undefined) {
+                value = "-";
+              }
+              dispatch(updateCell({ rowId: row.id, columnId: col.id, value }));
+            });
           }
 
-          if (scenarioName) {
-            dispatch(
-              setColumnPowerScenario({
-                columnId: col.id,
-                scenario: scenarioName,
-              })
-            );
-          }
-
-          // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
-          currentRowHeaders.forEach((row) => {
-            const metricKey = `${row.rowGroup}!${row.label}`;
-            // Pass scenario name for proper metric extraction
-            let value = extractMetricValue(metricKey, data, scenarioName);
-            if (value === undefined) {
-              value = "-";
-            }
-            dispatch(updateCell({ rowId: row.id, columnId: col.id, value }));
-          });
+          dispatch(markColumnFetched(col.id));
         }
 
-        // Mark this column as fetched in Redux
-        dispatch(markColumnFetched(col.id));
+        dispatch(
+          restoreFromURL({
+            selectedProject: null,
+            selectedBlock: null,
+            selectedNetver: null,
+            selectedRevision: null,
+            selectedEconum: null,
+          })
+        );
+
+        dispatch(setDoeName(""));
+      } finally {
+        dispatch(setRevisionMode(globalMode));
+        dispatch(setIsRestoringColumns(false));
+        isFetching.current = false;
       }
-
-      // Clear selection after restoration
-      dispatch(
-        restoreFromURL({
-          selectedProject: null,
-          selectedBlock: null,
-          selectedNetver: null,
-          selectedRevision: null,
-          selectedEconum: null,
-        })
-      );
-
-      // [WHY] Clear doeName after restoration to reset UI state
-      dispatch(setDoeName(""));
-
-      isFetching.current = false;
     };
 
     fetchAllColumns();
-  }, [dispatch, columnHeaders, rowHeaders, doeRegistry]);
+  }, [dispatch, columnHeaders, rowHeaders, doeRegistry, revisionMode]);
 }
