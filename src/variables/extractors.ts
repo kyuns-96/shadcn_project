@@ -420,6 +420,9 @@ const extractWithScenario = (
   return transformedValue;
 };
 
+const LAYOUT_PATH_POST = "get_layoutcellusage.layoutcellusage_data";
+const LAYOUT_PATH_PRE = "get_syncellusage.syncellusage_data";
+
 /**
  * 데이터셋에서 특정 메트릭 값을 추출합니다.
  * 시나리오 이름에 "."이 포함되어 있어도 정상적으로 처리합니다.
@@ -427,6 +430,7 @@ const extractWithScenario = (
  * @param metricKey - 메트릭 키 (형식: "Group!Label")
  * @param dataset - 데이터셋 객체
  * @param scenarioName - Power Scenario 이름 (선택적, ${SCENARIO} 플레이스홀더 대체용)
+ * @param revisionMode - Revision mode for Area metrics (선택적)
  * @returns 추출된 값 또는 undefined
  *
  * @example
@@ -439,12 +443,17 @@ const extractWithScenario = (
 export const extractMetricValue = (
   metricKey: string,
   dataset: DatasetRecord = {},
-  scenarioName?: string
+  scenarioName?: string,
+  revisionMode?: 'PRE' | 'POST'
 ): unknown => {
-  const basePath = METRIC_EXTRACTORS[metricKey];
+  let basePath = METRIC_EXTRACTORS[metricKey];
 
   if (!basePath) {
     return undefined;
+  }
+
+  if (revisionMode === 'PRE' && basePath.startsWith(LAYOUT_PATH_POST)) {
+    basePath = basePath.replace(LAYOUT_PATH_POST, LAYOUT_PATH_PRE);
   }
 
   // Formality 메트릭 처리
