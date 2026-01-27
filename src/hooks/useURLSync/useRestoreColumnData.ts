@@ -82,8 +82,10 @@ export function useRestoreColumnData() {
         for (const col of columnsToFetch) {
           fetchedColumnsRef.current.add(col.id);
 
-          const metadata = doeRegistry.byId[col.id];
-          const columnMode = metadata?.REVISION_MODE || 'POST';
+           const metadata = doeRegistry.byId[col.id];
+           const columnMode = (metadata?.REVISION_MODE as 'PRE' | 'POST') ?? 
+                              (col.REVISION_MODE as 'PRE' | 'POST') ?? 
+                              'POST';
 
           dispatch(setRevisionMode(columnMode));
 
