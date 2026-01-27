@@ -1,5 +1,7 @@
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 
+export type RevisionMode = 'PRE' | 'POST';
+
 export interface SelectedState {
   selectedProject: string | null;
   selectedBlock: string | null;
@@ -9,6 +11,8 @@ export interface SelectedState {
   doeName: string;
   /** 컬럼별 선택된 Power Scenario 매핑 (columnId -> scenarioName) */
   columnPowerScenarios: Record<string, string>;
+  revisionMode: RevisionMode;
+  isRestoringColumns: boolean;
 }
 
 // Payload type for restoring state from URL
@@ -28,6 +32,8 @@ const initialState: SelectedState = {
   selectedEconum: null,
   doeName: "",
   columnPowerScenarios: {},
+  revisionMode: 'POST',
+  isRestoringColumns: false,
 };
 
 const selectedSlice = createSlice({
@@ -55,6 +61,10 @@ const selectedSlice = createSlice({
     setSelectedRevision: (state, action: PayloadAction<string | null>) => {
       state.selectedRevision = action.payload;
       state.selectedEconum = null;
+    },
+    setSelectedRevisionOnly: (state, action: PayloadAction<string | null>) => {
+      state.selectedRevision = action.payload;
+      // DO NOT clear selectedEconum - used for PRE mode revision changes
     },
     setSelectedEconum: (state, action: PayloadAction<string | null>) => {
       state.selectedEconum = action.payload;
@@ -87,6 +97,12 @@ const selectedSlice = createSlice({
     resetColumnPowerScenarios: (state) => {
       state.columnPowerScenarios = {};
     },
+    setRevisionMode: (state, action: PayloadAction<RevisionMode>) => {
+      state.revisionMode = action.payload;
+    },
+    setIsRestoringColumns: (state, action: PayloadAction<boolean>) => {
+      state.isRestoringColumns = action.payload;
+    },
   },
 });
 
@@ -95,12 +111,15 @@ export const {
   setSelectedBlock,
   setSelectedNetver,
   setSelectedRevision,
+  setSelectedRevisionOnly,
   setSelectedEconum,
   setDoeName,
   restoreFromURL,
   setColumnPowerScenario,
   clearColumnPowerScenario,
   resetColumnPowerScenarios,
+  setRevisionMode,
+  setIsRestoringColumns,
 } = selectedSlice.actions;
 
 export default selectedSlice.reducer;
