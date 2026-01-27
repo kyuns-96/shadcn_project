@@ -32,11 +32,16 @@ import { useAppDispatch, useAppSelector } from "@/store";
 import { initializeDefaultMatrixRows } from "@/variables/defaultMatrixTemplate";
 import { useRestoreColumnData } from "@/hooks/useURLSync";
 import AccordionOutline from "@/components/shadcn-studio/accordion/accordion-09";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { setRevisionMode } from "@/store/reducers/selectedReducer";
+import type { RevisionMode } from "@/store/reducers/selectedReducer";
 
 const QORComparePage = () => {
   const filterDropdownConfigs = useFilterDropdownConfigs();
   const dispatch = useAppDispatch();
   const rowHeaders = useAppSelector((state) => state.matrix.rowHeaders);
+  const revisionMode = useAppSelector((state) => state.selected.revisionMode);
   const isInitialized = useRef(false);
 
   useEffect(() => {
@@ -68,6 +73,23 @@ const QORComparePage = () => {
                 ))}
               </div>
             </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium">Mode:</span>
+              <RadioGroup
+                value={revisionMode}
+                onValueChange={(v: RevisionMode) => dispatch(setRevisionMode(v))}
+                className="flex items-center space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="PRE" id="mode-pre" />
+                  <Label htmlFor="mode-pre">PRE</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="POST" id="mode-post" />
+                  <Label htmlFor="mode-post">POST</Label>
+                </div>
+              </RadioGroup>
+            </div>
             <div className="flex gap-2 items-end">
               <DoeNameInput />
               <DatasetColumnAddButton />
@@ -90,7 +112,7 @@ const QORComparePage = () => {
         ),
       },
     ],
-    [filterDropdownConfigs]
+    [filterDropdownConfigs, revisionMode, dispatch]
   );
 
   return (
