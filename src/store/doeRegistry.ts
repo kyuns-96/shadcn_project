@@ -47,6 +47,8 @@ export interface DoEEntry {
   TIMING_SCENARIO?: string;
   /** 사용 가능한 Timing Scenario 목록 */
   AVAILABLE_TIMING_SCENARIOS?: string[];
+  /** Revision mode for this DoE (PRE/POST) */
+  REVISION_MODE?: 'PRE' | 'POST';
 }
 
 /**
@@ -87,6 +89,7 @@ const doeRegistrySlice = createSlice({
         AVAILABLE_SCENARIOS?: string[];
         TIMING_SCENARIO?: string;
         AVAILABLE_TIMING_SCENARIOS?: string[];
+        REVISION_MODE?: 'PRE' | 'POST';
       }>
     ) => {
       const {
@@ -101,6 +104,7 @@ const doeRegistrySlice = createSlice({
         AVAILABLE_SCENARIOS,
         TIMING_SCENARIO,
         AVAILABLE_TIMING_SCENARIOS,
+        REVISION_MODE,
       } = action.payload;
       const id = action.payload.id || `doe-${Date.now()}`;
 
@@ -117,6 +121,7 @@ const doeRegistrySlice = createSlice({
         ...(AVAILABLE_SCENARIOS && { AVAILABLE_SCENARIOS }),
         ...(TIMING_SCENARIO && { TIMING_SCENARIO }),
         ...(AVAILABLE_TIMING_SCENARIOS && { AVAILABLE_TIMING_SCENARIOS }),
+        ...(REVISION_MODE && { REVISION_MODE }),
       };
 
       if (!state.allIds.includes(id)) {
@@ -142,6 +147,7 @@ const doeRegistrySlice = createSlice({
         AVAILABLE_SCENARIOS?: string[];
         TIMING_SCENARIO?: string;
         AVAILABLE_TIMING_SCENARIOS?: string[];
+        REVISION_MODE?: 'PRE' | 'POST';
       }>
     ) => {
       const { doeId, ...metadata } = action.payload;
