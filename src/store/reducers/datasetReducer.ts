@@ -11,8 +11,7 @@ export const fetchDataset = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >("dataset/fetch", async (_, { rejectWithValue, getState }) => {
   try {
-    // Extract selection parameters from the redux store
-    const { selected } = getState() as RootState;
+    const { selected, page } = getState() as RootState;
     const {
       selectedProject = "",
       selectedBlock = "",
@@ -20,9 +19,10 @@ export const fetchDataset = createAsyncThunk<
       selectedRevision = "",
       selectedEconum = "",
       doeName = "",
+      revisionMode,
     } = selected ?? {};
+    const currentPage = page.currentPage;
 
-    // Retrieve function list
     const funcListRaw = await fetchFunctionList();
     const funcList = Object.entries(
       funcListRaw as Record<string, { method: string; path: string }[]>
@@ -32,17 +32,54 @@ export const fetchDataset = createAsyncThunk<
         arr.filter((item) => item.method !== "GET").map((item) => item.path)
       );
 
+    const getAdjustedEndpoint = (
+      endpoint: string,
+      mode: 'PRE' | 'POST',
+      page: string
+    ): string | null | undefined => {
+      if (page !== 'qor-compare') {
+        return undefined;
+      }
+
+      if (mode === 'PRE' && endpoint === '/api/get_layoutcellusage') {
+        return '/api/get_syncellusage';
+      }
+
+      if (mode === 'PRE' && endpoint === '/api/get_syncellusage') {
+        return null;
+      }
+
+      if (mode === 'POST' && endpoint === '/api/get_syncellusage') {
+        return null;
+      }
+
+      return undefined;
+    };
+
     const result: Record<string, any> = {};
     for (const fn of funcList) {
+      const adjustedEndpoint = getAdjustedEndpoint(fn, revisionMode, currentPage);
+
+      if (adjustedEndpoint === null) {
+        continue;
+      }
+
+      const actualEndpoint = adjustedEndpoint ?? fn;
+
+      const shouldOmitEconum = currentPage === 'qor-compare' &&
+                               revisionMode === 'PRE' &&
+                               actualEndpoint.includes('syncellusage');
+
       const data = await fetchDatasetAPI(
         selectedProject || "ASDF",
         selectedBlock || "GGGGG",
         selectedNetver || "ZXCV",
         selectedRevision || "LLLL",
-        selectedEconum || "KKKKK",
-        fn
+        shouldOmitEconum ? undefined : (selectedEconum || "KKKKK"),
+        actualEndpoint
       );
-      const strippedFn = fn.replace(/\/api\//, "");
+
+      const strippedFn = actualEndpoint.replace(/\/api\//, "");
       result[strippedFn] = data;
     }
     const key = doeName;

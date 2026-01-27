@@ -12,15 +12,6 @@
  * - Fetch API
  */
 
-/** 데이터셋 조회 파라미터 */
-interface DatasetParams {
-  project: string;
-  block: string;
-  netver: string;
-  revision: string;
-  econum: string;
-}
-
 /**
  * 데이터셋을 조회합니다.
  *
@@ -28,7 +19,7 @@ interface DatasetParams {
  * @param block - 블록 이름
  * @param netver - 넷버전 이름
  * @param revision - 리비전 이름
- * @param econum - ECO 번호
+ * @param econum - ECO 번호 (optional - PRE mode syncellusage does not require econum)
  * @param apiEndpoint - API 엔드포인트 경로
  * @returns 데이터셋 데이터
  * @throws HTTP 에러 또는 네트워크 에러
@@ -38,22 +29,21 @@ export async function fetchDataset(
   block: string,
   netver: string,
   revision: string,
-  econum: string,
+  econum: string | undefined,
   apiEndpoint: string
 ): Promise<unknown> {
+  const body: Record<string, string> = { project, block, netver, revision };
+  if (econum !== undefined) {
+    body.econum = econum;
+  }
+
   const response = await fetch(apiEndpoint, {
     method: "POST",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      project,
-      block,
-      netver,
-      revision,
-      econum,
-    } as DatasetParams),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
