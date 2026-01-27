@@ -17,7 +17,7 @@
  * - @/hooks/useFetch*List: 각 드롭다운 데이터 fetch
  */
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import type { RootState } from "@/store";
 
@@ -33,6 +33,7 @@ import {
   setSelectedBlock,
   setSelectedNetver,
   setSelectedRevision,
+  setSelectedRevisionOnly,
   setSelectedEconum,
 } from "@/store/reducers/selectedReducer";
 
@@ -51,6 +52,9 @@ export default function useFilterDropdownConfigs(): DropdownConfig[] {
     selectedNetver,
     selectedRevision,
     selectedEconum,
+    currentPage,
+    revisionMode,
+    isRestoringColumns,
   } = useSelector(
     (state: RootState) => ({
       selectedProject: state.selected.selectedProject ?? "",
@@ -58,30 +62,52 @@ export default function useFilterDropdownConfigs(): DropdownConfig[] {
       selectedNetver: state.selected.selectedNetver ?? "",
       selectedRevision: state.selected.selectedRevision ?? "",
       selectedEconum: state.selected.selectedEconum ?? "",
+      currentPage: state.page.currentPage,
+      revisionMode: state.selected.revisionMode,
+      isRestoringColumns: state.selected.isRestoringColumns,
     }),
     shallowEqual
   );
 
   // 각 필터 변경 핸들러
-  const handleProjectChange = (value: string) => {
-    dispatch(setSelectedProject(value));
-  };
+  const handleProjectChange = useMemo(
+    () => (value: string) => {
+      dispatch(setSelectedProject(value));
+    },
+    [dispatch]
+  );
 
-  const handleBlockChange = (value: string) => {
-    dispatch(setSelectedBlock(value));
-  };
+  const handleBlockChange = useMemo(
+    () => (value: string) => {
+      dispatch(setSelectedBlock(value));
+    },
+    [dispatch]
+  );
 
-  const handleNetverChange = (value: string) => {
-    dispatch(setSelectedNetver(value));
-  };
+  const handleNetverChange = useMemo(
+    () => (value: string) => {
+      dispatch(setSelectedNetver(value));
+    },
+    [dispatch]
+  );
 
-  const handleRevisionChange = (value: string) => {
-    dispatch(setSelectedRevision(value));
-  };
+  const handleRevisionChange = useMemo(
+    () => (value: string) => {
+      if (currentPage === 'qor-compare' && revisionMode === 'PRE') {
+        dispatch(setSelectedRevisionOnly(value || null));
+      } else {
+        dispatch(setSelectedRevision(value || null));
+      }
+    },
+    [dispatch, currentPage, revisionMode]
+  );
 
-  const handleEconumChange = (value: string) => {
-    dispatch(setSelectedEconum(value));
-  };
+  const handleEconumChange = useMemo(
+    () => (value: string) => {
+      dispatch(setSelectedEconum(value));
+    },
+    [dispatch]
+  );
 
   const { projectList, blockList, netverList, revisionList, econumList } =
     useSelector(
@@ -107,9 +133,36 @@ export default function useFilterDropdownConfigs(): DropdownConfig[] {
     selectedRevision
   );
 
+  const filteredRevisionList = useMemo(() => {
+    const list = Array.isArray(revisionList) ? revisionList : [];
+
+    if (currentPage !== 'qor-compare') {
+      return list;
+    }
+
+    if (revisionMode === 'PRE') {
+      return list.filter((item: string) => !item.includes('-BE'));
+    } else {
+      return list.filter((item: string) => item.includes('-BE'));
+    }
+  }, [revisionList, revisionMode, currentPage]);
+
+  useEffect(() => {
+    if (currentPage !== 'qor-compare') return;
+
+    if (isRestoringColumns) return;
+
+    const list = Array.isArray(revisionList) ? revisionList : [];
+    if (list.length === 0) return;
+
+    if (selectedRevision && !filteredRevisionList.includes(selectedRevision)) {
+      dispatch(setSelectedRevisionOnly(null));
+    }
+  }, [revisionMode, filteredRevisionList, selectedRevision, dispatch, currentPage, revisionList, isRestoringColumns]);
+
   // 드롭다운 설정 배열 생성
-  const filterDropdownConfigs = useMemo<DropdownConfig[]>(
-    () => [
+  const filterDropdownConfigs = useMemo<DropdownConfig[]>(() => {
+    const configs: DropdownConfig[] = [
       {
         value: selectedProject,
         placeholder: "PROJECT_NAME",
@@ -131,29 +184,40 @@ export default function useFilterDropdownConfigs(): DropdownConfig[] {
       {
         value: selectedRevision,
         placeholder: "REVISION",
-        data: (Array.isArray(revisionList) ? revisionList : []) as string[],
+        data: filteredRevisionList as string[],
         set: handleRevisionChange,
       },
-      {
+    ];
+
+    if (currentPage !== 'qor-compare' || revisionMode === 'POST') {
+      configs.push({
         value: selectedEconum,
         placeholder: "ECO_NUM",
         data: (Array.isArray(econumList) ? econumList : []) as string[],
         set: handleEconumChange,
-      },
-    ],
-    [
-      selectedProject,
-      selectedBlock,
-      selectedNetver,
-      selectedRevision,
-      selectedEconum,
-      projectList,
-      blockList,
-      netverList,
-      revisionList,
-      econumList,
-    ]
-  );
+      });
+    }
+
+    return configs;
+  }, [
+    selectedProject,
+    selectedBlock,
+    selectedNetver,
+    selectedRevision,
+    selectedEconum,
+    projectList,
+    blockList,
+    netverList,
+    filteredRevisionList,
+    econumList,
+    handleProjectChange,
+    handleBlockChange,
+    handleNetverChange,
+    handleRevisionChange,
+    handleEconumChange,
+    currentPage,
+    revisionMode,
+  ]);
 
   return filterDropdownConfigs;
 }
