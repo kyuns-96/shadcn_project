@@ -70,6 +70,7 @@ const DatasetColumnAddButton = () => {
     selectedNetver,
     selectedRevision,
     selectedEconum,
+    revisionMode,
   } = useAppSelector((state) => state.selected);
   const { rowHeaders } = useAppSelector((state) => state.matrix);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
@@ -96,7 +97,8 @@ const DatasetColumnAddButton = () => {
     const columnId = generateUniqueColumnId();
     const columnLabel = doeName || columnId;
 
-    // 1. 먼저 doeRegistry에 DoE를 추가 (메타데이터 포함)
+    const currentMode = revisionMode;
+
     dispatch(
       addDoE({
         id: columnId,
@@ -106,6 +108,7 @@ const DatasetColumnAddButton = () => {
         NET_VER: selectedNetver || undefined,
         REVISION: selectedRevision || undefined,
         ECO_NUM: selectedEconum || undefined,
+        REVISION_MODE: currentMode,
       })
     );
 
@@ -178,7 +181,7 @@ const DatasetColumnAddButton = () => {
         rowHeaders.forEach((rowHeader) => {
           const metricKey = `${rowHeader.rowGroup}!${rowHeader.label}`;
           const metricValue =
-            extractMetricValue(metricKey, datasetPayload, defaultScenario) ??
+            extractMetricValue(metricKey, datasetPayload, defaultScenario, currentMode) ??
             EMPTY_VALUE_PLACEHOLDER;
 
           dispatch(
