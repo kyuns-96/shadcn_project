@@ -8,6 +8,7 @@
 
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
+import { useAppSelector } from "@/store";
 import type { RootState, AppDispatch } from "@/store";
 import {
   restoreFromURL,
@@ -49,6 +50,8 @@ export function useRestoreDoeGroupData() {
     shallowEqual
   );
 
+  const dataset = useAppSelector((state) => state.dataset);
+
   useEffect(() => {
     // [WHY] Prevent concurrent fetches to avoid race conditions
     if (isFetching.current) return;
@@ -85,106 +88,121 @@ export function useRestoreDoeGroupData() {
 
     // Fetch data for each DoE group sequentially
     const fetchAllGroups = async () => {
-      for (const group of groupsToFetch) {
-        // [WHY] Mark group as being processed immediately to prevent duplicate fetches
-        fetchedGroupsRef.current.add(group.id);
+       for (const group of groupsToFetch) {
+         // [WHY] Mark group as being processed immediately to prevent duplicate fetches
+         fetchedGroupsRef.current.add(group.id);
 
-        // [WHY] Set doeName - fetchDataset uses this as the key for storing results
-        dispatch(setDoeName(group.label));
+         // Get metadata from doeRegistry
+         const metadata = doeRegistry.byId[group.id];
+         if (!metadata) {
+           // Skip if metadata not found
+           continue;
+         }
 
-        // Get metadata from doeRegistry
-        const metadata = doeRegistry.byId[group.id];
-        if (!metadata) {
-          // Skip if metadata not found
-          continue;
-        }
+         // [WHY] Check cache first - if data exists, skip API call
+         const cachedData = dataset[group.label];
+         const hasCachedData = cachedData && Object.keys(cachedData).length > 0;
 
-        // Set selection state for this DoE group
-        dispatch(
-          restoreFromURL({
-            selectedProject: (metadata.PROJECT_NAME as string) ?? null,
-            selectedBlock: (metadata.BLOCK as string) ?? null,
-            selectedNetver: (metadata.NET_VER as string) ?? null,
-            selectedRevision: (metadata.REVISION as string) ?? null,
-            selectedEconum: (metadata.ECO_NUM as string) ?? null,
-          })
-        );
+         let datasetPayload: Record<string, unknown>;
 
-        // [WHY] Small delay to ensure Redux state is updated before fetch
-        // This prevents race condition where fetchDataset reads stale selection state
-        await new Promise((resolve) => setTimeout(resolve, 50));
+         if (hasCachedData) {
+           // Use cached data
+           datasetPayload = cachedData;
+         } else {
+           // [WHY] Set doeName - fetchDataset uses this as the key for storing results
+           dispatch(setDoeName(group.label));
 
-        // Fetch and update cells
-        const action = await dispatch(fetchDataset());
+           // Set selection state for this DoE group
+           dispatch(
+             restoreFromURL({
+               selectedProject: (metadata.PROJECT_NAME as string) ?? null,
+               selectedBlock: (metadata.BLOCK as string) ?? null,
+               selectedNetver: (metadata.NET_VER as string) ?? null,
+               selectedRevision: (metadata.REVISION as string) ?? null,
+               selectedEconum: (metadata.ECO_NUM as string) ?? null,
+             })
+           );
 
-        if (fetchDataset.fulfilled.match(action)) {
-          const datasetPayload = (action.payload?.[group.label] ??
-            {}) as Record<string, unknown>;
+           // [WHY] Small delay to ensure Redux state is updated before fetch
+           // This prevents race condition where fetchDataset reads stale selection state
+           await new Promise((resolve) => setTimeout(resolve, 50));
 
-          // [WHY] If POWER_SCENARIO is missing (DoE added from QoRComparePage),
-          // extract available scenarios and set default scenario
-          let scenarioName = metadata.POWER_SCENARIO;
-          if (!scenarioName) {
-            const availableScenarios =
-              extractAvailableScenarios(datasetPayload);
-            scenarioName = getDefaultScenario(
-              metadata.PROJECT_NAME as string,
-              availableScenarios
-            );
+           // Fetch and update cells
+           const action = await dispatch(fetchDataset());
 
-            // Update doeRegistry with the scenario information
-            dispatch(
-              updateDoEMetadata({
-                doeId: group.id,
-                POWER_SCENARIO: scenarioName,
-                AVAILABLE_SCENARIOS: availableScenarios,
-              })
-            );
+           if (fetchDataset.fulfilled.match(action)) {
+             datasetPayload = (action.payload?.[group.label] ??
+               {}) as Record<string, unknown>;
+           } else {
+             // Fetch failed, skip scenario extraction and cell updates
+             dispatch(markDoeFetched(group.id));
+             continue;
+           }
+         }
 
-            // Also update selected state
-            dispatch(
-              setColumnPowerScenario({
-                columnId: group.id,
-                scenario: scenarioName,
-              })
-            );
-          }
+         // [WHY] If POWER_SCENARIO is missing (DoE added from QoRComparePage),
+         // extract available scenarios and set default scenario
+         let scenarioName = metadata.POWER_SCENARIO;
+         if (!scenarioName) {
+           const availableScenarios =
+             extractAvailableScenarios(datasetPayload);
+           scenarioName = getDefaultScenario(
+             metadata.PROJECT_NAME as string,
+             availableScenarios
+           );
 
-          // The 4 power metric columns: Internal, Switching, Leakage, Total
-          const columnNames = ["Internal", "Switching", "Leakage", "Total"];
+           // Update doeRegistry with the scenario information
+           dispatch(
+             updateDoEMetadata({
+               doeId: group.id,
+               POWER_SCENARIO: scenarioName,
+               AVAILABLE_SCENARIOS: availableScenarios,
+             })
+           );
 
-          // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
-          currentRowHeaders.forEach((row) => {
-            columnNames.forEach((colName) => {
-              const columnId = `${group.id}_${colName}`;
-              // [WHY] PowerPage uses specific metric key format: "Power(mW)!{rowKey}_{columnName}"
-              // row.rowKey is the actual key used in the data (e.g., "clock_network")
-              // NOT row.label which is the display name (e.g., "Clock Network")
-              const metricKey = `Power(mW)!${
-                (row as { rowKey?: string }).rowKey
-              }_${colName}`;
-              let value = extractMetricValue(
-                metricKey,
-                datasetPayload,
-                scenarioName
-              );
-              if (value === undefined) {
-                value = "-";
-              }
-              dispatch(
-                updatePowerCell({
-                  rowId: row.id,
-                  columnId: columnId,
-                  value,
-                })
-              );
-            });
-          });
-        }
+           // Also update selected state
+           dispatch(
+             setColumnPowerScenario({
+               columnId: group.id,
+               scenario: scenarioName,
+             })
+           );
+         }
 
-        // Mark this group as fetched
-        dispatch(markDoeFetched(group.id));
-      }
+         // The 4 power metric columns: Internal, Switching, Leakage, Total
+         const columnNames = ["Internal", "Switching", "Leakage", "Total"];
+
+         // [WHY] Use captured snapshot of rowHeaders to ensure consistent updates
+         currentRowHeaders.forEach((row) => {
+           columnNames.forEach((colName) => {
+             const columnId = `${group.id}_${colName}`;
+             // [WHY] PowerPage uses specific metric key format: "Power(mW)!{rowKey}_{columnName}"
+             // row.rowKey is the actual key used in the data (e.g., "clock_network")
+             // NOT row.label which is the display name (e.g., "Clock Network")
+             const metricKey = `Power(mW)!${
+               (row as { rowKey?: string }).rowKey
+             }_${colName}`;
+             let value = extractMetricValue(
+               metricKey,
+               datasetPayload,
+               scenarioName
+             );
+             if (value === undefined) {
+               value = "-";
+             }
+             dispatch(
+               updatePowerCell({
+                 rowId: row.id,
+                 columnId: columnId,
+                 value,
+               })
+             );
+           });
+         });
+
+         // Mark this group as fetched
+         dispatch(markDoeFetched(group.id));
+       }
 
       // Clear selection after restoration
       dispatch(
@@ -203,6 +221,6 @@ export function useRestoreDoeGroupData() {
       isFetching.current = false;
     };
 
-    fetchAllGroups();
-  }, [dispatch, doeGroups, rowHeaders, doeRegistry]);
+     fetchAllGroups();
+   }, [dispatch, doeGroups, rowHeaders, doeRegistry, dataset]);
 }

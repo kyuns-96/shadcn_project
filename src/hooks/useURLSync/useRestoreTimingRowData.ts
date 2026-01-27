@@ -7,8 +7,9 @@
  */
 
 import { useEffect, useRef } from "react";
-import { useDispatch, useSelector, shallowEqual } from "react-redux";
-import type { RootState, AppDispatch } from "@/store";
+import { shallowEqual } from "react-redux";
+import type { RootState } from "@/store";
+import { useAppDispatch, useAppSelector } from "@/store";
 import { restoreFromURL, setDoeName } from "@/store/reducers/selectedReducer";
 import { updateDoEMetadata } from "@/store/doeRegistry";
 import {
@@ -31,22 +32,23 @@ import {
  * Only fetches data for rows that have _needsDataFetch flag (from URL restoration)
  */
 export function useRestoreTimingRowData() {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const isFetching = useRef(false);
   // [WHY] Track which rows we've already processed to prevent re-fetching on re-renders
   const fetchedRowsRef = useRef<Set<string>>(new Set());
 
-  const { rows: timingRows } = useSelector(
-    (state: RootState) => ({
-      rows: state.timingMatrix.rows,
-    }),
+  const timingRows = useAppSelector(
+    (state: RootState) => state.timingMatrix.rows,
     shallowEqual
   );
 
-  const { doeRegistry } = useSelector(
-    (state: RootState) => ({
-      doeRegistry: state.doeRegistry,
-    }),
+  const doeRegistry = useAppSelector(
+    (state: RootState) => state.doeRegistry,
+    shallowEqual
+  );
+
+  const dataset = useAppSelector(
+    (state: RootState) => state.dataset,
     shallowEqual
   );
 
@@ -65,110 +67,122 @@ export function useRestoreTimingRowData() {
 
     isFetching.current = true;
 
-    // Fetch data for each timing row sequentially
-    const fetchAllRows = async () => {
-      for (const row of rowsToFetch) {
-        // [WHY] Mark row as being processed immediately to prevent duplicate fetches
-        fetchedRowsRef.current.add(row.id);
+     // Fetch data for each timing row sequentially
+     const fetchAllRows = async () => {
+       for (const row of rowsToFetch) {
+         // [WHY] Mark row as being processed immediately to prevent duplicate fetches
+         fetchedRowsRef.current.add(row.id);
 
-        // [WHY] Set doeName - fetchDataset uses this as the key for storing results
-        dispatch(setDoeName(row.label));
+         // [WHY] Set doeName - fetchDataset uses this as the key for storing results
+         dispatch(setDoeName(row.label));
 
-        // [WHY] Read metadata from row object directly (like useRestoreColumnData does)
-        // This avoids timing issues with doeRegistry not being ready yet
-        // Fallback to doeRegistry for backwards compatibility
-        const metadata = doeRegistry.byId[row.id] || {};
+         // [WHY] Read metadata from row object directly (like useRestoreColumnData does)
+         // This avoids timing issues with doeRegistry not being ready yet
+         // Fallback to doeRegistry for backwards compatibility
+         const metadata = doeRegistry.byId[row.id] || {};
 
-        const PROJECT_NAME = (row.PROJECT_NAME ?? metadata.PROJECT_NAME) as
-          | string
-          | null;
-        const BLOCK = (row.BLOCK ?? metadata.BLOCK) as string | null;
-        const NET_VER = (row.NET_VER ?? metadata.NET_VER) as string | null;
-        const REVISION = (row.REVISION ?? metadata.REVISION) as string | null;
-        const ECO_NUM = (row.ECO_NUM ?? metadata.ECO_NUM) as string | null;
-        const TIMING_SCENARIO = (row.TIMING_SCENARIO ??
-          metadata.TIMING_SCENARIO) as string | undefined;
+         const PROJECT_NAME = (row.PROJECT_NAME ?? metadata.PROJECT_NAME) as
+           | string
+           | null;
+         const BLOCK = (row.BLOCK ?? metadata.BLOCK) as string | null;
+         const NET_VER = (row.NET_VER ?? metadata.NET_VER) as string | null;
+         const REVISION = (row.REVISION ?? metadata.REVISION) as string | null;
+         const ECO_NUM = (row.ECO_NUM ?? metadata.ECO_NUM) as string | null;
+         const TIMING_SCENARIO = (row.TIMING_SCENARIO ??
+           metadata.TIMING_SCENARIO) as string | undefined;
 
-        // [WHY] Skip if no PROJECT_NAME - can't fetch without it
-        if (!PROJECT_NAME) {
-          continue;
-        }
+         // [WHY] Skip if no PROJECT_NAME - can't fetch without it
+         if (!PROJECT_NAME) {
+           continue;
+         }
 
-        // Set selection state for this DoE row
-        dispatch(
-          restoreFromURL({
-            selectedProject: PROJECT_NAME ?? null,
-            selectedBlock: BLOCK ?? null,
-            selectedNetver: NET_VER ?? null,
-            selectedRevision: REVISION ?? null,
-            selectedEconum: ECO_NUM ?? null,
-          })
-        );
+         // Check cache first
+         const cachedData = dataset[row.label];
+         const hasCachedData = cachedData && Object.keys(cachedData).length > 0;
 
-        // [WHY] Small delay to ensure Redux state is updated before fetch
-        // This prevents race condition where fetchDataset reads stale selection state
-        await new Promise((resolve) => setTimeout(resolve, 50));
+         let datasetPayload: Record<string, unknown>;
 
-        // Fetch and update cells
-        const action = await dispatch(fetchDataset());
+         if (hasCachedData) {
+           // Use cached data
+           datasetPayload = cachedData;
+         } else {
+           // Set selection state for this DoE row
+           dispatch(
+             restoreFromURL({
+               selectedProject: PROJECT_NAME ?? null,
+               selectedBlock: BLOCK ?? null,
+               selectedNetver: NET_VER ?? null,
+               selectedRevision: REVISION ?? null,
+               selectedEconum: ECO_NUM ?? null,
+             })
+           );
 
-        if (fetchDataset.fulfilled.match(action)) {
-          const datasetPayload = (action.payload?.[row.label] ?? {}) as Record<
-            string,
-            unknown
-          >;
+           // [WHY] Small delay to ensure Redux state is updated before fetch
+           // This prevents race condition where fetchDataset reads stale selection state
+           await new Promise((resolve) => setTimeout(resolve, 50));
 
-          // [WHY] If TIMING_SCENARIO is missing, extract available scenarios and set default
-          // Prefer "total" scenario as default, fallback to first available
-          let scenarioName = TIMING_SCENARIO;
-          if (!scenarioName) {
-            const availableTimingScenarios =
-              extractAvailableTimingScenarios(datasetPayload);
-            scenarioName = availableTimingScenarios.includes("total")
-              ? "total"
-              : availableTimingScenarios.length > 0
-              ? availableTimingScenarios[0]
-              : undefined;
+           // Fetch and update cells
+           const action = await dispatch(fetchDataset());
 
-            // Update doeRegistry with the scenario information
-            dispatch(
-              updateDoEMetadata({
-                doeId: row.id,
-                TIMING_SCENARIO: scenarioName,
-                AVAILABLE_TIMING_SCENARIOS: availableTimingScenarios,
-              })
-            );
-          }
+           if (fetchDataset.fulfilled.match(action)) {
+             datasetPayload = (action.payload?.[row.label] ?? {}) as Record<
+               string,
+               unknown
+             >;
+           } else {
+             datasetPayload = {};
+           }
+         }
 
-          // Update all timing cells for this row
-          if (scenarioName) {
-            TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
-              TIMING_METRICS.forEach((metric) => {
-                const columnId = generateTimingColumnKey(columnGroup, metric);
-                const metricKey = getTimingMetricKey(columnGroup, metric);
-                let value = extractMetricValue(
-                  metricKey,
-                  datasetPayload,
-                  scenarioName
-                );
-                if (value === undefined) {
-                  value = EMPTY_VALUE_PLACEHOLDER;
-                }
-                dispatch(
-                  updateTimingCell({
-                    rowId: row.id,
-                    columnId,
-                    value,
-                  })
-                );
-              });
-            });
-          }
-        }
+         // Extract scenario and update cells
+         let scenarioName = TIMING_SCENARIO;
+         if (!scenarioName) {
+           const availableTimingScenarios =
+             extractAvailableTimingScenarios(datasetPayload);
+           scenarioName = availableTimingScenarios.includes("total")
+             ? "total"
+             : availableTimingScenarios.length > 0
+             ? availableTimingScenarios[0]
+             : undefined;
 
-        // Mark this row as fetched
-        dispatch(markTimingRowFetched(row.id));
-      }
+           // Update doeRegistry with the scenario information
+           dispatch(
+             updateDoEMetadata({
+               doeId: row.id,
+               TIMING_SCENARIO: scenarioName,
+               AVAILABLE_TIMING_SCENARIOS: availableTimingScenarios,
+             })
+           );
+         }
+
+         // Update all timing cells for this row
+         if (scenarioName) {
+           TIMING_COLUMN_GROUPS.forEach((columnGroup) => {
+             TIMING_METRICS.forEach((metric) => {
+               const columnId = generateTimingColumnKey(columnGroup, metric);
+               const metricKey = getTimingMetricKey(columnGroup, metric);
+               let value = extractMetricValue(
+                 metricKey,
+                 datasetPayload,
+                 scenarioName
+               );
+               if (value === undefined) {
+                 value = EMPTY_VALUE_PLACEHOLDER;
+               }
+               dispatch(
+                 updateTimingCell({
+                   rowId: row.id,
+                   columnId,
+                   value,
+                 })
+               );
+             });
+           });
+         }
+
+         // Mark this row as fetched
+         dispatch(markTimingRowFetched(row.id));
+       }
 
       // Clear selection after restoration
       dispatch(
@@ -187,6 +201,6 @@ export function useRestoreTimingRowData() {
       isFetching.current = false;
     };
 
-    fetchAllRows();
-  }, [dispatch, timingRows, doeRegistry]);
+     fetchAllRows();
+   }, [dispatch, timingRows, doeRegistry, dataset]);
 }

@@ -7,8 +7,9 @@
  */
 
 import { useEffect, useRef } from "react";
-import { useDispatch, useSelector, shallowEqual } from "react-redux";
-import type { RootState, AppDispatch } from "@/store";
+import { shallowEqual } from "react-redux";
+import { useAppDispatch, useAppSelector } from "@/store";
+import type { RootState } from "@/store";
 import {
   restoreFromURL,
   setDoeName,
@@ -28,12 +29,12 @@ import { getDefaultScenario } from "@/variables/defaultPowerScenarioMapping";
  * Only fetches data for columns that have _needsDataFetch flag (from URL restoration)
  */
 export function useRestoreColumnData() {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const isFetching = useRef(false);
   // [WHY] Track which columns we've already processed to prevent re-fetching on re-renders
   const fetchedColumnsRef = useRef<Set<string>>(new Set());
 
-  const { columnHeaders, rowHeaders } = useSelector(
+  const { columnHeaders, rowHeaders } = useAppSelector(
     (state: RootState) => ({
       columnHeaders: state.matrix.columnHeaders,
       rowHeaders: state.matrix.rowHeaders,
@@ -41,13 +42,15 @@ export function useRestoreColumnData() {
     shallowEqual
   );
 
-  const { doeRegistry, revisionMode } = useSelector(
+  const { doeRegistry, revisionMode } = useAppSelector(
     (state: RootState) => ({
       doeRegistry: state.doeRegistry,
       revisionMode: state.selected.revisionMode,
     }),
     shallowEqual
   );
+
+  const dataset = useAppSelector((state) => state.dataset);
 
   useEffect(() => {
     // [WHY] Prevent concurrent fetches to avoid race conditions
@@ -78,85 +81,103 @@ export function useRestoreColumnData() {
       
       dispatch(setIsRestoringColumns(true));
 
-      try {
-        for (const col of columnsToFetch) {
-          fetchedColumnsRef.current.add(col.id);
+       try {
+         for (const col of columnsToFetch) {
+           fetchedColumnsRef.current.add(col.id);
 
+           // [WHY] Check if data is already cached in dataset before fetching
+           const cachedData = dataset[col.label];
+           const hasCachedData = cachedData && Object.keys(cachedData).length > 0;
+
+           let data: Record<string, unknown>;
+
+           if (hasCachedData) {
+             // [WHY] Use cached data to avoid redundant API call
+             data = cachedData;
+           } else {
+             // [WHY] Fetch data from API if not cached
+             const metadata = doeRegistry.byId[col.id];
+             const columnMode = (metadata?.REVISION_MODE as 'PRE' | 'POST') ?? 
+                                (col.REVISION_MODE as 'PRE' | 'POST') ?? 
+                                'POST';
+
+             dispatch(setRevisionMode(columnMode));
+
+             dispatch(setDoeName(col.label));
+
+             dispatch(
+               restoreFromURL({
+                 selectedProject: (col.PROJECT_NAME as string) ?? null,
+                 selectedBlock: (col.BLOCK as string) ?? null,
+                 selectedNetver: (col.NET_VER as string) ?? null,
+                 selectedRevision: (col.REVISION as string) ?? null,
+                 selectedEconum: (col.ECO_NUM as string) ?? null,
+               })
+             );
+
+             await new Promise((resolve) => setTimeout(resolve, 50));
+
+             const action = await dispatch(fetchDataset());
+             if (fetchDataset.fulfilled.match(action)) {
+               data = (action.payload?.[col.label] ?? {}) as Record<string, unknown>;
+             } else {
+               data = {};
+             }
+           }
+
+           // [WHY] Extract scenario and update cells for both cache hit and miss paths
+           let scenarioName =
+             (doeRegistry.byId[col.id]?.POWER_SCENARIO as string) ??
+             (col.POWER_SCENARIO as string) ??
+             "";
+           if (!scenarioName) {
+             const availableScenarios = extractAvailableScenarios(data);
+             const selectedProject =
+               (doeRegistry.byId[col.id]?.PROJECT_NAME as string) ??
+               (col.PROJECT_NAME as string) ??
+               null;
+             scenarioName = getDefaultScenario(
+               selectedProject,
+               availableScenarios
+             );
+
+             if (doeRegistry.byId[col.id]) {
+               dispatch(
+                 updateDoEMetadata({
+                   doeId: col.id,
+                   POWER_SCENARIO: scenarioName,
+                   AVAILABLE_SCENARIOS: availableScenarios,
+                 })
+               );
+             }
+           }
+
+           if (scenarioName) {
+             dispatch(
+               setColumnPowerScenario({
+                 columnId: col.id,
+                 scenario: scenarioName,
+               })
+             );
+           }
+
+           // [WHY] columnMode needed for metric extraction - use from metadata or fallback to POST
            const metadata = doeRegistry.byId[col.id];
            const columnMode = (metadata?.REVISION_MODE as 'PRE' | 'POST') ?? 
                               (col.REVISION_MODE as 'PRE' | 'POST') ?? 
                               'POST';
 
-          dispatch(setRevisionMode(columnMode));
+           currentRowHeaders.forEach((row) => {
+             const metricKey = `${row.rowGroup}!${row.label}`;
+             let value = extractMetricValue(metricKey, data, scenarioName, columnMode);
+             if (value === undefined) {
+               value = "-";
+             }
+             dispatch(updateCell({ rowId: row.id, columnId: col.id, value }));
+           });
 
-          dispatch(setDoeName(col.label));
-
-          dispatch(
-            restoreFromURL({
-              selectedProject: (col.PROJECT_NAME as string) ?? null,
-              selectedBlock: (col.BLOCK as string) ?? null,
-              selectedNetver: (col.NET_VER as string) ?? null,
-              selectedRevision: (col.REVISION as string) ?? null,
-              selectedEconum: (col.ECO_NUM as string) ?? null,
-            })
-          );
-
-          await new Promise((resolve) => setTimeout(resolve, 50));
-
-          const action = await dispatch(fetchDataset());
-          if (fetchDataset.fulfilled.match(action)) {
-            const data = (action.payload?.[col.label] ?? {}) as Record<
-              string,
-              unknown
-            >;
-
-            let scenarioName =
-              (metadata?.POWER_SCENARIO as string) ??
-              (col.POWER_SCENARIO as string) ??
-              "";
-            if (!scenarioName) {
-              const availableScenarios = extractAvailableScenarios(data);
-              const selectedProject =
-                (metadata?.PROJECT_NAME as string) ??
-                (col.PROJECT_NAME as string) ??
-                null;
-              scenarioName = getDefaultScenario(
-                selectedProject,
-                availableScenarios
-              );
-
-              if (metadata) {
-                dispatch(
-                  updateDoEMetadata({
-                    doeId: col.id,
-                    POWER_SCENARIO: scenarioName,
-                    AVAILABLE_SCENARIOS: availableScenarios,
-                  })
-                );
-              }
-            }
-
-            if (scenarioName) {
-              dispatch(
-                setColumnPowerScenario({
-                  columnId: col.id,
-                  scenario: scenarioName,
-                })
-              );
-            }
-
-            currentRowHeaders.forEach((row) => {
-              const metricKey = `${row.rowGroup}!${row.label}`;
-              let value = extractMetricValue(metricKey, data, scenarioName, columnMode);
-              if (value === undefined) {
-                value = "-";
-              }
-              dispatch(updateCell({ rowId: row.id, columnId: col.id, value }));
-            });
-          }
-
-          dispatch(markColumnFetched(col.id));
-        }
+           dispatch(markColumnFetched(col.id));
+         }
 
         dispatch(
           restoreFromURL({
@@ -177,5 +198,5 @@ export function useRestoreColumnData() {
     };
 
     fetchAllColumns();
-  }, [dispatch, columnHeaders, rowHeaders, doeRegistry, revisionMode]);
+  }, [dispatch, columnHeaders, rowHeaders, doeRegistry, revisionMode, dataset]);
 }
