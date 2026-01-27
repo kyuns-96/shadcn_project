@@ -12,6 +12,7 @@ export const URL_PARAMS = {
   PAGE: "page",
   // QOR Compare params
   COLUMNS: "columns", // JSON encoded column metadata
+  REVISION_MODE: "rm", // Revision mode (PRE/POST)
   // FC Check Tool params (prefixed with fc_)
   FC_PROJECT: "fc_project",
   FC_BLOCK: "fc_block",
@@ -42,6 +43,7 @@ export interface ColumnMeta {
   ECO_NUM?: string;
   POWER_SCENARIO?: string;
   AVAILABLE_SCENARIOS?: string[];
+  REVISION_MODE?: 'PRE' | 'POST';
 }
 
 // Timing row metadata structure for URL

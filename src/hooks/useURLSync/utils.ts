@@ -20,6 +20,7 @@ const COMPRESS_MAP: Record<string, string> = {
   AVAILABLE_SCENARIOS: "a",
   TIMING_SCENARIO: "t",
   AVAILABLE_TIMING_SCENARIOS: "at",
+  REVISION_MODE: "m",
 };
 
 // Reverse mapping for decompression
