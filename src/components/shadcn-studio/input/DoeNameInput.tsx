@@ -18,7 +18,7 @@
  * - @/components/ui/label: 라벨 UI
  */
 
-import { useId, useState } from "react";
+import { useId, useState, useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { setDoeName } from "@/store/reducers/selectedReducer";
 import { selectDoEExistsByName } from "@/store/doeRegistry";
@@ -36,13 +36,16 @@ const DoeNameInput = () => {
   const inputId = useId();
   const dispatch = useAppDispatch();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isUserInput = useRef(false);
 
   const state = useAppSelector((state) => state);
   const columnHeaders = state.matrix.columnHeaders;
   const doeGroups = state.powerMatrix.doeGroups;
   const doeRegistry = state.doeRegistry;
+  const doeName = state.selected.doeName;
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    isUserInput.current = true;
     const value = event.target.value;
     dispatch(setDoeName(value));
 
@@ -50,6 +53,7 @@ const DoeNameInput = () => {
     const trimmedValue = value.trim();
     if (!trimmedValue) {
       setErrorMessage(null);
+      setTimeout(() => { isUserInput.current = false; }, 0);
       return;
     }
 
@@ -60,23 +64,35 @@ const DoeNameInput = () => {
     );
     if (existsInRegistry) {
       setErrorMessage("이미 존재하는 DoE 이름입니다");
+      setTimeout(() => { isUserInput.current = false; }, 0);
       return;
     }
 
     // 2. QoRComparePage columnHeaders에서 확인
     if (columnHeaders.some((col) => col.label === trimmedValue)) {
       setErrorMessage("이미 존재하는 DoE 이름입니다");
+      setTimeout(() => { isUserInput.current = false; }, 0);
       return;
     }
 
     // 3. PowerPage doeGroups에서 확인
     if (doeGroups.some((doe) => doe.label === trimmedValue)) {
       setErrorMessage("이미 존재하는 DoE 이름입니다");
+      setTimeout(() => { isUserInput.current = false; }, 0);
       return;
     }
 
     setErrorMessage(null);
+    setTimeout(() => { isUserInput.current = false; }, 0);
   };
+
+  // Clear error message only when doeName changes from EXTERNAL source (ECO_NUM auto-fill)
+  // NOT when user is typing (which already handles validation in handleInputChange)
+  useEffect(() => {
+    if (!isUserInput.current) {
+      setErrorMessage(null);
+    }
+  }, [doeName]);
 
   return (
     <div className="w-full max-w-xs space-y-2">
@@ -85,6 +101,7 @@ const DoeNameInput = () => {
         id={inputId}
         type="text"
         placeholder="DoE Name"
+        value={doeName}
         onChange={handleInputChange}
         aria-invalid={!!errorMessage}
       />

@@ -35,6 +35,7 @@ import {
   setSelectedRevision,
   setSelectedRevisionOnly,
   setSelectedEconum,
+  setDoeName,
 } from "@/store/reducers/selectedReducer";
 
 /**
@@ -102,12 +103,13 @@ export default function useFilterDropdownConfigs(): DropdownConfig[] {
     [dispatch, currentPage, revisionMode]
   );
 
-  const handleEconumChange = useMemo(
-    () => (value: string) => {
-      dispatch(setSelectedEconum(value));
-    },
-    [dispatch]
-  );
+   const handleEconumChange = useMemo(
+     () => (value: string) => {
+       dispatch(setSelectedEconum(value));
+       dispatch(setDoeName(value || ""));
+     },
+     [dispatch]
+   );
 
   const { projectList, blockList, netverList, revisionList, econumList } =
     useSelector(
