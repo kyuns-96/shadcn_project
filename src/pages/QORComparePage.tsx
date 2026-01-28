@@ -36,6 +36,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { setRevisionMode } from "@/store/reducers/selectedReducer";
 import type { RevisionMode } from "@/store/reducers/selectedReducer";
+import { GraphFAB } from "@/components/graph/GraphFAB";
 
 const QORComparePage = () => {
   const filterDropdownConfigs = useFilterDropdownConfigs();
@@ -122,6 +123,7 @@ const QORComparePage = () => {
         defaultValue={["item-1", "item-2", "item-3"]}
         className="flex flex-col h-full gap-2"
       />
+      <GraphFAB />
     </div>
   );
 };

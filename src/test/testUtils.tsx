@@ -1,8 +1,9 @@
 import type { PropsWithChildren } from "react";
-import { render, type RenderOptions } from "@testing-library/react";
+import { render, type RenderOptions, cleanup } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import graphReducer, { type GraphState } from "@/store/reducers/graphSlice";
+import { afterEach } from "vitest";
 
 export type TestRootState = { graph: GraphState };
 
@@ -35,4 +36,9 @@ const renderWithProviders = (
   return { ...render(ui, { wrapper: Wrapper, ...renderOptions }), store };
 };
 
+afterEach(() => {
+  cleanup();
+});
+
 export { renderWithProviders, createTestStore };
+
