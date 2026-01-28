@@ -209,7 +209,7 @@ export default function AgGridMatrixTable() {
 
           // Group 셀: 첫 행에만 rowspan으로 merge
           if (isFirstOfGroup) {
-            let groupValue = currentGroup
+            const groupValue = currentGroup
               .replace(/\r?\n+/g, " ")
               .replace(/\s+/g, " ")
               .trim();

@@ -336,7 +336,7 @@ const extractWithInputDate = (
   let curr: unknown = dataset;
 
   for (let i = 0; i < pathKeys.length; i++) {
-    let key = pathKeys[i];
+    const key = pathKeys[i];
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
     const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
@@ -523,7 +523,7 @@ export const extractMetricValue = (
   let current: unknown = dataset;
 
   for (let i = 0; i < pathKeys.length; i++) {
-    let key = pathKeys[i];
+    const key = pathKeys[i];
 
     if (metricKey === "Physical Info!ECO Runtime") {
       console.log(`  [step ${i}] key:`, key, "current:", current);
