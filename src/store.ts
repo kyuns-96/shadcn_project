@@ -38,6 +38,7 @@ import pageReducer from "@/store/reducers/pageReducer";
 import fcCheckToolReducer from "@/store/reducers/fcCheckToolReducer";
 import powerMatrixReducer from "@/store/reducers/powerMatrixReducer";
 import timingMatrixReducer from "@/store/reducers/timingMatrixReducer";
+import graphReducer from "@/store/reducers/graphSlice";
 
 // Type 및 Action exports
 export type { SelectedState } from "@/store/reducers/selectedReducer";
@@ -60,6 +61,7 @@ const rootReducer = combineReducers({
   dataset: datasetReducer,
   page: pageReducer,
   fcCheckTool: fcCheckToolReducer,
+  graph: graphReducer,
 });
 
 /** 설정된 Redux store */

@@ -2,19 +2,21 @@ import type { PropsWithChildren } from "react";
 import { render, type RenderOptions } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import type { RootState } from "@/store";
+import graphReducer, { type GraphState } from "@/store/reducers/graphSlice";
 
-const createTestStore = (preloadedState?: Partial<RootState>) => {
+export type TestRootState = { graph: GraphState };
+
+const createTestStore = (preloadedState?: { graph?: Partial<GraphState> }) => {
   return configureStore({
     reducer: {
-      _placeholder: (state = null) => state,
-    } as any,
-    preloadedState: preloadedState as any,
+      graph: graphReducer,
+    },
+    preloadedState: preloadedState as { graph: GraphState } | undefined,
   });
 };
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, "wrapper"> {
-  preloadedState?: Partial<RootState>;
+  preloadedState?: { graph?: Partial<GraphState> };
   store?: ReturnType<typeof createTestStore>;
 }
 
