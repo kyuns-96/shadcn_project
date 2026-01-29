@@ -1,7 +1,17 @@
-// Verify recharts and react-rnd are installed by importing their main exports
-// These will fail to compile if packages aren't installed or types are missing
 import 'recharts';
 import 'react-rnd';
 
-// Placeholder - actual component exports added in Phase 2
-export {};
+export { GraphChart } from './GraphChart';
+export { FloatingGraphWindow } from './FloatingGraphWindow';
+export { GraphFAB } from './GraphFAB';
+
+export { AxisConfigPanel } from './AxisConfigPanel';
+export { SeriesPalette } from './SeriesPalette';
+export { ChartDropZone } from './ChartDropZone';
+export { RangeControls } from './RangeControls';
+export { SERIES_COLORS, MAX_SERIES_PER_WINDOW } from './constants';
+
+export { computeDataDomain } from './utils/computeDataDomain';
+export type { DataDomain } from './utils/computeDataDomain';
+export { exportToPng, serializeSvgToDataUrl } from './utils/exportToPng';
+export { getNumericMetrics, formatMetricForDisplay, DOE_METADATA_KEYS } from './utils/metrics';

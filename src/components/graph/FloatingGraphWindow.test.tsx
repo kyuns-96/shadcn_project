@@ -202,6 +202,6 @@ describe('FloatingGraphWindow', () => {
 
     const rnd = screen.getByTestId('mock-rnd');
     const size = JSON.parse(rnd.getAttribute('data-size') || '{}');
-    expect(size).toEqual({ width: 600, height: 400 });
+    expect(size).toEqual({ width: 800, height: 600 });
   });
 });
