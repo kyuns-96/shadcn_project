@@ -22,6 +22,8 @@ export const URL_PARAMS = {
   TIMING_ROWS: "timing_rows", // Compressed timing row metadata
   // Power Page params
   POWER_DOES: "power_does", // Compressed power DoE metadata
+  // Graph Window params
+  GRAPH_WINDOWS: "gw", // Graph window configurations
 } as const;
 
 // Valid page types for validation

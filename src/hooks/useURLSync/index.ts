@@ -51,6 +51,9 @@ import {
   encodePowerDoes,
   decodePowerDoes,
 } from "./utils";
+import { encodeGraphWindows, decodeGraphWindows } from "./graphUrlCodec";
+import { setGraphWindows } from "@/store/reducers/graphSlice";
+import type { GraphWindowConfig } from "@/store/reducers/graphSlice";
 
 // Re-export hooks from separate files
 export { useRestoreColumnData } from "./useRestoreColumnData";
@@ -76,6 +79,7 @@ export function useURLSync() {
     currentPage,
     // QOR Compare state
     columnHeaders,
+    graphWindows,
     // Timing Page state
     timingRows,
     // Power Page state
@@ -92,6 +96,7 @@ export function useURLSync() {
     (state: RootState) => ({
       currentPage: state.page.currentPage,
       columnHeaders: state.matrix.columnHeaders,
+      graphWindows: state.graph.windows,
       timingRows: state.timingMatrix.rows,
       doeGroups: state.powerMatrix.doeGroups,
       fcProject: state.fcCheckTool.selectedProject,
@@ -190,13 +195,33 @@ export function useURLSync() {
             );
           });
 
-          // Delay data fetch to allow template rows to initialize
+           // Delay data fetch to allow template rows to initialize
+           setTimeout(() => {
+             isRestoringFromURL.current = false;
+           }, 500);
+         }
+       }
+
+      // === GRAPH WINDOWS RESTORATION ===
+      const gwParam = params.get(URL_PARAMS.GRAPH_WINDOWS);
+      if (gwParam) {
+        const graphConfigs = decodeGraphWindows(gwParam);
+        if (graphConfigs.length === 0 && gwParam.length > 0) {
+          console.warn('Failed to decode graph windows from URL - param ignored');
+        }
+        if (graphConfigs.length > 0) {
+          isRestoringFromURL.current = true;
+          dispatch(setGraphWindows(graphConfigs));
+          
+          // Reset flag after delay (gw-only case needs its own reset)
           setTimeout(() => {
             isRestoringFromURL.current = false;
           }, 500);
         }
       }
-    } else if (effectivePage === "fc-check-tool") {
+      // === END GRAPH WINDOWS RESTORATION ===
+
+     } else if (effectivePage === "fc-check-tool") {
       // Restore FC Check Tool state
       const fcProjectParam = params.get(URL_PARAMS.FC_PROJECT);
       const fcBlockParam = params.get(URL_PARAMS.FC_BLOCK);
@@ -394,12 +419,43 @@ export function useURLSync() {
             REVISION_MODE: metadata?.REVISION_MODE,
           };
         });
-        const encoded = encodeColumns(columnMeta);
-        if (encoded) {
-          params.set(URL_PARAMS.COLUMNS, encoded);
+         const encoded = encodeColumns(columnMeta);
+         if (encoded) {
+           params.set(URL_PARAMS.COLUMNS, encoded);
+         }
+       }
+
+      // Encode graph windows
+      const graphConfigs: GraphWindowConfig[] = graphWindows.map(w => ({
+        chartType: w.chartType,
+        xAxis: w.xAxis,
+        yAxis: w.yAxis,
+        series: w.series.map(s => ({ 
+          metricKey: s.metricKey, 
+          color: s.color, 
+          enabled: s.enabled 
+        })),
+        xRange: w.xRange,
+        yRange: w.yRange,
+      }));
+      
+      if (graphConfigs.length > 0) {
+        const { encoded, truncated, truncatedCount, originalCount } = encodeGraphWindows(graphConfigs);
+        
+        // SIZE WARNING RULE
+        if (truncated) {
+          console.warn(`Graph URL truncated: ${truncatedCount} of ${originalCount} windows not saved (URL too long)`);
         }
+        if (encoded.length > 2000) {
+          console.warn(`Graph URL is long (${encoded.length} chars) - may not work in all browsers`);
+        }
+        
+        params.set(URL_PARAMS.GRAPH_WINDOWS, encoded);
+      } else {
+        // No windows - remove param from URL
+        params.delete(URL_PARAMS.GRAPH_WINDOWS);
       }
-    } else if (currentPage === "fc-check-tool") {
+     } else if (currentPage === "fc-check-tool") {
       // Save FC Check Tool state
       if (fcProject) params.set(URL_PARAMS.FC_PROJECT, fcProject);
       if (fcBlock) params.set(URL_PARAMS.FC_BLOCK, fcBlock);
@@ -454,19 +510,20 @@ export function useURLSync() {
     // Update URL without triggering a page reload
     const newURL = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", newURL);
-  }, [
-    currentPage,
-    columnHeaders,
-    timingRows,
-    doeGroups,
-    doeRegistry,
-    fcProject,
-    fcBlock,
-    fcNetver,
-    fcRevision,
-    revisionMode,
-    isRestoringColumns,
-  ]);
+   }, [
+     currentPage,
+     columnHeaders,
+     graphWindows,
+     timingRows,
+     doeGroups,
+     doeRegistry,
+     fcProject,
+     fcBlock,
+     fcNetver,
+     fcRevision,
+     revisionMode,
+     isRestoringColumns,
+   ]);
 }
 
 /**
