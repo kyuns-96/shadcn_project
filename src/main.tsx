@@ -6,10 +6,24 @@ import App from "./App.tsx";
 import { Provider } from "react-redux";
 import { store } from "./store.ts";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
-  </StrictMode>
-);
+async function enableMocking() {
+  if (import.meta.env.VITE_MSW_ENABLED !== 'true') {
+    return;
+  }
+  
+  const { worker } = await import('./mocks/browser');
+  
+  return worker.start({
+    onUnhandledRequest: 'error',
+  });
+}
+
+enableMocking().then(() => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </StrictMode>
+  );
+});
