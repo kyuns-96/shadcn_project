@@ -50,7 +50,7 @@ export function ChartDropZone({ onDropMetricKey, children }: ChartDropZoneProps)
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        'relative transition-all',
+        'relative transition-all flex-1 min-h-0',
         isDragOver && 'ring-2 ring-primary ring-inset'
       )}
     >

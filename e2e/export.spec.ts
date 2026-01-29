@@ -4,14 +4,29 @@ import { createSeededTestUrl } from './utils/graph-url-helper';
 test.describe('PNG Export', () => {
   test('should trigger PNG download when clicking export', async ({ page }) => {
     const seededUrl = createSeededTestUrl('qor-compare');
-    await page.goto(seededUrl);
+    await page.goto(seededUrl, { waitUntil: 'networkidle' });
+    
+    // Wait for page to be ready
+    await expect(page.locator('[data-testid="graph-fab"]')).toBeVisible({ timeout: 10000 });
+    
     await page.click('[data-testid="graph-fab"]');
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    const downloadPromise = page.waitForEvent('download');
+    // Wait for chart container to be visible
+    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
     
-    await page.click('[data-testid="export-button"]');
+    // Wait for SVG to render (even if showing "No data")
+    await page.locator('svg').first().waitFor({ state: 'visible', timeout: 10000 });
+    
+    // Wait for export button to be visible
+    const exportButton = page.locator('[data-testid="export-button"]');
+    await expect(exportButton).toBeVisible();
+    
+    // Start listening for download before clicking
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+    
+    await exportButton.click();
     
     const download = await downloadPromise;
     
@@ -20,14 +35,29 @@ test.describe('PNG Export', () => {
 
   test('should generate file with correct name pattern', async ({ page }) => {
     const seededUrl = createSeededTestUrl('qor-compare');
-    await page.goto(seededUrl);
+    await page.goto(seededUrl, { waitUntil: 'networkidle' });
+    
+    // Wait for page to be ready
+    await expect(page.locator('[data-testid="graph-fab"]')).toBeVisible({ timeout: 10000 });
+    
     await page.click('[data-testid="graph-fab"]');
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    const downloadPromise = page.waitForEvent('download');
+    // Wait for chart container to be visible
+    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
     
-    await page.click('[data-testid="export-button"]');
+    // Wait for SVG to render (even if showing "No data")
+    await page.locator('svg').first().waitFor({ state: 'visible', timeout: 10000 });
+    
+    // Wait for export button to be visible
+    const exportButton = page.locator('[data-testid="export-button"]');
+    await expect(exportButton).toBeVisible();
+    
+    // Start listening for download before clicking
+    const downloadPromise = page.waitForEvent('download', { timeout: 10000 });
+    
+    await exportButton.click();
     
     const download = await downloadPromise;
     

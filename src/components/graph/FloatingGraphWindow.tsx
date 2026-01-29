@@ -91,10 +91,14 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
     dispatch(cloneWindow(windowId));
   };
 
-  const handleExport = () => {
-    if (isMinimized || !chartRef.current) return;
-    exportToPng(chartRef, `graph-window-${windowIndex + 1}.png`);
-  };
+   const handleExport = () => {
+     if (isMinimized || !chartRef.current) return;
+     const now = new Date();
+     const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+     const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '');
+     const filename = `graph-window-${windowIndex + 1}-${dateStr}-${timeStr}.png`;
+     exportToPng(chartRef, filename);
+   };
 
   const handleXAxisChange = (axis: typeof windowState.xAxis) => {
     dispatch(updateGraphWindow({ 
@@ -267,17 +271,17 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                 )}
               </div>
 
-              <div ref={chartRef} className="flex-1 p-4 overflow-auto">
-                <ChartDropZone onDropMetricKey={handleSeriesDrop}>
-                  <GraphChart
-                    chartType={windowState.chartType}
-                    dataPoints={dataPoints}
-                    series={windowState.series}
-                    xRange={windowState.xRange}
-                    yRange={windowState.yRange}
-                  />
-                </ChartDropZone>
-              </div>
+               <div ref={chartRef} className="flex-1 p-4 overflow-auto flex flex-col min-h-0">
+                 <ChartDropZone onDropMetricKey={handleSeriesDrop}>
+                   <GraphChart
+                     chartType={windowState.chartType}
+                     dataPoints={dataPoints}
+                     series={windowState.series}
+                     xRange={windowState.xRange}
+                     yRange={windowState.yRange}
+                   />
+                 </ChartDropZone>
+               </div>
 
               <div className="border-t p-2">
                 <h4 className="text-sm font-medium mb-2">Active Series ({windowState.series.length}/{MAX_SERIES_PER_WINDOW})</h4>
