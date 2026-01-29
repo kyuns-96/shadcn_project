@@ -79,22 +79,23 @@ export function AxisConfigPanel({
 
   return (
     <div className="flex items-center gap-4 p-4 border-b">
-      {/* X-Axis Dropdown */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">X-Axis:</span>
-        <Popover open={xOpen} onOpenChange={setXOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-label="X-Axis"
-              aria-expanded={xOpen}
-              className="w-[250px] justify-between"
-            >
-              <span className="truncate">{xDisplayValue}</span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
+       {/* X-Axis Dropdown */}
+       <div className="flex items-center gap-2">
+         <span className="text-sm font-medium">X-Axis:</span>
+         <Popover open={xOpen} onOpenChange={setXOpen}>
+           <PopoverTrigger asChild>
+             <Button
+               variant="outline"
+               role="combobox"
+               aria-label="X-Axis"
+               aria-expanded={xOpen}
+               className="w-[250px] justify-between"
+               data-testid="x-axis-select"
+             >
+               <span className="truncate">{xDisplayValue}</span>
+               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+             </Button>
+           </PopoverTrigger>
           <PopoverContent className="w-[250px] p-0" align="start">
             <Command>
               <CommandInput placeholder="Search..." />
@@ -135,22 +136,23 @@ export function AxisConfigPanel({
         </Popover>
       </div>
 
-      {/* Y-Axis Dropdown */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">Y-Axis:</span>
-        <Popover open={yOpen} onOpenChange={setYOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-label="Y-Axis"
-              aria-expanded={yOpen}
-              className="w-[250px] justify-between"
-            >
-              <span className="truncate">{yDisplayValue}</span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
+       {/* Y-Axis Dropdown */}
+       <div className="flex items-center gap-2">
+         <span className="text-sm font-medium">Y-Axis:</span>
+         <Popover open={yOpen} onOpenChange={setYOpen}>
+           <PopoverTrigger asChild>
+             <Button
+               variant="outline"
+               role="combobox"
+               aria-label="Y-Axis"
+               aria-expanded={yOpen}
+               className="w-[250px] justify-between"
+               data-testid="y-axis-select"
+             >
+               <span className="truncate">{yDisplayValue}</span>
+               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+             </Button>
+           </PopoverTrigger>
           <PopoverContent className="w-[250px] p-0" align="start">
             <Command>
               <CommandInput placeholder="Search metrics..." />

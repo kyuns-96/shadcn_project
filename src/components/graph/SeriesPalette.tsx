@@ -28,31 +28,32 @@ export function SeriesPalette({ isMaxSeriesReached }: SeriesPaletteProps) {
     <div className="p-4 space-y-2 border-r bg-card">
       <h3 className="text-sm font-medium">Available Metrics</h3>
       <div className="space-y-1 max-h-[500px] overflow-y-auto">
-        {numericMetrics.map((metricKey) => (
-          <button
-            key={metricKey}
-            type="button"
-            draggable={!isMaxSeriesReached}
-            onDragStart={(e) => {
-              if (isMaxSeriesReached) {
-                e.preventDefault();
-                return;
-              }
-              // ONLY set metricKey - parent handles color assignment
-              e.dataTransfer.setData('text/plain', metricKey);
-              e.dataTransfer.effectAllowed = 'copy';
-            }}
-            className={cn(
-              'px-3 py-2 text-sm rounded-md border bg-card',
-              !isMaxSeriesReached && 'cursor-grab hover:bg-accent active:cursor-grabbing',
-              isMaxSeriesReached && 'opacity-50 cursor-not-allowed'
-            )}
-            title={isMaxSeriesReached ? 'Maximum 10 series per window' : 'Drag to chart to add series'}
-          >
-            {formatMetricForDisplay(metricKey)}
-          </button>
-        ))}
-      </div>
+         {numericMetrics.map((metricKey, index) => (
+           <button
+             key={metricKey}
+             type="button"
+             draggable={!isMaxSeriesReached}
+             onDragStart={(e) => {
+               if (isMaxSeriesReached) {
+                 e.preventDefault();
+                 return;
+               }
+               // ONLY set metricKey - parent handles color assignment
+               e.dataTransfer.setData('text/plain', metricKey);
+               e.dataTransfer.effectAllowed = 'copy';
+             }}
+             className={cn(
+               'px-3 py-2 text-sm rounded-md border bg-card',
+               !isMaxSeriesReached && 'cursor-grab hover:bg-accent active:cursor-grabbing',
+               isMaxSeriesReached && 'opacity-50 cursor-not-allowed'
+             )}
+             title={isMaxSeriesReached ? 'Maximum 10 series per window' : 'Drag to chart to add series'}
+             data-testid={`series-palette-item-${index}`}
+           >
+             {formatMetricForDisplay(metricKey)}
+           </button>
+         ))}
+       </div>
     </div>
   );
 }

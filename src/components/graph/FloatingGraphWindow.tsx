@@ -175,53 +175,57 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
       style={{ zIndex }}
       onMouseDown={handleMouseDown}
     >
-      <div className="flex h-full flex-col rounded-lg border bg-background shadow-lg">
-        <div className="window-title-bar flex items-center justify-between border-b px-4 py-2 cursor-move">
-          <h3 className="text-sm font-semibold">Graph Window {windowIndex + 1}</h3>
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleMinimize}
-              type="button"
-              aria-label={isMinimized ? 'Restore window' : 'Minimize window'}
-            >
-              {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleClone}
-              type="button"
-              aria-label="Clone window"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleExport}
-              disabled={isMinimized}
-              type="button"
-              aria-label="Export as PNG"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleClose}
-              type="button"
-              aria-label="Close window"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="flex h-full flex-col rounded-lg border bg-background shadow-lg" data-testid="floating-graph-window">
+         <div className="window-title-bar flex items-center justify-between border-b px-4 py-2 cursor-move" data-testid="window-title-bar">
+           <h3 className="text-sm font-semibold">Graph Window {windowIndex + 1}</h3>
+           <div className="flex gap-1">
+             <Button
+               variant="ghost"
+               size="icon"
+               className="h-6 w-6"
+               onClick={handleMinimize}
+               type="button"
+               aria-label={isMinimized ? 'Restore window' : 'Minimize window'}
+               data-testid="minimize-button"
+             >
+               {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minus className="h-4 w-4" />}
+             </Button>
+             <Button
+               variant="ghost"
+               size="icon"
+               className="h-6 w-6"
+               onClick={handleClone}
+               type="button"
+               aria-label="Clone window"
+               data-testid="clone-button"
+             >
+               <Copy className="h-4 w-4" />
+             </Button>
+             <Button
+               variant="ghost"
+               size="icon"
+               className="h-6 w-6"
+               onClick={handleExport}
+               disabled={isMinimized}
+               type="button"
+               aria-label="Export as PNG"
+               data-testid="export-button"
+             >
+               <Download className="h-4 w-4" />
+             </Button>
+             <Button
+               variant="ghost"
+               size="icon"
+               className="h-6 w-6"
+               onClick={handleClose}
+               type="button"
+               aria-label="Close window"
+               data-testid="close-button"
+             >
+               <X className="h-4 w-4" />
+             </Button>
+           </div>
+         </div>
 
         {!isMinimized && (
           <div className="flex flex-1 overflow-hidden">
@@ -280,9 +284,9 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                 {windowState.series.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Drag metrics from the left panel to add series</p>
                 ) : (
-                  <div className="space-y-1">
-                    {windowState.series.map((series) => (
-                      <div key={series.id} className="flex items-center gap-2">
+                   <div className="space-y-1">
+                     {windowState.series.map((series) => (
+                       <div key={series.id} className="flex items-center gap-2" data-testid={`series-item-${series.id}`}>
                         <div 
                           className="w-3 h-3 rounded-full flex-shrink-0" 
                           style={{ backgroundColor: series.color }} 
