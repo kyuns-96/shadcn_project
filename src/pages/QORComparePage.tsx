@@ -37,12 +37,15 @@ import { Label } from "@/components/ui/label";
 import { setRevisionMode } from "@/store/reducers/selectedReducer";
 import type { RevisionMode } from "@/store/reducers/selectedReducer";
 import { GraphFAB } from "@/components/graph/GraphFAB";
+import { FloatingGraphWindow } from "@/components/graph/FloatingGraphWindow";
+import { selectAllGraphWindows } from "@/store/reducers/graphSlice";
 
 const QORComparePage = () => {
   const filterDropdownConfigs = useFilterDropdownConfigs();
   const dispatch = useAppDispatch();
   const rowHeaders = useAppSelector((state) => state.matrix.rowHeaders);
   const revisionMode = useAppSelector((state) => state.selected.revisionMode);
+  const graphWindows = useAppSelector(selectAllGraphWindows);
   const isInitialized = useRef(false);
 
   useEffect(() => {
@@ -124,6 +127,9 @@ const QORComparePage = () => {
         className="flex flex-col h-full gap-2"
       />
       <GraphFAB />
+      {graphWindows.map((window, index) => (
+        <FloatingGraphWindow key={window.id} windowId={window.id} windowIndex={index} />
+      ))}
     </div>
   );
 };
