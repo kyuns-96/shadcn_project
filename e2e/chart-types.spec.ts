@@ -90,4 +90,25 @@ test.describe('Chart Type Rendering', () => {
     
     await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
   });
+
+  test('should render chart with actual data (not empty state)', async ({ page }) => {
+    const config: TestGraphWindowConfig[] = [{
+      chartType: 'line',
+      xAxis: { type: 'doeMetadata', key: 'label' },
+      yAxis: { type: 'metric', key: 'Power(mW)!combinational_Total' },
+      series: [{ metricKey: 'Power(mW)!combinational_Total', color: '#ff0000', enabled: true }],
+      xRange: { min: 'auto', max: 'auto' },
+      yRange: { min: 'auto', max: 'auto' },
+    }];
+    
+    const encodedGw = encodeGraphWindowsForUrl(config);
+    const seededUrl = createSeededTestUrl('qor-compare');
+    await page.goto(`${seededUrl}&gw=${encodedGw}`);
+    
+    await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
+    await page.waitForTimeout(1000);
+    
+    await expect(page.locator('.recharts-wrapper')).toBeVisible();
+    await expect(page.getByText('No data')).not.toBeVisible();
+  });
 });
