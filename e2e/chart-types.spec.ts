@@ -111,4 +111,22 @@ test.describe('Chart Type Rendering', () => {
     await expect(page.locator('.recharts-wrapper')).toBeVisible();
     await expect(page.getByText('No data')).not.toBeVisible();
   });
+
+  test('should change chart type via UI selection', async ({ page }) => {
+    const seededUrl = createSeededTestUrl('qor-compare');
+    await page.goto(seededUrl);
+    
+    // Create graph window
+    await page.click('[data-testid="graph-fab"]');
+    await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
+    
+    // Open chart type selector
+    await page.click('[data-testid="chart-type-select"]');
+    
+    // Select scatter
+    await page.click('[cmdk-item]:has-text("Scatter")');
+    
+    // Verify selection updated
+    await expect(page.locator('[data-testid="chart-type-select"]')).toContainText('Scatter');
+  });
 });
