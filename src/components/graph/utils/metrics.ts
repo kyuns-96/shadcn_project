@@ -29,7 +29,7 @@ export const DOE_METADATA_KEYS = [
 
 /**
  * Get all numeric metrics (excludes string-only metrics like Formality).
- * Used by Y-axis dropdown and SeriesPalette.
+ * Used by Y-axis dropdown.
  */
 export function getNumericMetrics(): string[] {
   const allMetrics = Object.keys(METRIC_EXTRACTORS);

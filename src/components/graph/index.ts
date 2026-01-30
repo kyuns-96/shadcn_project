@@ -6,8 +6,6 @@ export { FloatingGraphWindow } from './FloatingGraphWindow';
 export { GraphFAB } from './GraphFAB';
 
 export { AxisConfigPanel } from './AxisConfigPanel';
-export { SeriesPalette } from './SeriesPalette';
-export { ChartDropZone } from './ChartDropZone';
 export { RangeControls } from './RangeControls';
 export { SERIES_COLORS, MAX_SERIES_PER_WINDOW } from './constants';
 
