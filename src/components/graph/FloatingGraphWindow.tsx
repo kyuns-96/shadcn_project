@@ -20,8 +20,6 @@ import {
 import { useGraphData } from '@/hooks/useGraphData';
 import { GraphChart } from './GraphChart';
 import { AxisConfigPanel } from './AxisConfigPanel';
-import { SeriesPalette } from './SeriesPalette';
-import { ChartDropZone } from './ChartDropZone';
 import { RangeControls } from './RangeControls';
 import { computeDataDomain } from './utils/computeDataDomain';
 import { formatMetricForDisplay } from './utils/metrics';
@@ -111,28 +109,19 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
     dispatch(updateGraphWindow({ id: windowId, changes: { yAxis: axis } }));
   };
 
-  const handleQuickAddSeries = () => {
-    if (windowState.series.length >= MAX_SERIES_PER_WINDOW) {
-      console.warn('Max 10 series per window');
-      return;
-    }
-    const color = SERIES_COLORS[windowState.series.length % SERIES_COLORS.length];
-    dispatch(addSeriesToWindow({ 
-      windowId, 
-      series: { metricKey: windowState.yAxis.key, color, enabled: true } 
-    }));
-  };
+   const handleQuickAddSeries = () => {
+     if (windowState.series.length >= MAX_SERIES_PER_WINDOW) {
+       console.warn('Max 10 series per window');
+       return;
+     }
+     const color = SERIES_COLORS[windowState.series.length % SERIES_COLORS.length];
+     dispatch(addSeriesToWindow({ 
+       windowId, 
+       series: { metricKey: windowState.yAxis.key, color, enabled: true } 
+     }));
+   };
 
-  const handleSeriesDrop = (metricKey: string) => {
-    if (windowState.series.length >= MAX_SERIES_PER_WINDOW) {
-      console.warn('Max 10 series per window - drop ignored');
-      return;
-    }
-    const color = SERIES_COLORS[windowState.series.length % SERIES_COLORS.length];
-    dispatch(addSeriesToWindow({ windowId, series: { metricKey, color, enabled: true } }));
-  };
-
-  const handleXRangeChange = (range: typeof windowState.xRange) => {
+   const handleXRangeChange = (range: typeof windowState.xRange) => {
     dispatch(updateGraphWindow({ id: windowId, changes: { xRange: range } }));
   };
 
@@ -231,13 +220,9 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
            </div>
          </div>
 
-        {!isMinimized && (
-          <div className="flex flex-1 overflow-hidden">
-            <div className="w-48 border-r p-2 overflow-y-auto">
-              <SeriesPalette isMaxSeriesReached={windowState.series.length >= MAX_SERIES_PER_WINDOW} />
-            </div>
-
-            <div className="flex-1 flex flex-col overflow-hidden">
+         {!isMinimized && (
+           <div className="flex flex-1 overflow-hidden">
+             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="border-b p-2 space-y-2">
                 <AxisConfigPanel
                   xAxis={windowState.xAxis}
@@ -271,23 +256,21 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                 )}
               </div>
 
-               <div ref={chartRef} className="flex-1 p-4 overflow-auto flex flex-col min-h-0">
-                 <ChartDropZone onDropMetricKey={handleSeriesDrop}>
-                   <GraphChart
-                     chartType={windowState.chartType}
-                     dataPoints={dataPoints}
-                     series={windowState.series}
-                     xRange={windowState.xRange}
-                     yRange={windowState.yRange}
-                   />
-                 </ChartDropZone>
-               </div>
+                <div ref={chartRef} className="flex-1 p-4 overflow-auto flex flex-col min-h-0">
+                  <GraphChart
+                    chartType={windowState.chartType}
+                    dataPoints={dataPoints}
+                    series={windowState.series}
+                    xRange={windowState.xRange}
+                    yRange={windowState.yRange}
+                  />
+                </div>
 
               <div className="border-t p-2">
                 <h4 className="text-sm font-medium mb-2">Active Series ({windowState.series.length}/{MAX_SERIES_PER_WINDOW})</h4>
-                {windowState.series.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Drag metrics from the left panel to add series</p>
-                ) : (
+                 {windowState.series.length === 0 ? (
+                   <p className="text-sm text-muted-foreground">Use the Quick Add button above to add series</p>
+                 ) : (
                    <div className="space-y-1">
                      {windowState.series.map((series) => (
                        <div key={series.id} className="flex items-center gap-2" data-testid={`series-item-${series.id}`}>
