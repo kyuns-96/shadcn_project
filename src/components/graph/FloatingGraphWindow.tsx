@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import { Rnd } from 'react-rnd';
 import { useMemo, useRef, useState } from 'react';
-import { Minus, Maximize2, Copy, Download, X, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { Minus, Maximize2, Copy, Download, X, Eye, EyeOff, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
 import {
   selectGraphWindowById,
@@ -26,6 +26,8 @@ import { formatMetricForDisplay } from './utils/metrics';
 import { exportToPng } from './utils/exportToPng';
 import { SERIES_COLORS, MAX_SERIES_PER_WINDOW } from './constants';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandList, CommandItem, CommandGroup } from '@/components/ui/command';
 
 interface FloatingGraphWindowProps {
   windowId: string;
@@ -63,6 +65,7 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
   const dataPoints = useGraphData(windowState ?? dummyWindow);
 
   const [showRangeControls, setShowRangeControls] = useState(false);
+  const [chartTypeOpen, setChartTypeOpen] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
   const dataDomain = useMemo(
@@ -127,6 +130,11 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
 
   const handleYRangeChange = (range: typeof windowState.yRange) => {
     dispatch(updateGraphWindow({ id: windowId, changes: { yRange: range } }));
+  };
+
+  const handleChartTypeChange = (type: typeof windowState.chartType) => {
+    dispatch(updateGraphWindow({ id: windowId, changes: { chartType: type } }));
+    setChartTypeOpen(false);
   };
 
   const handleDragStop = (_e: any, d: { x: number; y: number }) => {
@@ -232,6 +240,41 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                   onQuickAddSeries={handleQuickAddSeries}
                   isQuickAddDisabled={windowState.series.length >= MAX_SERIES_PER_WINDOW}
                 />
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Chart Type:</span>
+                  <Popover open={chartTypeOpen} onOpenChange={setChartTypeOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-label="Chart Type"
+                        aria-expanded={chartTypeOpen}
+                        className="w-[200px] justify-between"
+                        data-testid="chart-type-select"
+                      >
+                        <span className="truncate">{windowState.chartType.charAt(0).toUpperCase() + windowState.chartType.slice(1)}</span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0" align="start">
+                      <Command>
+                        <CommandList>
+                          <CommandGroup heading="Chart Types">
+                            {(['line', 'scatter', 'bar', 'area', 'histogram'] as const).map((type) => (
+                              <CommandItem
+                                key={type}
+                                value={type}
+                                onSelect={() => handleChartTypeChange(type)}
+                              >
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
