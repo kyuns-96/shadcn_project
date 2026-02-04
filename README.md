@@ -33,15 +33,27 @@ The landing page provides quick access to all major tools and features.
 
 ![Dashboard](./public/screenshots/dashboard.png)
 
+*With example data loaded:*
+
+![Dashboard with Data](./public/screenshots/dashboard-with-data.png)
+
 ### Timing Analysis
 Advanced timing analysis with ag-grid data tables, featuring multi-level column headers and customizable decimal precision.
 
 ![Timing Data Table](./public/screenshots/timing-data-table.png)
 
+*With populated data showing real timing metrics:*
+
+![Timing with Data](./public/screenshots/timing-with-data.png)
+
 ### Power Analysis
 Comprehensive power analysis tool with detailed metrics and data visualization.
 
 ![Power Analysis](./public/screenshots/power-analysis.png)
+
+*With example power data displayed:*
+
+![Power with Data](./public/screenshots/power-with-data.png)
 
 ### FC Check Tool
 Specialized validation and checking utility for data consistency verification.
