@@ -60,10 +60,18 @@ Specialized validation and checking utility for data consistency verification.
 
 ![FC Check Tool](./public/screenshots/fc-check-tool.png)
 
+*With validation data loaded:*
+
+![FC Check with Data](./public/screenshots/fc-check-with-data.png)
+
 ### QOR Compare
 Quality of Results comparison tool for benchmarking different data sets and configurations.
 
 ![QOR Compare](./public/screenshots/qor-compare.png)
+
+*With comparison data displayed:*
+
+![QOR Compare with Data](./public/screenshots/qor-compare-with-data.png)
 
 ## 🛠 Tech Stack
 - **Framework**: [React 19](https://react.dev/)
