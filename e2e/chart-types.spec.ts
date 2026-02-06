@@ -12,7 +12,7 @@ test.describe('Chart Type Rendering', () => {
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
+    await expect(page.locator('[data-testid="chart-type-select"]')).toContainText('Line');
   });
 
   test('should render scatter chart from URL state', async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe('Chart Type Rendering', () => {
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
+    await expect(page.locator('[data-testid="chart-type-select"]')).toContainText('Bar');
   });
 
   test('should render area chart from URL state', async ({ page }) => {
@@ -69,7 +69,7 @@ test.describe('Chart Type Rendering', () => {
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
+    await expect(page.locator('[data-testid="chart-type-select"]')).toContainText('Area');
   });
 
   test('should render histogram chart from URL state', async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe('Chart Type Rendering', () => {
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
+    await expect(page.locator('[data-testid="chart-type-select"]')).toContainText('Histogram');
   });
 
   test('should render chart with actual data (not empty state)', async ({ page }) => {
