@@ -10,7 +10,6 @@ import { useEffect, useRef } from "react";
 import { shallowEqual } from "react-redux";
 import type { RootState } from "@/store";
 import { useAppDispatch, useAppSelector } from "@/store";
-import { restoreFromURL, setDoeName } from "@/store/reducers/selectedReducer";
 import { updateDoEMetadata } from "@/store/doeRegistry";
 import {
   markTimingRowFetched,
@@ -42,13 +41,12 @@ export function useRestoreTimingRowData() {
     shallowEqual
   );
 
-  const doeRegistry = useAppSelector(
-    (state: RootState) => state.doeRegistry,
-    shallowEqual
-  );
-
-  const dataset = useAppSelector(
-    (state: RootState) => state.dataset,
+  const { doeRegistry, dataset, currentPage } = useAppSelector(
+    (state: RootState) => ({
+      doeRegistry: state.doeRegistry,
+      dataset: state.dataset.data,
+      currentPage: state.page.currentPage,
+    }),
     shallowEqual
   );
 
@@ -70,13 +68,10 @@ export function useRestoreTimingRowData() {
      // Fetch data for each timing row sequentially
      const fetchAllRows = async () => {
        for (const row of rowsToFetch) {
-         // [WHY] Mark row as being processed immediately to prevent duplicate fetches
-         fetchedRowsRef.current.add(row.id);
+          // [WHY] Mark row as being processed immediately to prevent duplicate fetches
+          fetchedRowsRef.current.add(row.id);
 
-         // [WHY] Set doeName - fetchDataset uses this as the key for storing results
-         dispatch(setDoeName(row.label));
-
-         // [WHY] Read metadata from row object directly (like useRestoreColumnData does)
+          // [WHY] Read metadata from row object directly (like useRestoreColumnData does)
          // This avoids timing issues with doeRegistry not being ready yet
          // Fallback to doeRegistry for backwards compatibility
          const metadata = doeRegistry.byId[row.id] || {};
@@ -102,29 +97,22 @@ export function useRestoreTimingRowData() {
 
          let datasetPayload: Record<string, unknown>;
 
-         if (hasCachedData) {
-           // Use cached data
-           datasetPayload = cachedData;
-         } else {
-           // Set selection state for this DoE row
-           dispatch(
-             restoreFromURL({
-               selectedProject: PROJECT_NAME ?? null,
-               selectedBlock: BLOCK ?? null,
-               selectedNetver: NET_VER ?? null,
-               selectedRevision: REVISION ?? null,
-               selectedEconum: ECO_NUM ?? null,
-             })
-           );
+          if (hasCachedData) {
+            // Use cached data
+            datasetPayload = cachedData;
+          } else {
+             const action = await dispatch(fetchDataset({
+              project: PROJECT_NAME ?? '',
+              block: BLOCK ?? '',
+              netver: NET_VER ?? '',
+              revision: REVISION ?? '',
+              econum: ECO_NUM ?? undefined,
+              doeName: row.label,
+              revisionMode: 'POST',
+              currentPage: currentPage,
+            }));
 
-           // [WHY] Small delay to ensure Redux state is updated before fetch
-           // This prevents race condition where fetchDataset reads stale selection state
-           await new Promise((resolve) => setTimeout(resolve, 50));
-
-           // Fetch and update cells
-           const action = await dispatch(fetchDataset());
-
-           if (fetchDataset.fulfilled.match(action)) {
+            if (fetchDataset.fulfilled.match(action)) {
              datasetPayload = (action.payload?.[row.label] ?? {}) as Record<
                string,
                unknown
@@ -182,23 +170,9 @@ export function useRestoreTimingRowData() {
 
          // Mark this row as fetched
          dispatch(markTimingRowFetched(row.id));
-       }
+        }
 
-      // Clear selection after restoration
-      dispatch(
-        restoreFromURL({
-          selectedProject: null,
-          selectedBlock: null,
-          selectedNetver: null,
-          selectedRevision: null,
-          selectedEconum: null,
-        })
-      );
-
-      // [WHY] Clear doeName after restoration to reset UI state
-      dispatch(setDoeName(""));
-
-      isFetching.current = false;
+       isFetching.current = false;
     };
 
      fetchAllRows();

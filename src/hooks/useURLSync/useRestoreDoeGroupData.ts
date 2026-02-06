@@ -10,11 +10,7 @@ import { useEffect, useRef } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
 import { useAppSelector } from "@/store";
 import type { RootState, AppDispatch } from "@/store";
-import {
-  restoreFromURL,
-  setDoeName,
-  setColumnPowerScenario,
-} from "@/store/reducers/selectedReducer";
+import { setColumnPowerScenario } from "@/store/reducers/selectedReducer";
 import { updateDoEMetadata } from "@/store/doeRegistry";
 import {
   updatePowerCell,
@@ -50,7 +46,13 @@ export function useRestoreDoeGroupData() {
     shallowEqual
   );
 
-  const dataset = useAppSelector((state) => state.dataset);
+  const { dataset, currentPage } = useAppSelector(
+    (state: RootState) => ({
+      dataset: state.dataset.data,
+      currentPage: state.page.currentPage,
+    }),
+    shallowEqual
+  );
 
   useEffect(() => {
     // [WHY] Prevent concurrent fetches to avoid race conditions
@@ -108,29 +110,21 @@ export function useRestoreDoeGroupData() {
          if (hasCachedData) {
            // Use cached data
            datasetPayload = cachedData;
-         } else {
-           // [WHY] Set doeName - fetchDataset uses this as the key for storing results
-           dispatch(setDoeName(group.label));
+          } else {
+            // Set selection state for this DoE group
 
-           // Set selection state for this DoE group
-           dispatch(
-             restoreFromURL({
-               selectedProject: (metadata.PROJECT_NAME as string) ?? null,
-               selectedBlock: (metadata.BLOCK as string) ?? null,
-               selectedNetver: (metadata.NET_VER as string) ?? null,
-               selectedRevision: (metadata.REVISION as string) ?? null,
-               selectedEconum: (metadata.ECO_NUM as string) ?? null,
-             })
-           );
+             const action = await dispatch(fetchDataset({
+              project: (metadata.PROJECT_NAME as string) ?? '',
+              block: (metadata.BLOCK as string) ?? '',
+              netver: (metadata.NET_VER as string) ?? '',
+              revision: (metadata.REVISION as string) ?? '',
+              econum: (metadata.ECO_NUM as string) ?? undefined,
+              doeName: group.label,
+              revisionMode: 'POST',
+              currentPage: currentPage,
+            }));
 
-           // [WHY] Small delay to ensure Redux state is updated before fetch
-           // This prevents race condition where fetchDataset reads stale selection state
-           await new Promise((resolve) => setTimeout(resolve, 50));
-
-           // Fetch and update cells
-           const action = await dispatch(fetchDataset());
-
-           if (fetchDataset.fulfilled.match(action)) {
+            if (fetchDataset.fulfilled.match(action)) {
              datasetPayload = (action.payload?.[group.label] ??
                {}) as Record<string, unknown>;
            } else {
@@ -200,25 +194,11 @@ export function useRestoreDoeGroupData() {
            });
          });
 
-         // Mark this group as fetched
-         dispatch(markDoeFetched(group.id));
-       }
+          // Mark this group as fetched
+          dispatch(markDoeFetched(group.id));
+        }
 
-      // Clear selection after restoration
-      dispatch(
-        restoreFromURL({
-          selectedProject: null,
-          selectedBlock: null,
-          selectedNetver: null,
-          selectedRevision: null,
-          selectedEconum: null,
-        })
-      );
-
-      // [WHY] Clear doeName after restoration to reset UI state
-      dispatch(setDoeName(""));
-
-      isFetching.current = false;
+       isFetching.current = false;
     };
 
      fetchAllGroups();

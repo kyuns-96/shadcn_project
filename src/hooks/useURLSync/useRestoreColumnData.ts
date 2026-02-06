@@ -11,8 +11,6 @@ import { shallowEqual } from "react-redux";
 import { useAppDispatch, useAppSelector } from "@/store";
 import type { RootState } from "@/store";
 import {
-  restoreFromURL,
-  setDoeName,
   setColumnPowerScenario,
   setRevisionMode,
   setIsRestoringColumns,
@@ -42,15 +40,16 @@ export function useRestoreColumnData() {
     shallowEqual
   );
 
-  const { doeRegistry, revisionMode } = useAppSelector(
+  const { doeRegistry, revisionMode, currentPage } = useAppSelector(
     (state: RootState) => ({
       doeRegistry: state.doeRegistry,
       revisionMode: state.selected.revisionMode,
+      currentPage: state.page.currentPage,
     }),
     shallowEqual
   );
 
-  const dataset = useAppSelector((state) => state.dataset);
+  const dataset = useAppSelector((state) => state.dataset.data);
 
   useEffect(() => {
     // [WHY] Prevent concurrent fetches to avoid race conditions
@@ -94,31 +93,24 @@ export function useRestoreColumnData() {
            if (hasCachedData) {
              // [WHY] Use cached data to avoid redundant API call
              data = cachedData;
-           } else {
-             // [WHY] Fetch data from API if not cached
-             const metadata = doeRegistry.byId[col.id];
-             const columnMode = (metadata?.REVISION_MODE as 'PRE' | 'POST') ?? 
-                                (col.REVISION_MODE as 'PRE' | 'POST') ?? 
-                                'POST';
+            } else {
+              // [WHY] Fetch data from API if not cached
+              const metadata = doeRegistry.byId[col.id];
+              const columnMode = (metadata?.REVISION_MODE as 'PRE' | 'POST') ?? 
+                                 (col.REVISION_MODE as 'PRE' | 'POST') ?? 
+                                 'POST';
 
-             dispatch(setRevisionMode(columnMode));
-
-             dispatch(setDoeName(col.label));
-
-             dispatch(
-               restoreFromURL({
-                 selectedProject: (col.PROJECT_NAME as string) ?? null,
-                 selectedBlock: (col.BLOCK as string) ?? null,
-                 selectedNetver: (col.NET_VER as string) ?? null,
-                 selectedRevision: (col.REVISION as string) ?? null,
-                 selectedEconum: (col.ECO_NUM as string) ?? null,
-               })
-             );
-
-             await new Promise((resolve) => setTimeout(resolve, 50));
-
-             const action = await dispatch(fetchDataset());
-             if (fetchDataset.fulfilled.match(action)) {
+              const action = await dispatch(fetchDataset({
+                project: (col.PROJECT_NAME as string) ?? '',
+                block: (col.BLOCK as string) ?? '',
+                netver: (col.NET_VER as string) ?? '',
+                revision: (col.REVISION as string) ?? '',
+                econum: (col.ECO_NUM as string) ?? undefined,
+                doeName: col.label,
+                revisionMode: columnMode,
+                currentPage: currentPage,
+              }));
+              if (fetchDataset.fulfilled.match(action)) {
                data = (action.payload?.[col.label] ?? {}) as Record<string, unknown>;
              } else {
                data = {};
@@ -176,21 +168,9 @@ export function useRestoreColumnData() {
              dispatch(updateCell({ rowId: row.id, columnId: col.id, value }));
            });
 
-           dispatch(markColumnFetched(col.id));
-         }
-
-        dispatch(
-          restoreFromURL({
-            selectedProject: null,
-            selectedBlock: null,
-            selectedNetver: null,
-            selectedRevision: null,
-            selectedEconum: null,
-          })
-        );
-
-        dispatch(setDoeName(""));
-      } finally {
+            dispatch(markColumnFetched(col.id));
+          }
+       } finally {
         dispatch(setRevisionMode(globalMode));
         dispatch(setIsRestoringColumns(false));
         isFetching.current = false;
