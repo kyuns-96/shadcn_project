@@ -17,6 +17,7 @@ import {
   toggleSeriesEnabled,
   type GraphWindow,
 } from '@/store/reducers/graphSlice';
+import { selectAnyDatasetLoading } from '@/store/reducers/datasetReducer';
 import { useGraphData } from '@/hooks/useGraphData';
 import { GraphChart } from './GraphChart';
 import { AxisConfigPanel } from './AxisConfigPanel';
@@ -51,6 +52,7 @@ function computeInitialPosition(windowIndex: number): { x: number; y: number } {
 export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWindowProps) {
   const dispatch = useAppDispatch();
   const windowState = useAppSelector(selectGraphWindowById(windowId));
+  const isLoading = useAppSelector(selectAnyDatasetLoading);
   
   const dummyWindow: GraphWindow = {
     id: '',
@@ -306,6 +308,7 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                     series={windowState.series}
                     xRange={windowState.xRange}
                     yRange={windowState.yRange}
+                    isLoading={isLoading}
                   />
                 </div>
 

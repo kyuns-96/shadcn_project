@@ -27,6 +27,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
+import { Loader2 } from 'lucide-react';
 
 // ============================================
 // RECHARTS DATA TYPES
@@ -61,6 +62,7 @@ export interface GraphChartProps {
   series: Series[];
   xRange: RangeConfig;
   yRange: RangeConfig;
+  isLoading?: boolean;
 }
 
 // ============================================
@@ -233,6 +235,7 @@ export function GraphChart({
   series,
   xRange,
   yRange,
+  isLoading,
 }: GraphChartProps) {
   // Transform data for Recharts
   const transformedData = transformForRecharts(
@@ -241,6 +244,16 @@ export function GraphChart({
     series,
     yRange
   );
+
+  // Loading state - show spinner instead of "No data"
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground" data-testid="graph-loading-indicator">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="text-sm">Loading data...</span>
+      </div>
+    );
+  }
 
   // Empty state
   if (
