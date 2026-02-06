@@ -15,7 +15,7 @@ export interface ChartDataPoint {
 export function useGraphData(window: GraphWindow): ChartDataPoint[] {
   const columnHeaders = useAppSelector(state => state.matrix.columnHeaders);
   const doeRegistry = useAppSelector(state => state.doeRegistry.byId);
-  const datasets = useAppSelector(state => state.dataset);
+  const datasets = useAppSelector(state => state.dataset.data);
   const revisionMode = useAppSelector(state => state.selected.revisionMode);
   
   return useMemo(() => {

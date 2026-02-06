@@ -83,6 +83,7 @@ const TimingDatasetColumnAddButton = () => {
   const { rowHeaders: powerRowHeaders } = useAppSelector(
     (state) => state.powerMatrix
   );
+  const currentPage = useAppSelector((state) => state.page.currentPage);
 
   // Check if button should be disabled (empty or duplicate)
   const trimmedDoeName = doeName.trim();
@@ -166,7 +167,16 @@ const TimingDatasetColumnAddButton = () => {
     );
 
     // 5. 데이터셋 fetch 후 시나리오 정보 및 셀 데이터 업데이트
-    dispatch(fetchDataset()).then((action) => {
+    dispatch(fetchDataset({
+      project: selectedProject ?? '',
+      block: selectedBlock ?? '',
+      netver: selectedNetver ?? '',
+      revision: selectedRevision ?? '',
+      econum: selectedEconum ?? undefined,
+      doeName: doeName,
+      revisionMode: 'POST',
+      currentPage: currentPage,
+    })).then((action) => {
       if (fetchDataset.fulfilled.match(action)) {
         const datasetPayload = (action.payload?.[doeName] ?? {}) as Record<
           string,

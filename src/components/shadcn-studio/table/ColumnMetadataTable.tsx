@@ -76,7 +76,7 @@ const ColumnMetadataTable = () => {
   const columnPowerScenarios = useAppSelector(
     (state) => state.selected.columnPowerScenarios
   );
-  const dataset = useAppSelector((state) => state.dataset);
+  const dataset = useAppSelector((state) => state.dataset.data);
 
   // [WHY] doeRegistry의 모든 DoE를 columnHeaders로 사용
   // 이렇게 하면 PowerPage에서 추가한 DoE도 QoRComparePage의 ColumnMetadataTable에 표시됨

@@ -74,6 +74,7 @@ const DatasetColumnAddButton = () => {
   } = useAppSelector((state) => state.selected);
   const { rowHeaders } = useAppSelector((state) => state.matrix);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
+  const currentPage = useAppSelector((state) => state.page.currentPage);
 
   // Check if button should be disabled (empty or duplicate)
   // [WHY] doeRegistry에서 중복 확인 - 두 페이지의 DoE를 모두 체크
@@ -143,7 +144,16 @@ const DatasetColumnAddButton = () => {
     );
 
     // 3. 데이터셋 fetch 후 각 셀에 값 업데이트
-    dispatch(fetchDataset()).then((action) => {
+    dispatch(fetchDataset({
+      project: selectedProject ?? '',
+      block: selectedBlock ?? '',
+      netver: selectedNetver ?? '',
+      revision: selectedRevision ?? '',
+      econum: selectedEconum ?? undefined,
+      doeName: doeName,
+      revisionMode: revisionMode,
+      currentPage: currentPage,
+    })).then((action) => {
       if (fetchDataset.fulfilled.match(action)) {
         const datasetPayload = (action.payload?.[doeName] ?? {}) as Record<
           string,

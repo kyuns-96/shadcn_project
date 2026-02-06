@@ -79,7 +79,7 @@ const PowerColumnMetadataTable = () => {
 
   const { rowHeaders } = useAppSelector((state) => state.powerMatrix);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
-  const dataset = useAppSelector((state) => state.dataset);
+  const dataset = useAppSelector((state) => state.dataset.data);
 
   const enrichedDoeGroups = doeRegistry.allIds.map((doeId) => ({
     ...doeRegistry.byId[doeId],

@@ -72,7 +72,7 @@ const TimingColumnMetadataTable = () => {
   // Redux에서 DoE 레지스트리 조회
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const { rows } = useAppSelector((state) => state.timingMatrix);
-  const dataset = useAppSelector((state) => state.dataset);
+  const dataset = useAppSelector((state) => state.dataset.data);
 
   // timingMatrix의 rows에 해당하는 DoE만 표시 (timing page에서 추가된 것들)
   const timingDoeEntries = rows.map((row) => ({
