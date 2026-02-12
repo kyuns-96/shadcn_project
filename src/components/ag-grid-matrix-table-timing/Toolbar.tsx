@@ -3,7 +3,7 @@
  *
  * @purpose
  * Timing 전용 AG Grid 테이블의 툴바 컴포넌트입니다.
- * 행 높이, 텍스트 정렬, 소수점 자리수 조정, 클립보드 복사 기능을 제공합니다.
+ * 행 높이, 텍스트 정렬, 클립보드 복사 기능을 제공합니다.
  *
  * @dependencies
  * - @/components/ui/*: UI 컴포넌트들
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, Rows3Icon } from "lucide-react";
-import { CheckIcon, CopyIcon, PlusIcon, MinusIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from "lucide-react";
 import {
   ROW_HEIGHT_CONFIG,
   TEXT_ALIGN_CONFIG,
@@ -32,9 +32,6 @@ interface TimingToolbarProps {
   onRowHeightChange: (opt: RowHeightOption) => void;
   textAlignOption: TextAlignOption;
   onTextAlignChange: (opt: TextAlignOption) => void;
-  decimalPlaces: number;
-  onIncreaseDecimal: () => void;
-  onDecreaseDecimal: () => void;
   copied: boolean;
   onCopy: () => void;
 }
@@ -45,9 +42,6 @@ export function TimingToolbar(props: TimingToolbarProps) {
     onRowHeightChange,
     textAlignOption,
     onTextAlignChange,
-    decimalPlaces,
-    onIncreaseDecimal,
-    onDecreaseDecimal,
     copied,
     onCopy,
   } = props;
@@ -151,32 +145,6 @@ export function TimingToolbar(props: TimingToolbarProps) {
           </div>
         </PopoverContent>
       </Popover>
-
-      {/* Decimal Places Control */}
-      <div className="flex items-center gap-1 border rounded-md px-2 py-1">
-        <span className="text-xs text-muted-foreground mr-1">Decimal</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6"
-          onClick={onDecreaseDecimal}
-          disabled={decimalPlaces <= 0}
-        >
-          <MinusIcon className="size-3" />
-        </Button>
-        <span className="text-xs min-w-[16px] text-center font-medium">
-          {decimalPlaces}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6"
-          onClick={onIncreaseDecimal}
-          disabled={decimalPlaces >= 10}
-        >
-          <PlusIcon className="size-3" />
-        </Button>
-      </div>
 
       {/* Copy to Clipboard Button */}
       <Button variant="outline" size="sm" className="gap-2" onClick={onCopy}>

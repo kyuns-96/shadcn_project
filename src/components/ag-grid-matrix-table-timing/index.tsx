@@ -29,6 +29,7 @@ import {
   AllCommunityModule,
   ModuleRegistry,
   type GridApi,
+  type CellContextMenuEvent,
 } from "ag-grid-community";
 import { useAppSelector } from "@/store";
 import {
@@ -50,6 +51,8 @@ import {
   type TimingColumnGroup,
   type TimingMetric,
 } from "@/variables/defaultTimingMatrixTemplate";
+import { DecimalContextMenu } from "../ag-grid-matrix-table/DecimalContextMenu";
+import { TIMING_DEFAULT_DECIMALS } from "../ag-grid-matrix-table/decimalDefaults";
 
 // AG Grid 모듈 등록
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -65,7 +68,14 @@ export default function AgGridTimingTable() {
     useState<RowHeightOption>("normal");
   const [textAlignOption, setTextAlignOption] =
     useState<TextAlignOption>("right");
-  const [decimalPlaces, setDecimalPlaces] = useState<number>(3);
+  const [groupDecimals, setGroupDecimals] = useState<Record<string, number>>(
+    TIMING_DEFAULT_DECIMALS
+  );
+  const [contextMenu, setContextMenu] = useState<{
+    groupName: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height;
@@ -81,17 +91,17 @@ export default function AgGridTimingTable() {
 
   // 컬럼 정의 생성 (고정 - DoE와 무관)
   let columnDefs = useMemo(() => {
-    return buildTimingColumnDefs(textAlignOption, decimalPlaces);
-  }, [textAlignOption, decimalPlaces]);
+    return buildTimingColumnDefs(textAlignOption, groupDecimals);
+  }, [textAlignOption, groupDecimals]);
 
   // 텍스트 정렬 변경 시 컬럼 업데이트
   columnDefs = useMemo(() => {
     return updateTimingColumnAlignment(
       columnDefs,
       textAlignOption,
-      decimalPlaces
+      groupDecimals
     );
-  }, [columnDefs, textAlignOption, decimalPlaces]);
+  }, [columnDefs, textAlignOption, groupDecimals]);
 
   // ============================================================
   // Toolbar 핸들러
@@ -121,21 +131,19 @@ export default function AgGridTimingTable() {
   }, []);
 
   /**
-   * 소수점 자리수 증가 핸들러
+   * 우클릭 컨텍스트 메뉴 핸들러
    */
-  const handleDecimalIncrease = useCallback(() => {
-    setDecimalPlaces((prev) => Math.min(prev + 1, 10));
-    const api = gridRef.current?.api as GridApi<TimingRowData> | undefined;
-    api?.refreshCells({ force: true });
-  }, []);
+  const handleCellContextMenu = useCallback((params: CellContextMenuEvent) => {
+    if (!params.event) return;
+    const event = params.event as MouseEvent;
+    event.preventDefault();
 
-  /**
-   * 소수점 자리수 감소 핸들러
-   */
-  const handleDecimalDecrease = useCallback(() => {
-    setDecimalPlaces((prev) => Math.max(prev - 1, 0));
-    const api = gridRef.current?.api as GridApi<TimingRowData> | undefined;
-    api?.refreshCells({ force: true });
+    // Get column group from parent
+    const colGroupDef = params.column.getParent()?.getColGroupDef();
+    if (!colGroupDef?.headerName) return;
+
+    const groupName = colGroupDef.headerName;
+    setContextMenu({ groupName, x: event.clientX, y: event.clientY });
   }, []);
 
   /**
@@ -186,7 +194,8 @@ export default function AgGridTimingTable() {
             const isNVP = metric === "NVP";
             const formattedValue = formatTimingValue(
               rawValue,
-              decimalPlaces,
+              groupDecimals,
+              group,
               isNVP
             );
             rowValues.push(formattedValue);
@@ -247,7 +256,8 @@ export default function AgGridTimingTable() {
             const isNVP = metric === "NVP";
             const formattedValue = formatTimingValue(
               rawValue,
-              decimalPlaces,
+              groupDecimals,
+              _group,
               isNVP
             );
             rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${formattedValue}</td>`;
@@ -285,7 +295,7 @@ export default function AgGridTimingTable() {
     } catch (err) {
       console.error("Failed to copy table data: ", err);
     }
-  }, [rows, decimalPlaces]);
+  }, [rows, groupDecimals]);
 
   // AG Grid 기본 설정
   const defaultColDef = {
@@ -308,9 +318,6 @@ export default function AgGridTimingTable() {
         onRowHeightChange={handleRowHeightChange}
         textAlignOption={textAlignOption}
         onTextAlignChange={handleTextAlignChange}
-        decimalPlaces={decimalPlaces}
-        onIncreaseDecimal={handleDecimalIncrease}
-        onDecreaseDecimal={handleDecimalDecrease}
         copied={copied}
         onCopy={handleCopyToClipboard}
       />
@@ -335,8 +342,29 @@ export default function AgGridTimingTable() {
           groupDisplayType="multipleColumns"
           rowDragManaged={true}
           animateRows={true}
+          onCellContextMenu={handleCellContextMenu}
+          preventDefaultOnContextMenu={true}
         />
       </div>
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <DecimalContextMenu
+          groupName={contextMenu.groupName}
+          currentDecimal={groupDecimals[contextMenu.groupName] ?? 3}
+          onDecimalChange={(newDecimals) => {
+            setGroupDecimals((prev) => ({
+              ...prev,
+              [contextMenu.groupName]: newDecimals,
+            }));
+            if (gridRef.current?.api) {
+              gridRef.current.api.refreshCells({ force: true });
+            }
+          }}
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

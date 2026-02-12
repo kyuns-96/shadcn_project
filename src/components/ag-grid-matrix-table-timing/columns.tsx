@@ -29,6 +29,8 @@ import {
 } from "./constants";
 import { Spinner } from "@/components/ui/spinner";
 
+import { TIMING_DEFAULT_DECIMALS } from "../ag-grid-matrix-table/decimalDefaults";
+
 /**
  * 숫자 값 포맷팅 함수
  * - 0값은 소수점 없이 "0"으로 표시
@@ -38,7 +40,8 @@ import { Spinner } from "@/components/ui/spinner";
  */
 export const formatTimingValue = (
   value: unknown,
-  decimalPlaces: number,
+  decimalPlaces: Record<string, number>,
+  columnGroup: string,
   isNVP: boolean
 ): string => {
   // null, undefined, 빈 문자열 처리
@@ -72,7 +75,11 @@ export const formatTimingValue = (
   }
 
   // 그 외 숫자는 지정된 소수점 자리수로 표시
-  return num.toFixed(decimalPlaces);
+  const decimals =
+    decimalPlaces[columnGroup] ??
+    (TIMING_DEFAULT_DECIMALS as Record<string, number>)[columnGroup] ??
+    3;
+  return num.toFixed(decimals);
 };
 
 /**
@@ -88,7 +95,7 @@ export const formatTimingValue = (
  */
 export const buildTimingColumnDefs = (
   textAlign: TextAlignOption = "right",
-  decimalPlaces: number = 3
+  decimalPlaces: Record<string, number>
 ): (ColDef | ColGroupDef)[] => {
   const columnDefs: (ColDef | ColGroupDef)[] = [];
 
@@ -120,7 +127,7 @@ export const buildTimingColumnDefs = (
           suppressMovable: true,
           sortable: false,
           valueFormatter: (params) => {
-            return formatTimingValue(params.value, decimalPlaces, isNVP);
+            return formatTimingValue(params.value, decimalPlaces, columnGroup, isNVP);
           },
           cellRenderer: (params: ICellRendererParams<TimingRowData>) => {
             if (params.value === LOADING_CELL_VALUE) {
@@ -150,7 +157,7 @@ export const buildTimingColumnDefs = (
 export const updateTimingColumnAlignment = (
   columnDefs: (ColDef | ColGroupDef)[],
   textAlign: TextAlignOption,
-  decimalPlaces: number = 3
+  decimalPlaces: Record<string, number>
 ): (ColDef | ColGroupDef)[] => {
   return columnDefs.map((colDef) => {
     if ("children" in colDef && colDef.children) {
@@ -168,12 +175,21 @@ export const updateTimingColumnAlignment = (
     if ("field" in colDef && colDef.field !== "name") {
       // 데이터 컬럼: cellStyle 업데이트 및 valueFormatter 재설정
       const field = colDef.field as string;
+      
+      // field format: ${group}_${metric}
+      // 메트릭(WNS, TNS, NVP)은 underscore를 포함하지 않으므로 마지막 underscore로 분리 가능
+      const lastUnderscoreIndex = field.lastIndexOf("_");
+      const columnGroup = lastUnderscoreIndex !== -1 
+        ? field.substring(0, lastUnderscoreIndex) 
+        : "";
+      
       const isNVP = field.endsWith("_NVP");
+      
       return {
         ...colDef,
         cellStyle: { textAlign },
         valueFormatter: (params: { value: unknown }) => {
-          return formatTimingValue(params.value, decimalPlaces, isNVP);
+          return formatTimingValue(params.value, decimalPlaces, columnGroup, isNVP);
         },
       };
     }
