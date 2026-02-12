@@ -28,6 +28,7 @@ import {
   AllCommunityModule,
   ModuleRegistry,
   type GridApi,
+  type CellContextMenuEvent,
 } from "ag-grid-community";
 import { useAppSelector } from "@/store";
 import { PowerToolbar } from "./Toolbar";
@@ -39,7 +40,12 @@ import {
 import type { PowerRowData, PowerUnit } from "./types";
 import { buildPowerColumnDefs } from "./columns";
 import { useSelectionHandlers, useRowClasses } from "./hooks";
-import { POWER_COLUMN_NAMES } from "@/variables/defaultPowerMatrixTemplate";
+import { POWER_COLUMN_NAMES, type PowerRowKey } from "@/variables/defaultPowerMatrixTemplate";
+import {
+  POWER_DEFAULT_DECIMALS,
+  type PowerDecimalMap,
+} from "@/components/ag-grid-matrix-table/decimalDefaults";
+import { DecimalContextMenu } from "@/components/ag-grid-matrix-table/DecimalContextMenu";
 
 // AG Grid 모듈 등록
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -74,7 +80,15 @@ export default function AgGridPowerTable() {
     useState<RowHeightOption>("normal");
   const [textAlignOption, setTextAlignOption] =
     useState<TextAlignOption>("right");
-  const [decimalPlaces, setDecimalPlaces] = useState<number>(2);
+  const [rowDecimals, setRowDecimals] = useState<PowerDecimalMap>(
+    POWER_DEFAULT_DECIMALS
+  );
+  const [contextMenu, setContextMenu] = useState<{
+    rowKey: string;
+    rowLabel: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [powerUnit, setPowerUnit] = useState<PowerUnit>("mW");
 
   // 단위 변환 배수: API 값은 W이므로, mW일 때 1000을 곱함
@@ -99,17 +113,42 @@ export default function AgGridPowerTable() {
     api?.refreshCells({ force: true });
   }, []);
 
-  const handleDecimalIncrease = useCallback(() => {
-    setDecimalPlaces((prev) => Math.min(prev + 1, 10));
-    const api = gridRef.current?.api as GridApi<PowerRowData> | undefined;
-    api?.refreshCells({ force: true });
-  }, []);
+  const handleCellContextMenu = useCallback(
+    (params: CellContextMenuEvent<PowerRowData>) => {
+      // rowHeader 컬럼에서만 컨텍스트 메뉴 활성화
+      if (params.column.getColId() !== "rowHeader") return;
 
-  const handleDecimalDecrease = useCallback(() => {
-    setDecimalPlaces((prev) => Math.max(prev - 1, 0));
+      const event = params.event as MouseEvent;
+      event.preventDefault();
+
+      const rowKey = params.data?.rowKey;
+      const rowLabel = params.data?.rowHeader;
+
+      if (!rowKey || !rowLabel) return;
+
+      setContextMenu({
+        rowKey,
+        rowLabel,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    []
+  );
+
+  const handleDecimalChange = useCallback((newDecimal: number) => {
+    if (!contextMenu) return;
+
+    setRowDecimals((prev) => ({
+      ...prev,
+      [contextMenu.rowKey]: newDecimal,
+    }));
+    setContextMenu(null);
+
+    // Force refresh to update formatted values
     const api = gridRef.current?.api as GridApi<PowerRowData> | undefined;
     api?.refreshCells({ force: true });
-  }, []);
+  }, [contextMenu]);
 
   const handlePowerUnitChange = useCallback((unit: PowerUnit) => {
     setPowerUnit(unit);
@@ -123,14 +162,22 @@ export default function AgGridPowerTable() {
       if (!api) return;
 
       // Format helper function (1000 곱한 후 decimal 적용)
-      const formatPowerValue = (value: unknown): string => {
+      const formatPowerValue = (
+        value: unknown,
+        rowKey: PowerRowKey | string
+      ): string => {
         if (value === null || value === undefined || value === "") return "";
         if (value === "___LOADING___") return "";
         const num = parseFloat(String(value));
         if (isNaN(num)) return String(value);
+
         // 먼저 1000을 곱하고 (mW인 경우), 그 후에 decimal 적용
         const converted = num * unitMultiplier;
-        return converted.toFixed(decimalPlaces);
+        const decimals =
+          rowDecimals[rowKey as PowerRowKey] ??
+          POWER_DEFAULT_DECIMALS.total ??
+          3;
+        return converted.toFixed(decimals);
       };
 
       // Build headers: Power(단위) + DoE group columns
@@ -155,12 +202,13 @@ export default function AgGridPowerTable() {
         const originalRow = rowHeaders.find((r) => r.id === row.id);
         if (!originalRow) return "";
 
+        const rowKey = row.rowKey;
         const rowValues = [originalRow.label];
         doeGroups.forEach((doeGroup) => {
           POWER_COLUMN_NAMES.forEach((colName) => {
             const columnId = `${doeGroup.id}_${colName}`;
             const rawValue = originalRow.data[columnId];
-            rowValues.push(formatPowerValue(rawValue));
+            rowValues.push(formatPowerValue(rawValue, rowKey));
           });
         });
         return rowValues.join("\t");
@@ -206,7 +254,7 @@ export default function AgGridPowerTable() {
           for (const [doeId, colName] of doeDataArray) {
             const columnId = `${doeId}_${colName}`;
             const rawValue = originalRow.data[columnId];
-            const formattedValue = formatPowerValue(rawValue);
+            const formattedValue = formatPowerValue(rawValue, row.rowKey);
             rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${formattedValue}</td>`;
           }
 
@@ -241,7 +289,7 @@ export default function AgGridPowerTable() {
     } catch (err) {
       console.error("Failed to copy table data: ", err);
     }
-  }, [doeGroups, rowHeaders, decimalPlaces, unitMultiplier]);
+  }, [doeGroups, rowHeaders, rowDecimals, unitMultiplier, powerUnit]);
 
   // Transform rowHeaders to PowerRowData format (단위 변환 적용)
   const rowData: PowerRowData[] = useMemo(() => {
@@ -281,10 +329,10 @@ export default function AgGridPowerTable() {
       buildPowerColumnDefs({
         doeGroups,
         textAlignOption,
-        decimalPlaces,
+        decimalPlaces: rowDecimals,
         powerUnit,
       }),
-    [doeGroups, textAlignOption, decimalPlaces, powerUnit]
+    [doeGroups, textAlignOption, rowDecimals, powerUnit]
   );
 
   const defaultColDef = useMemo(
@@ -316,9 +364,6 @@ export default function AgGridPowerTable() {
           onRowHeightChange={handleRowHeightChange}
           textAlignOption={textAlignOption}
           onTextAlignChange={handleTextAlignChange}
-          decimalPlaces={decimalPlaces}
-          onIncreaseDecimal={handleDecimalIncrease}
-          onDecreaseDecimal={handleDecimalDecrease}
           powerUnit={powerUnit}
           onPowerUnitChange={handlePowerUnitChange}
           copied={copied}
@@ -327,7 +372,7 @@ export default function AgGridPowerTable() {
       </div>
 
       {/* AG Grid */}
-      <div className="flex-1 ag-theme-quartz">
+      <div className="flex-1 ag-theme-quartz relative">
         <AgGridReact<PowerRowData>
           ref={gridRef}
           rowData={rowData}
@@ -344,7 +389,18 @@ export default function AgGridPowerTable() {
           animateRows={true}
           suppressMovableColumns={false}
           suppressColumnMoveAnimation={false}
+          onCellContextMenu={handleCellContextMenu}
+          preventDefaultOnContextMenu={true}
         />
+        {contextMenu && (
+          <DecimalContextMenu
+            position={{ x: contextMenu.x, y: contextMenu.y }}
+            currentDecimal={rowDecimals[contextMenu.rowKey as PowerRowKey] ?? 3}
+            onDecimalChange={handleDecimalChange}
+            onClose={() => setContextMenu(null)}
+            groupName={contextMenu.rowLabel}
+          />
+        )}
       </div>
     </div>
   );

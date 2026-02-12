@@ -28,6 +28,7 @@ import type { TextAlignOption } from "./constants";
 import { POWER_TABLE_CONFIG } from "./constants";
 import { POWER_COLUMN_NAMES } from "@/variables/defaultPowerMatrixTemplate";
 import ColumnHeaderWithPopup from "@/components/ColumnHeaderWithPopup";
+import type { PowerDecimalMap } from "@/components/ag-grid-matrix-table/decimalDefaults";
 
 /**
  * DoE 그룹 헤더 렌더러 - 중앙정렬
@@ -53,8 +54,8 @@ export function buildPowerColumnDefs(args: {
   doeGroups: DoeColumnGroup[];
   /** 텍스트 정렬 옵션 */
   textAlignOption: TextAlignOption;
-  /** 소수점 자리수 */
-  decimalPlaces: number;
+  /** 소수점 자리수 (행별 설정) */
+  decimalPlaces: PowerDecimalMap;
   /** Power 단위 (mW/W) */
   powerUnit?: PowerUnit;
 }): (ColDef<PowerRowData> | ColGroupDef<PowerRowData>)[] {
@@ -107,10 +108,15 @@ export function buildPowerColumnDefs(args: {
               const value = params.value;
               if (value === null || value === undefined || value === "")
                 return "";
-              // 모든 숫자에 소수점 자릿수 적용 (정수 포함)
+              
               const num = parseFloat(String(value));
-              if (!isNaN(num)) return num.toFixed(decimalPlaces);
-              return String(value);
+              if (isNaN(num)) return String(value);
+
+              // Use per-row decimal precision
+              const rowKey = params.data?.rowKey ?? "total";
+              const decimals = decimalPlaces[rowKey] ?? 3;
+              
+              return num.toFixed(decimals);
             },
             cellRenderer: (params: ICellRendererParams<PowerRowData>) => {
               if (params.value === "___LOADING___")

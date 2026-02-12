@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, Rows3Icon, AlignLeftIcon } from "lucide-react";
-import { CheckIcon, CopyIcon, PlusIcon, MinusIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from "lucide-react";
 import {
   ROW_HEIGHT_CONFIG,
   TEXT_ALIGN_CONFIG,
@@ -33,9 +33,6 @@ interface PowerToolbarProps {
   onRowHeightChange: (opt: RowHeightOption) => void;
   textAlignOption: TextAlignOption;
   onTextAlignChange: (opt: TextAlignOption) => void;
-  decimalPlaces: number;
-  onIncreaseDecimal: () => void;
-  onDecreaseDecimal: () => void;
   powerUnit: PowerUnit;
   onPowerUnitChange: (unit: PowerUnit) => void;
   copied: boolean;
@@ -48,9 +45,6 @@ export function PowerToolbar(props: PowerToolbarProps) {
     onRowHeightChange,
     textAlignOption,
     onTextAlignChange,
-    decimalPlaces,
-    onIncreaseDecimal,
-    onDecreaseDecimal,
     powerUnit,
     onPowerUnitChange,
     copied,
@@ -157,32 +151,6 @@ export function PowerToolbar(props: PowerToolbarProps) {
           </div>
         </PopoverContent>
       </Popover>
-
-      {/* Decimal Places Control */}
-      <div className="flex items-center gap-1 border rounded-md px-2 py-1">
-        <span className="text-xs text-muted-foreground mr-1">Decimal</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6"
-          onClick={onDecreaseDecimal}
-          disabled={decimalPlaces <= 0}
-        >
-          <MinusIcon className="size-3" />
-        </Button>
-        <span className="text-xs min-w-[16px] text-center font-medium">
-          {decimalPlaces}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-6"
-          onClick={onIncreaseDecimal}
-          disabled={decimalPlaces >= 10}
-        >
-          <PlusIcon className="size-3" />
-        </Button>
-      </div>
 
       {/* Power Unit Toggle */}
       <div className="flex items-center gap-0.5 border rounded-md p-0.5">
