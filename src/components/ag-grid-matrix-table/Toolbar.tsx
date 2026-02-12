@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { ChevronDownIcon, Rows3Icon, AlignLeftIcon } from "lucide-react";
-import { CheckIcon, CopyIcon, PlusIcon, MinusIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from "lucide-react";
 import {
   ROW_HEIGHT_CONFIG,
   TEXT_ALIGN_CONFIG,
@@ -21,9 +21,6 @@ interface ToolbarProps {
   onRowHeightChange: (opt: RowHeightOption) => void;
   textAlignOption: TextAlignOption;
   onTextAlignChange: (opt: TextAlignOption) => void;
-  decimalPlaces: number;
-  onIncreaseDecimal: () => void;
-  onDecreaseDecimal: () => void;
   powerUnit: PowerUnit;
   onPowerUnitChange: (unit: PowerUnit) => void;
   copied: boolean;
@@ -36,9 +33,6 @@ export function Toolbar(props: ToolbarProps) {
     onRowHeightChange,
     textAlignOption,
     onTextAlignChange,
-    decimalPlaces,
-    onIncreaseDecimal,
-    onDecreaseDecimal,
     powerUnit,
     onPowerUnitChange,
     copied,
@@ -137,33 +131,6 @@ export function Toolbar(props: ToolbarProps) {
           </div>
         </PopoverContent>
       </Popover>
-
-      <div className="flex items-center gap-1 border rounded-md px-2 py-1">
-        <span className="text-xs text-muted-foreground mr-1">Decimal</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0"
-          onClick={onDecreaseDecimal}
-          disabled={decimalPlaces <= 0}
-          title="Decrease decimal places"
-        >
-          <MinusIcon className="size-3" />
-        </Button>
-        <span className="text-xs w-4 text-center font-medium">
-          {decimalPlaces}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0"
-          onClick={onIncreaseDecimal}
-          disabled={decimalPlaces >= 10}
-          title="Increase decimal places"
-        >
-          <PlusIcon className="size-3" />
-        </Button>
-      </div>
 
       {/* Power Unit Toggle Buttons */}
       <div className="flex items-center gap-1 border rounded-md p-1">

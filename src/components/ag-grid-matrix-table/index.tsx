@@ -28,9 +28,12 @@ import {
   ModuleRegistry,
   type ColDef,
   type GridApi,
+  type CellContextMenuEvent,
 } from "ag-grid-community";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { Toolbar } from "./Toolbar";
+import { DecimalContextMenu } from "./DecimalContextMenu";
+import { QOR_DEFAULT_DECIMALS, type QorDecimalMap } from "./decimalDefaults";
 import {
   ROW_HEIGHT_CONFIG,
   type RowHeightOption,
@@ -58,7 +61,13 @@ export default function AgGridMatrixTable() {
     useState<RowHeightOption>("normal");
   const [textAlignOption, setTextAlignOption] =
     useState<TextAlignOption>("right");
-  const [decimalPlaces, setDecimalPlaces] = useState<number>(2);
+  const [groupDecimals, setGroupDecimals] =
+    useState<QorDecimalMap>(QOR_DEFAULT_DECIMALS);
+  const [contextMenu, setContextMenu] = useState<{
+    groupName: string;
+    x: number;
+    y: number;
+  } | null>(null);
   const [powerUnit, setPowerUnit] = useState<PowerUnit>("mW");
 
   const currentRowHeight = ROW_HEIGHT_CONFIG[rowHeightOption].height;
@@ -83,17 +92,37 @@ export default function AgGridMatrixTable() {
     api?.refreshCells({ force: true });
   }, []);
 
-  const handleDecimalIncrease = useCallback(() => {
-    setDecimalPlaces((prev) => Math.min(prev + 1, 10));
-    const api = gridRef.current?.api as GridApi<RowData> | undefined;
-    api?.refreshCells({ force: true });
-  }, []);
+  const handleCellContextMenu = useCallback(
+    (params: CellContextMenuEvent<RowData>) => {
+      const colId = params.column.getColId();
+      if (colId !== "rowGroup" && colId !== "rowHeader") return;
 
-  const handleDecimalDecrease = useCallback(() => {
-    setDecimalPlaces((prev) => Math.max(prev - 1, 0));
-    const api = gridRef.current?.api as GridApi<RowData> | undefined;
-    api?.refreshCells({ force: true });
-  }, []);
+      const event = params.event as MouseEvent;
+      event.preventDefault();
+
+      const rowGroup = params.data?.rowGroup;
+      if (!rowGroup) return;
+
+      setContextMenu({
+        groupName: rowGroup,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    []
+  );
+
+  const handleDecimalChange = useCallback(
+    (groupName: string, newDecimals: number) => {
+      setGroupDecimals((prev) => ({
+        ...prev,
+        [groupName]: newDecimals,
+      }));
+      const api = gridRef.current?.api as GridApi<RowData> | undefined;
+      api?.refreshCells({ force: true });
+    },
+    []
+  );
 
   const handlePowerUnitChange = useCallback((unit: PowerUnit) => {
     setPowerUnit(unit);
@@ -121,12 +150,16 @@ export default function AgGridMatrixTable() {
         const num = parseFloat(String(value));
         if (isNaN(num)) return String(value);
 
-        // Apply unit multiplier only for power rows
+        // Apply unit conversion only for power rows
         const converted = isPowerRow ? num * unitMultiplier : num;
-        return converted.toFixed(decimalPlaces);
+
+        // Use per-group decimal setting
+        const decimals = groupDecimals[rowGroup] ?? 2;
+        return converted.toFixed(decimals);
       };
 
       const headers = [
+
         "Group",
         "Row Header",
         ...dataColumnOrder.map((colId) => {
@@ -219,8 +252,9 @@ export default function AgGridMatrixTable() {
           rowHtml += `<td style="padding: 8px; text-align: left; font-weight: 500; background-color: #e8f5e9; ${borderStyle}">${originalRow.label}</td>`;
 
           for (const colId of dataColumnOrder) {
-            const value = originalRow.data[colId] ?? "";
-            rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${value}</td>`;
+            const rawValue = originalRow.data[colId];
+            const formattedValue = formatValue(rawValue, currentGroup);
+            rowHtml += `<td style="padding: 8px; text-align: right; ${borderStyle}">${formattedValue}</td>`;
           }
 
           rowHtml += "</tr>";
@@ -255,7 +289,7 @@ export default function AgGridMatrixTable() {
     } catch (err) {
       console.error("Failed to copy table data: ", err);
     }
-  }, [columnHeaders, rowHeaders, unitMultiplier, decimalPlaces]);
+  }, [columnHeaders, rowHeaders, unitMultiplier, groupDecimals]);
 
   const rowData: RowData[] = useMemo(() => {
     return rowHeaders.map((row) => {
@@ -332,7 +366,7 @@ export default function AgGridMatrixTable() {
         groupColumnWidth,
         rowHeaderColumnWidth,
         textAlignOption,
-        decimalPlaces,
+        decimalPlaces: groupDecimals,
         rowGroupRowSpan,
         rowGroupCellClass,
         isFirstOfGroupFromApi,
@@ -343,7 +377,7 @@ export default function AgGridMatrixTable() {
       groupColumnWidth,
       rowHeaderColumnWidth,
       textAlignOption,
-      decimalPlaces,
+      groupDecimals,
       rowGroupRowSpan,
       rowGroupCellClass,
       isFirstOfGroupFromApi,
@@ -367,9 +401,6 @@ export default function AgGridMatrixTable() {
         onRowHeightChange={handleRowHeightChange}
         textAlignOption={textAlignOption}
         onTextAlignChange={handleTextAlignChange}
-        decimalPlaces={decimalPlaces}
-        onIncreaseDecimal={handleDecimalIncrease}
-        onDecreaseDecimal={handleDecimalDecrease}
         powerUnit={powerUnit}
         onPowerUnitChange={handlePowerUnitChange}
         copied={copied}
@@ -397,8 +428,21 @@ export default function AgGridMatrixTable() {
           onRowDragMove={onRowDragMove}
           onRowDragEnd={onRowDragEnd}
           onCellClicked={onCellClicked}
+          onCellContextMenu={handleCellContextMenu}
+          preventDefaultOnContextMenu={true}
         />
       </div>
+      {contextMenu && (
+        <DecimalContextMenu
+          groupName={contextMenu.groupName}
+          currentDecimal={groupDecimals[contextMenu.groupName] ?? 2}
+          onDecimalChange={(newDecimals) =>
+            handleDecimalChange(contextMenu.groupName, newDecimals)
+          }
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

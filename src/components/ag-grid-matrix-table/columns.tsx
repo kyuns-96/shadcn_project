@@ -12,7 +12,7 @@ export function buildColumnDefs(args: {
   groupColumnWidth: number;
   rowHeaderColumnWidth: number;
   textAlignOption: TextAlignOption;
-  decimalPlaces: number;
+  decimalPlaces: Record<string, number>;
   rowGroupRowSpan: ColDef<RowData>["rowSpan"];
   rowGroupCellClass: ColDef<RowData>["cellClass"];
   isFirstOfGroupFromApi: (
@@ -147,7 +147,14 @@ export function buildColumnDefs(args: {
 
       // skip-decimal: 문자열로 반환하되, 숫자인 경우 정수로 변환
       if (strategy === "skip-decimal") {
+        const decimals = decimalPlaces[rowGroup || ""] ?? 0;
         const num = parseFloat(String(value));
+        
+        // If user set decimals > 0 for this group, respect it even if strategy is skip-decimal
+        if (!isNaN(num) && decimals > 0) {
+          return num.toFixed(decimals);
+        }
+
         const result = isNaN(num) ? String(value) : String(Math.floor(num));
         if (isEcoRuntime) {
           console.log(`  skip-decimal 적용, parseFloat:`, num, "결과:", result);
@@ -158,7 +165,8 @@ export function buildColumnDefs(args: {
       // number: 일반 숫자 포맷팅 (decimal 적용)
       const num = parseFloat(String(value));
       if (!isNaN(num)) {
-        const result = num.toFixed(decimalPlaces);
+        const decimals = decimalPlaces[rowGroup || ""] ?? 2;
+        const result = num.toFixed(decimals);
         if (isEcoRuntime) {
           console.log(`  number 적용, parseFloat:`, num, "결과:", result);
         }
