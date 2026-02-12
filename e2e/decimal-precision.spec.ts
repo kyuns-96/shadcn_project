@@ -383,8 +383,6 @@ test.describe('Per-Group Decimal Precision - Context Menu', () => {
       const nvpCell = page.locator('.ag-cell[col-id$="_NVP"]').first();
       const nvpCount = await nvpCell.count();
       test.skip(nvpCount === 0, 'No NVP column available to test');
-      
-      const initialValue = await nvpCell.textContent();
 
       await nvpCell.click({ button: 'right' });
       await page.waitForSelector('div.fixed', { timeout: 2000 });
