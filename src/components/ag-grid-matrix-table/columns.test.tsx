@@ -1,20 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { buildColumnDefs } from "./columns";
-import type { ColDef, ValueFormatterParams } from "ag-grid-community";
-import type { RowData } from "./types";
+import type { ValueFormatterParams } from "ag-grid-community";
 
 // Mock helpers if needed, but we can probably use the real one if it's pure
 // The real getMetricFormatStrategy is pure and exported from @/variables/helpers
 // We need to make sure we understand what it returns for our test cases.
 
 describe("QoR valueFormatter with per-group decimals", () => {
+  type BuildColumnDefsArgs = Parameters<typeof buildColumnDefs>[0];
+
   // Mock data for buildColumnDefs
-  const mockArgs = {
+  const mockArgs: BuildColumnDefsArgs = {
     columnHeaders: [{ id: "col1", label: "Column 1" }],
     groupColumnWidth: 100,
     rowHeaderColumnWidth: 100,
     textAlignOption: "right" as const,
-    // @ts-ignore - passing object instead of number to test future implementation
     decimalPlaces: {
       "Area(G/C)": 2,
       "Power(mW)": 3,
@@ -27,7 +27,7 @@ describe("QoR valueFormatter with per-group decimals", () => {
   };
 
   const getValueFormatter = () => {
-    const colDefs = buildColumnDefs(mockArgs as any);
+    const colDefs = buildColumnDefs(mockArgs);
     const dataCol = colDefs.find((col) => col.field === "col1");
     if (!dataCol || !dataCol.valueFormatter) {
       throw new Error("valueFormatter not found for col1");
@@ -84,7 +84,7 @@ describe("QoR valueFormatter with per-group decimals", () => {
       },
     };
     
-    const colDefs = buildColumnDefs(argsWithDecimals as any);
+    const colDefs = buildColumnDefs(argsWithDecimals);
     const dataCol = colDefs.find((col) => col.field === "col1");
     const formatter = dataCol!.valueFormatter! as (params: ValueFormatterParams) => string;
 
@@ -116,4 +116,3 @@ describe("QoR valueFormatter with per-group decimals", () => {
     expect(formatter(params)).toBe("9.88");
   });
 });
-

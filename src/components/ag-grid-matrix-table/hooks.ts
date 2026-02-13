@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import type { AgGridReact } from "ag-grid-react";
 import type {
   CellClickedEvent,
   CellClassParams,
@@ -10,10 +11,12 @@ import type {
   RowSpanParams,
 } from "ag-grid-community";
 import type { RowData } from "./types";
-import { deleteRows, reorderRows } from "@/store/matrixSlice";
+import { deleteRows, reorderRows, type RowHeader } from "@/store/matrixSlice";
 import type { AppDispatch } from "@/store";
 
-export function useSelectionHandlers(gridRef: React.RefObject<any>) {
+export function useSelectionHandlers(
+  gridRef: React.RefObject<AgGridReact<RowData> | null>
+) {
   const selectGroupRows = useCallback(
     (groupName: string) => {
       const api = gridRef.current?.api as GridApi<RowData> | undefined;
@@ -154,9 +157,9 @@ export function useRowSpanAndClasses() {
 }
 
 export function useRowDragHandlers(
-  gridRef: React.RefObject<any>,
+  gridRef: React.RefObject<AgGridReact<RowData> | null>,
   gridContainerRef: React.RefObject<HTMLDivElement | null>,
-  rowHeaders: Array<{ id: string }>,
+  rowHeaders: RowHeader[],
   dispatch: AppDispatch
 ) {
   const draggingRowIdsRef = useRef<string[]>([]);
@@ -250,7 +253,7 @@ export function useRowDragHandlers(
         return original!;
       });
 
-      dispatch(reorderRows(newRowHeaders as any));
+      dispatch(reorderRows(newRowHeaders));
       api.deselectAll();
 
       setTimeout(() => {

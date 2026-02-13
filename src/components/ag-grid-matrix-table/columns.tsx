@@ -1,4 +1,4 @@
-import type { ColDef, ICellRendererParams } from "ag-grid-community";
+import type { ColDef, GridApi, ICellRendererParams } from "ag-grid-community";
 import ColumnHeaderWithPopup, {
   type ColumnMetadata,
 } from "@/components/ColumnHeaderWithPopup";
@@ -16,7 +16,7 @@ export function buildColumnDefs(args: {
   rowGroupRowSpan: ColDef<RowData>["rowSpan"];
   rowGroupCellClass: ColDef<RowData>["cellClass"];
   isFirstOfGroupFromApi: (
-    api: any,
+    api: GridApi,
     rowIndex: number,
     groupName: string
   ) => boolean;
@@ -56,38 +56,32 @@ export function buildColumnDefs(args: {
     cellStyle: (params) => {
       const rowIndex = params.node?.rowIndex;
       const hasGroup = !!params.data?.rowGroup;
-      if (!hasGroup) {
-        return {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          paddingLeft: "12px",
-          backgroundColor: "var(--ag-header-background-color)",
-          fontWeight: "550",
-          borderRight: "1px solid var(--ag-border-color)",
-          cursor: "grab",
-          whiteSpace: "pre-line",
-        } as any;
-      }
-      if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
-        const api = params.api;
-        const prevNode = api?.getDisplayedRowAtIndex(rowIndex - 1);
-        const prevRowGroup = prevNode?.data?.rowGroup;
-        if (prevRowGroup === params.data?.rowGroup) {
-          return { display: "none" } as any;
-        }
-      }
-      return {
+      const baseStyle: Record<string, string | number> = {
         display: "flex",
         alignItems: "center",
         justifyContent: "flex-start",
         paddingLeft: "12px",
         backgroundColor: "var(--ag-header-background-color)",
-        fontWeight: "650",
+        fontWeight: hasGroup ? 650 : 550,
         borderRight: "1px solid var(--ag-border-color)",
         cursor: "grab",
         whiteSpace: "pre-line",
-      } as any;
+      };
+
+      if (!hasGroup) {
+        return baseStyle;
+      }
+
+      if (rowIndex !== undefined && rowIndex !== null && rowIndex > 0) {
+        const api = params.api;
+        const prevNode = api?.getDisplayedRowAtIndex(rowIndex - 1);
+        const prevRowGroup = prevNode?.data?.rowGroup;
+        if (prevRowGroup === params.data?.rowGroup) {
+          return { ...baseStyle, display: "none" };
+        }
+      }
+
+      return baseStyle;
     },
   };
 
@@ -99,15 +93,21 @@ export function buildColumnDefs(args: {
     lockPosition: true,
     suppressMovable: true,
     rowDrag: (params) => !!params.data?.rowGroup,
-    cellStyle: (params) =>
-      !params.data?.rowGroup
-        ? ({ display: "none" } as any)
-        : ({
-            fontWeight: 550,
-            backgroundColor: "var(--ag-header-background-color)",
-            borderRight: "1px solid var(--ag-border-color)",
-            cursor: "grab",
-          } as any),
+    cellStyle: (params) => {
+      const style: Record<string, string | number> = {
+        display: "block",
+        fontWeight: 550,
+        backgroundColor: "var(--ag-header-background-color)",
+        borderRight: "1px solid var(--ag-border-color)",
+        cursor: "grab",
+      };
+
+      if (!params.data?.rowGroup) {
+        style.display = "none";
+      }
+
+      return style;
+    },
   };
 
   const dataColumns: ColDef<RowData>[] = columnHeaders.map((col) => ({
@@ -115,7 +115,7 @@ export function buildColumnDefs(args: {
     headerName: col.label,
     width: 150,
     editable: true,
-    cellStyle: { textAlign: textAlignOption } as any,
+    cellStyle: { textAlign: textAlignOption },
     headerComponent: ColumnHeaderWithPopup,
     headerComponentParams: {
       columnMetadata: col as ColumnMetadata,
@@ -182,7 +182,7 @@ export function buildColumnDefs(args: {
     cellRenderer: (params: ICellRendererParams<RowData>) => {
       if (params.value === "___LOADING___")
         return <Spinner className="mx-auto" />;
-      return (params as any).valueFormatted ?? params.value;
+      return params.valueFormatted ?? params.value;
     },
   }));
 
