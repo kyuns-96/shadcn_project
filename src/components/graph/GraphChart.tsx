@@ -27,6 +27,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
+import type { XAxisProps, YAxisProps } from 'recharts';
 import { Loader2 } from 'lucide-react';
 
 // ============================================
@@ -314,7 +315,12 @@ export function GraphChart({
                   ]
             }
           />
-          <YAxis type="number" dataKey="y" name="Y" domain={yDomain as any} />
+          <YAxis
+            type="number"
+            dataKey="y"
+            name="Y"
+            domain={yDomain as YAxisProps['domain']}
+          />
           <Tooltip cursor={{ strokeDasharray: '3 3' }} />
           {Array.from(transformedData.seriesData.entries()).map(
             ([seriesId, points]) => (
@@ -352,8 +358,8 @@ export function GraphChart({
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={transformedData.data}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="x" domain={xDomain as any} />
-          <YAxis domain={yDomain as any} />
+          <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
+          <YAxis domain={yDomain as YAxisProps['domain']} />
           <Tooltip />
           {transformedData.seriesKeys.map((seriesId) => (
             <Line
@@ -376,8 +382,8 @@ export function GraphChart({
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={transformedData.data}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="x" domain={xDomain as any} />
-          <YAxis domain={yDomain as any} />
+          <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
+          <YAxis domain={yDomain as YAxisProps['domain']} />
           <Tooltip />
           {transformedData.seriesKeys.map((seriesId) => (
             <Bar
@@ -397,8 +403,8 @@ export function GraphChart({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={transformedData.data}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="x" domain={xDomain as any} />
-          <YAxis domain={yDomain as any} />
+          <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
+          <YAxis domain={yDomain as YAxisProps['domain']} />
           <Tooltip />
           {transformedData.seriesKeys.map((seriesId) => (
             <Area

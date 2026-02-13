@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom';
 import { Rnd } from 'react-rnd';
+import type { RndDragCallback, RndResizeCallback } from 'react-rnd';
 import { useMemo, useRef, useState } from 'react';
 import { Minus, Maximize2, Copy, Download, X, Eye, EyeOff, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store';
@@ -139,17 +140,11 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
     setChartTypeOpen(false);
   };
 
-  const handleDragStop = (_e: any, d: { x: number; y: number }) => {
+  const handleDragStop: RndDragCallback = (_e, d) => {
     dispatch(setWindowPosition({ id: windowId, position: { x: d.x, y: d.y } }));
   };
 
-  const handleResizeStop = (
-    _e: any,
-    _dir: any,
-    ref: HTMLElement,
-    _delta: any,
-    pos: { x: number; y: number }
-  ) => {
+  const handleResizeStop: RndResizeCallback = (_e, _dir, ref, _delta, pos) => {
     dispatch(setWindowSize({ id: windowId, size: { width: ref.offsetWidth, height: ref.offsetHeight } }));
     dispatch(setWindowPosition({ id: windowId, position: { x: pos.x, y: pos.y } }));
   };

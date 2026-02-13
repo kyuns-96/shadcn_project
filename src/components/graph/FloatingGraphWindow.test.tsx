@@ -1,15 +1,36 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { screen, fireEvent, cleanup } from '@testing-library/react';
 import { FloatingGraphWindow } from './FloatingGraphWindow';
 import { renderWithProviders } from '@/test/testUtils';
 import type { GraphWindow } from '@/store/reducers/graphSlice';
 
 vi.mock('react-rnd', () => ({
-  Rnd: ({ children, onDragStop, onResizeStop, onMouseDown, ...props }: any) => (
+  Rnd: ({
+    children,
+    onDragStop,
+    onResizeStop,
+    onMouseDown,
+    position,
+    size,
+  }: {
+    children?: ReactNode;
+    onDragStop?: (e: unknown, data: { x: number; y: number }) => void;
+    onResizeStop?: (
+      e: unknown,
+      dir: unknown,
+      ref: { offsetWidth: number; offsetHeight: number },
+      delta: unknown,
+      position: { x: number; y: number }
+    ) => void;
+    onMouseDown?: () => void;
+    position?: unknown;
+    size?: unknown;
+  }) => (
     <div
       data-testid="mock-rnd"
-      data-position={JSON.stringify(props.position)}
-      data-size={JSON.stringify(props.size)}
+      data-position={JSON.stringify(position)}
+      data-size={JSON.stringify(size)}
       onClick={onMouseDown}
     >
       <button
@@ -66,7 +87,11 @@ describe('FloatingGraphWindow', () => {
       byId: {},
       allIds: [],
     },
-    dataset: {},
+    dataset: {
+      data: {},
+      loading: {},
+      error: {},
+    },
     selected: {
       selectedProject: null,
       selectedBlock: null,

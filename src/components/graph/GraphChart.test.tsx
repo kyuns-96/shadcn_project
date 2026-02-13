@@ -140,7 +140,7 @@ describe('GraphChart', () => {
         { doeId: 'col2', doeLabel: 'DOE_2', seriesId: 's_0', x: 2.5, y: 200, color: '#ff0000' },
       ];
 
-      const { container } = render(
+      render(
         <GraphChart
           chartType="scatter"
           dataPoints={dataPoints}
@@ -242,7 +242,7 @@ describe('GraphChart', () => {
         { doeId: 'col3', doeLabel: 'DOE_3', seriesId: 's_0', x: 3, y: 100, color: '#ff0000' },
       ];
 
-      const { container } = render(
+      render(
         <GraphChart
           chartType="histogram"
           dataPoints={dataPoints}
@@ -265,7 +265,7 @@ describe('GraphChart', () => {
 
       const customXRange: RangeConfig = { min: 0, max: 10 };
 
-      const { container } = render(
+      render(
         <GraphChart
           chartType="line"
           dataPoints={dataPoints}
@@ -286,7 +286,7 @@ describe('GraphChart', () => {
 
       const customYRange: RangeConfig = { min: 0, max: 500 };
 
-      const { container } = render(
+      render(
         <GraphChart
           chartType="line"
           dataPoints={dataPoints}
