@@ -27,7 +27,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import type { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef, Header, Row } from '@tanstack/react-table'
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -39,11 +39,17 @@ import { moveRow, setColumnHeaders } from '@/store/matrixSlice'
 type MatrixData = {
   id: string
   label: string
-  [key: string]: any
+  rowGroup: string
+  data: Record<string, unknown>
 }
 
 // --- Context ---
-const RowDragContext = React.createContext<any>(null)
+type RowDragContextValue = Pick<
+  ReturnType<typeof useSortable>,
+  'attributes' | 'listeners'
+>
+
+const RowDragContext = React.createContext<RowDragContextValue | null>(null)
 
 // --- Component ---
 
@@ -51,7 +57,12 @@ export default function MatrixDataTable() {
   const dispatch = useAppDispatch()
   const { columnHeaders, rowHeaders } = useAppSelector(state => state.matrix)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [activeItem, setActiveItem] = useState<any>(null)
+
+  type ActiveItem =
+    | { type: 'column'; id: string }
+    | { type: 'row'; id: string }
+    | null
+  const [activeItem, setActiveItem] = useState<ActiveItem>(null)
 
   // Local column order state for real-time reordering
   const [columnOrder, setColumnOrder] = useState<string[]>([])
@@ -79,11 +90,11 @@ export default function MatrixDataTable() {
       cell: ({ row }) => <span className="font-medium">{row.original.label}</span>,
       size: 150,
     },
-    ...columnHeaders.map(col => ({
+    ...columnHeaders.map<ColumnDef<MatrixData>>(col => ({
       id: col.id,
       header: col.label,
       accessorKey: col.id,
-      cell: ({ row }: any) => <div>{row.original.data[col.id]}</div>
+      cell: ({ row }) => <div>{String(row.original.data[col.id] ?? '')}</div>
     }))
   ]
 
@@ -112,9 +123,9 @@ export default function MatrixDataTable() {
     const isRow = rowHeaders.find(row => row.id === active.id)
 
     if (isColumn) {
-      setActiveItem({ type: 'column', id: active.id })
+      setActiveItem({ type: 'column', id: String(active.id) })
     } else if (isRow) {
-      setActiveItem({ type: 'row', id: active.id })
+      setActiveItem({ type: 'row', id: String(active.id) })
     }
   }
 
@@ -230,14 +241,14 @@ export default function MatrixDataTable() {
                 </span>
               </div>
               <div className="flex flex-col">
-                {table.getRowModel().rows.map(row => {
-                  const cellData = row.original.data[activeId as string];
-                  return (
-                    <div key={row.id} className="flex h-16 items-center px-4 border-b last:border-0 align-middle">
-                      <div className="text-sm">{cellData}</div>
-                    </div>
-                  )
-                })}
+                 {table.getRowModel().rows.map(row => {
+                   const cellData = row.original.data[activeId as string];
+                   return (
+                     <div key={row.id} className="flex h-16 items-center px-4 border-b last:border-0 align-middle">
+                      <div className="text-sm">{String(cellData ?? '')}</div>
+                     </div>
+                   )
+                 })}
               </div>
             </div>
           ) : activeItem?.type === 'row' ? (
@@ -271,7 +282,7 @@ export default function MatrixDataTable() {
 
 // --- Sub Components ---
 
-const DraggableColumnHeader = ({ header }: { header: any }) => {
+const DraggableColumnHeader = ({ header }: { header: Header<MatrixData, unknown> }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: header.column.id,
   })
@@ -301,7 +312,7 @@ const DraggableColumnHeader = ({ header }: { header: any }) => {
   )
 }
 
-const DraggableRow = ({ row }: { row: any }) => {
+const DraggableRow = ({ row }: { row: Row<MatrixData> }) => {
   const { transform, transition, setNodeRef, isDragging, attributes, listeners } = useSortable({
     id: row.original.id,
   })
@@ -317,7 +328,7 @@ const DraggableRow = ({ row }: { row: any }) => {
   return (
     <RowDragContext.Provider value={{ attributes, listeners }}>
       <TableRow ref={setNodeRef} style={style} className={isDragging ? "bg-muted/50" : ""}>
-        {row.getVisibleCells().map((cell: any) => (
+        {row.getVisibleCells().map((cell) => (
           <TableCell key={cell.id}>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </TableCell>
@@ -328,10 +339,12 @@ const DraggableRow = ({ row }: { row: any }) => {
 }
 
 const RowDragHandle = () => {
-  const { attributes, listeners } = React.useContext(RowDragContext) || {}
+  const rowDrag = React.useContext(RowDragContext)
+  const attributes = rowDrag?.attributes
+  const listeners = rowDrag?.listeners
 
   return (
-    <Button variant="ghost" size="icon" className="cursor-grab hover:bg-muted" {...attributes} {...listeners}>
+    <Button variant="ghost" size="icon" className="cursor-grab hover:bg-muted" {...(attributes ?? {})} {...(listeners ?? {})}>
       <GripVerticalIcon className="size-4 text-muted-foreground" />
     </Button>
   )
