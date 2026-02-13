@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 import { RangeControls } from './RangeControls';
 import type { DataDomain } from './utils/computeDataDomain';
 
@@ -93,16 +93,18 @@ describe('RangeControls', () => {
     expect(onXRangeChange).not.toHaveBeenCalled();
   });
 
-  it('should convert empty input to auto', () => {
+  it('should convert empty input to auto', async () => {
     const onYRangeChange = vi.fn();
     render(<RangeControls {...defaultProps} yRange={{ min: 100, max: 200 }} onYRangeChange={onYRangeChange} />);
     
     const yMinInput = screen.getByRole('spinbutton', { name: /y min/i });
     fireEvent.change(yMinInput, { target: { value: '' } });
-    
-    setTimeout(() => {
-      expect(onYRangeChange).toHaveBeenCalledWith(expect.objectContaining({ min: 'auto' }));
-    }, 100);
+
+    await waitFor(() => {
+      expect(onYRangeChange).toHaveBeenCalledWith(
+        expect.objectContaining({ min: 'auto' })
+      );
+    });
   });
 
   it('should reject non-numeric input', () => {
