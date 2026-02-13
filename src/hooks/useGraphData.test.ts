@@ -9,12 +9,12 @@ import { Provider } from 'react-redux';
 import { configureStore } from '@reduxjs/toolkit';
 import { createElement, type ReactNode } from 'react';
 import { useGraphData } from './useGraphData';
-import graphReducer from '@/store/reducers/graphSlice';
-import matrixReducer from '@/store/matrixSlice';
-import doeRegistryReducer from '@/store/doeRegistry';
-import datasetReducer from '@/store/reducers/datasetReducer';
-import selectedReducer from '@/store/reducers/selectedReducer';
-import type { GraphWindow } from '@/store/reducers/graphSlice';
+import graphReducer from '../store/reducers/graphSlice';
+import matrixReducer from '../store/matrixSlice';
+import doeRegistryReducer from '../store/doeRegistry';
+import datasetReducer from '../store/reducers/datasetReducer';
+import selectedReducer from '../store/reducers/selectedReducer';
+import type { GraphWindow } from '../store/reducers/graphSlice';
 
 // ============================================
 // TEST 1: Returns data points from preloaded state
@@ -56,15 +56,19 @@ describe('useGraphData', () => {
         allIds: ['col1'],
       },
       dataset: {
-        'DOE_LABEL_1': {
-          get_ptpxpower: {
-            ptpxpower_data: {
-              'tt_0.85v': {
-                Total_power: { combinational: 100.5 },
+        data: {
+          'DOE_LABEL_1': {
+            get_ptpxpower: {
+              ptpxpower_data: {
+                'tt_0.85v': {
+                  Total_power: { combinational: 100.5 },
+                },
               },
             },
           },
         },
+        loading: {},
+        error: {},
       },
       selected: {
         selectedProject: null,
@@ -141,7 +145,11 @@ describe('useGraphData', () => {
         },
         allIds: ['col1'],
       },
-      dataset: {}, // Empty dataset
+      dataset: {
+        data: {},
+        loading: {},
+        error: {},
+      }, // Empty dataset
       selected: {
         selectedProject: null,
         selectedBlock: null,
@@ -213,15 +221,19 @@ describe('useGraphData', () => {
         allIds: ['col1'],
       },
       dataset: {
-        'DOE_LABEL_1': {
-          get_ptpxpower: {
-            ptpxpower_data: {
-              'tt_0.85v': {
-                Total_power: { combinational: 100.5, register: 50.2 },
+        data: {
+          'DOE_LABEL_1': {
+            get_ptpxpower: {
+              ptpxpower_data: {
+                'tt_0.85v': {
+                  Total_power: { combinational: 100.5, register: 50.2 },
+                },
               },
             },
           },
         },
+        loading: {},
+        error: {},
       },
       selected: {
         selectedProject: null,
@@ -294,15 +306,19 @@ describe('useGraphData', () => {
         allIds: ['col1'],
       },
       dataset: {
-        'DOE_LABEL_1': {
-          get_ptpxpower: {
-            ptpxpower_data: {
-              'tt_0.85v': {
-                Total_power: { combinational: 100.5 },
+        data: {
+          'DOE_LABEL_1': {
+            get_ptpxpower: {
+              ptpxpower_data: {
+                'tt_0.85v': {
+                  Total_power: { combinational: 100.5 },
+                },
               },
             },
           },
         },
+        loading: {},
+        error: {},
       },
       selected: {
         selectedProject: null,
@@ -333,5 +349,88 @@ describe('useGraphData', () => {
     // Should skip columns without scenario for Power metrics
     // extractMetricValue will return undefined without scenario
     expect(result.current).toEqual([]);
+  });
+
+  it('parses numeric string metric values for graph plotting', () => {
+    const TEST_STATE_WITH_STRING_VALUES = {
+      graph: {
+        windows: [{
+          id: 'win1',
+          chartType: 'line' as const,
+          xAxis: { type: 'metric' as const, key: 'Power(mW)!register_Total' },
+          yAxis: { type: 'metric' as const, key: 'Power(mW)!combinational_Total' },
+          series: [{ id: 's1', metricKey: 'Power(mW)!combinational_Total', color: '#ff0000', enabled: true }],
+          xRange: { min: 'auto' as const, max: 'auto' as const },
+          yRange: { min: 'auto' as const, max: 'auto' as const },
+          position: undefined,
+          size: undefined,
+          zIndex: 1,
+        }],
+        nextWindowId: 1,
+        nextSeriesIdByWindow: { 'win1': 1 },
+        maxZIndex: 1,
+      },
+      matrix: {
+        columnHeaders: [{ id: 'col1', label: 'Test Column 1', accessorKey: 'col1' }],
+        rowHeaders: [],
+      },
+      doeRegistry: {
+        byId: {
+          col1: {
+            id: 'col1',
+            label: 'DOE_LABEL_1',
+            POWER_SCENARIO: 'tt_0.85v',
+            PROJECT_NAME: 'test_project',
+            BLOCK: 'test_block',
+          },
+        },
+        allIds: ['col1'],
+      },
+      dataset: {
+        data: {
+          'DOE_LABEL_1': {
+            get_ptpxpower: {
+              ptpxpower_data: {
+                'tt_0.85v': {
+                  Total_power: { combinational: '100.5', register: '50.25' },
+                },
+              },
+            },
+          },
+        },
+        loading: {},
+        error: {},
+      },
+      selected: {
+        selectedProject: null,
+        selectedBlock: null,
+        selectedNetver: null,
+        selectedRevision: null,
+        selectedEconum: null,
+        doeName: '',
+        columnPowerScenarios: {},
+        revisionMode: 'POST' as const,
+        isRestoringColumns: false,
+      },
+    };
+
+    const store = configureStore({
+      reducer: { graph: graphReducer, matrix: matrixReducer, doeRegistry: doeRegistryReducer, dataset: datasetReducer, selected: selectedReducer },
+      preloadedState: TEST_STATE_WITH_STRING_VALUES,
+    });
+
+    const window = TEST_STATE_WITH_STRING_VALUES.graph.windows[0] as GraphWindow;
+
+    function Wrapper({ children }: { children: ReactNode }) {
+      return createElement(Provider, { store, children });
+    }
+
+    const { result } = renderHook(() => useGraphData(window), { wrapper: Wrapper });
+
+    expect(result.current).toHaveLength(1);
+    expect(result.current[0]).toMatchObject({
+      x: 50.25,
+      y: 100.5,
+    });
   });
 });

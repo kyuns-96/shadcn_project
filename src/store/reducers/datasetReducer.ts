@@ -3,8 +3,10 @@ import { fetchDataset as fetchDatasetAPI } from "@/api/fetchDataset";
 import type { RootState } from "@/store";
 import { fetchFunctionList } from "@/api/fetchFunctionList";
 
+export type DatasetRecord = Record<string, unknown>;
+
 export interface DatasetState {
-  data: Record<string, any>;
+  data: Record<string, DatasetRecord>;
   loading: Record<string, boolean>;
   error: Record<string, string | null>;
 }
@@ -21,7 +23,7 @@ export interface FetchDatasetParams {
 }
 
 export const fetchDataset = createAsyncThunk<
-  Record<string, any>,
+  Record<string, DatasetRecord>,
   FetchDatasetParams,
   { state: RootState; rejectValue: string }
 >("dataset/fetch", async (params, { rejectWithValue }) => {
@@ -70,7 +72,7 @@ export const fetchDataset = createAsyncThunk<
       return undefined;
     };
 
-    const result: Record<string, any> = {};
+    const result: DatasetRecord = {};
     
     const fetchPromises = funcList.map(async (fn) => {
       const adjustedEndpoint = getAdjustedEndpoint(fn, revisionMode, currentPage);
@@ -108,7 +110,7 @@ export const fetchDataset = createAsyncThunk<
     
     const key = doeName;
     return { [key]: result };
-  } catch (error) {
+  } catch {
     return rejectWithValue("Failed to fetch dataset");
   }
 });

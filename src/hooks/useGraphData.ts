@@ -12,10 +12,26 @@ export interface ChartDataPoint {
   color: string;
 }
 
+function toFiniteNumber(value: unknown): number | undefined {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  return undefined;
+}
+
 export function useGraphData(window: GraphWindow): ChartDataPoint[] {
   const columnHeaders = useAppSelector(state => state.matrix.columnHeaders);
   const doeRegistry = useAppSelector(state => state.doeRegistry.byId);
-  const datasets = useAppSelector(state => state.dataset.data);
+  const datasets = useAppSelector(state => state.dataset.data ?? {});
   const revisionMode = useAppSelector(state => state.selected.revisionMode);
   
   return useMemo(() => {
@@ -40,20 +56,22 @@ export function useGraphData(window: GraphWindow): ChartDataPoint[] {
         xValue = doeMeta[window.xAxis.key as keyof typeof doeMeta] as string ?? doeLabel;
       } else {
         const xRaw = extractMetricValue(window.xAxis.key, dataset, scenario, revisionMode);
-        if (xRaw === undefined || xRaw === null || typeof xRaw !== 'number') return;
-        xValue = xRaw;
+        const numericX = toFiniteNumber(xRaw);
+        if (numericX === undefined) return;
+        xValue = numericX;
       }
       
       enabledSeries.forEach(series => {
         const yRaw = extractMetricValue(series.metricKey, dataset, scenario, revisionMode);
-        if (yRaw === undefined || yRaw === null || typeof yRaw !== 'number') return;
+        const numericY = toFiniteNumber(yRaw);
+        if (numericY === undefined) return;
         
         dataPoints.push({
           doeId: columnId,
           doeLabel,
           seriesId: series.id,
           x: xValue,
-          y: yRaw,
+          y: numericY,
           color: series.color,
         });
       });

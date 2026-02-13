@@ -250,13 +250,15 @@ describe('datasetReducer', () => {
   });
 
   describe('selectors', () => {
+    type SelectorState = Parameters<typeof selectAnyDatasetLoading>[0];
+
     const mockState = {
       dataset: {
         data: { doe1: { endpoint: 'data' } },
         loading: { doe1: true, doe2: false },
         error: { doe1: null, doe3: 'Error message' },
       },
-    } as any;
+    } as unknown as SelectorState;
 
     it('selectDatasetLoading returns loading state for doeName', () => {
       expect(selectDatasetLoading('doe1')(mockState)).toBe(true);
@@ -273,14 +275,14 @@ describe('datasetReducer', () => {
     it('selectAnyDatasetLoading returns true if any dataset is loading', () => {
       expect(selectAnyDatasetLoading(mockState)).toBe(true);
       
-      const noneLoadingState = {
-        dataset: {
-          data: {},
-          loading: { doe1: false, doe2: false },
-          error: {},
-        },
-      } as any;
-      expect(selectAnyDatasetLoading(noneLoadingState)).toBe(false);
-    });
-  });
-});
+       const noneLoadingState = {
+         dataset: {
+           data: {},
+           loading: { doe1: false, doe2: false },
+           error: {},
+         },
+       } as unknown as SelectorState;
+       expect(selectAnyDatasetLoading(noneLoadingState)).toBe(false);
+     });
+   });
+ });
