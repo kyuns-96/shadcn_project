@@ -20,8 +20,9 @@ export const fetchRevisionList = createAsyncThunk<
     try {
       const data = await fetchRevisionListAPI(projectName, blockName, netverName);
       return Array.isArray(data) ? data : [];
-    } catch (error: any) {
-      return rejectWithValue(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      return rejectWithValue(message);
     }
   }
 );
