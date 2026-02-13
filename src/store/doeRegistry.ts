@@ -153,12 +153,37 @@ const doeRegistrySlice = createSlice({
       const { doeId, ...metadata } = action.payload;
       const entry = state.byId[doeId];
       if (entry) {
-        // Update only provided fields
-        Object.entries(metadata).forEach(([key, value]) => {
-          if (value !== undefined) {
-            (entry as any)[key] = value;
-          }
-        });
+        const {
+          PROJECT_NAME,
+          BLOCK,
+          NET_VER,
+          REVISION,
+          ECO_NUM,
+          POWER_SCENARIO,
+          AVAILABLE_POWER_SCENARIOS,
+          AVAILABLE_SCENARIOS,
+          TIMING_SCENARIO,
+          AVAILABLE_TIMING_SCENARIOS,
+          REVISION_MODE,
+        } = metadata;
+
+        if (PROJECT_NAME !== undefined) entry.PROJECT_NAME = PROJECT_NAME;
+        if (BLOCK !== undefined) entry.BLOCK = BLOCK;
+        if (NET_VER !== undefined) entry.NET_VER = NET_VER;
+        if (REVISION !== undefined) entry.REVISION = REVISION;
+        if (ECO_NUM !== undefined) entry.ECO_NUM = ECO_NUM;
+        if (POWER_SCENARIO !== undefined) entry.POWER_SCENARIO = POWER_SCENARIO;
+        if (AVAILABLE_POWER_SCENARIOS !== undefined) {
+          entry.AVAILABLE_POWER_SCENARIOS = AVAILABLE_POWER_SCENARIOS;
+        }
+        if (AVAILABLE_SCENARIOS !== undefined) {
+          entry.AVAILABLE_SCENARIOS = AVAILABLE_SCENARIOS;
+        }
+        if (TIMING_SCENARIO !== undefined) entry.TIMING_SCENARIO = TIMING_SCENARIO;
+        if (AVAILABLE_TIMING_SCENARIOS !== undefined) {
+          entry.AVAILABLE_TIMING_SCENARIOS = AVAILABLE_TIMING_SCENARIOS;
+        }
+        if (REVISION_MODE !== undefined) entry.REVISION_MODE = REVISION_MODE;
       }
     },
 

@@ -146,7 +146,7 @@ const matrixSlice = createSlice({
         id?: string;
         label: string;
         rowGroup: string;
-        data?: Record<string, any>;
+        data?: Record<string, unknown>;
       }>
     ) => {
       const { label, rowGroup, data } = action.payload;
@@ -161,7 +161,7 @@ const matrixSlice = createSlice({
           // [WHY] Use loading placeholder for columns awaiting data fetch from URL restoration
           acc[col.id] = col._needsDataFetch ? "___LOADING___" : "";
           return acc;
-        }, {} as Record<string, any>);
+        }, {} as Record<string, unknown>);
 
       // [WHY] Merge provided data with any missing column initializations
       // This ensures columns restored from URL are properly initialized even if partial data is provided
@@ -186,7 +186,7 @@ const matrixSlice = createSlice({
         id?: string;
         label: string;
         accessorKey?: string;
-        defaultValue?: any;
+        defaultValue?: unknown;
         _needsDataFetch?: boolean;
         meta?: {
           PROJECT_NAME?: string;
@@ -225,7 +225,7 @@ const matrixSlice = createSlice({
       action: PayloadAction<{
         rowId: string;
         columnId: string;
-        value: any;
+        value: unknown;
       }>
     ) => {
       const { rowId, columnId, value } = action.payload;
@@ -274,15 +274,22 @@ const matrixSlice = createSlice({
       }
     },
     updateColumnScenario: (
-      _state,
-      _action: PayloadAction<{
+      state,
+      action: PayloadAction<{
         columnId: string;
         scenario: string;
         availableScenarios?: string[];
       }>
     ) => {
       // [WHY] Deprecated - scenarios now managed in doeRegistry
-      // This is kept for backwards compatibility but no longer used
+      const { columnId, scenario, availableScenarios } = action.payload;
+      const column = state.columnHeaders.find((col) => col.id === columnId);
+      if (!column) return;
+
+      column.POWER_SCENARIO = scenario;
+      if (availableScenarios) {
+        column.AVAILABLE_SCENARIOS = availableScenarios;
+      }
     },
   },
 });

@@ -26,6 +26,13 @@ export interface PowerDoeGroup {
   id: string;
   /** DoE 표시 이름 (예: "DoE-001") */
   label: string;
+  PROJECT_NAME?: string;
+  BLOCK?: string;
+  NET_VER?: string;
+  REVISION?: string;
+  ECO_NUM?: string;
+  POWER_SCENARIO?: string;
+  AVAILABLE_SCENARIOS?: string[];
   /** URL 복원 시 데이터 fetch 필요 여부 */
   _needsDataFetch?: boolean;
 }
@@ -183,15 +190,22 @@ const powerMatrixSlice = createSlice({
      * PowerColumnMetadataTable에서는 doeRegistry.updateDoEMetadata를 사용해야 함
      */
     updateDoeScenario: (
-      _state,
-      _action: PayloadAction<{
+      state,
+      action: PayloadAction<{
         doeId: string;
         scenario: string;
         availableScenarios?: string[];
       }>
     ) => {
       // [WHY] Deprecated - scenarios are now managed in doeRegistry
-      // This is kept for backwards compatibility but no longer used
+      const { doeId, scenario, availableScenarios } = action.payload;
+      const doeGroup = state.doeGroups.find((doe) => doe.id === doeId);
+      if (!doeGroup) return;
+
+      doeGroup.POWER_SCENARIO = scenario;
+      if (availableScenarios) {
+        doeGroup.AVAILABLE_SCENARIOS = availableScenarios;
+      }
     },
 
     /**
