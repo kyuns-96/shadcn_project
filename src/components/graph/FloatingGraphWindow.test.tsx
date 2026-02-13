@@ -144,7 +144,13 @@ describe('FloatingGraphWindow', () => {
     fireEvent.click(screen.getByTestId('trigger-drag-stop'));
 
     const state = store.getState();
-    expect(state.graph.windows[0].position).toEqual({ x: 150, y: 250 });
+
+    const padding = 16;
+    const rawMaxY = Math.max(0, window.innerHeight - 600);
+    const usePaddingY = rawMaxY >= padding * 2 ? padding : 0;
+    const expectedY = Math.min(rawMaxY - usePaddingY, Math.max(usePaddingY, 250));
+
+    expect(state.graph.windows[0].position).toEqual({ x: 150, y: expectedY });
   });
 
   it('dispatches setWindowSize on resize stop', () => {

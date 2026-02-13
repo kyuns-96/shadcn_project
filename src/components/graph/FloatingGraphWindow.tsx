@@ -36,6 +36,33 @@ interface FloatingGraphWindowProps {
   windowIndex: number;
 }
 
+const POPUP_VIEWPORT_PADDING_PX = 16;
+
+function clamp(value: number, min: number, max: number): number {
+  if (min > max) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
+function clampPositionToViewport(
+  position: { x: number; y: number },
+  size: { width: number; height: number },
+  paddingPx: number
+): { x: number; y: number } {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  const rawMaxX = Math.max(0, viewportWidth - size.width);
+  const rawMaxY = Math.max(0, viewportHeight - size.height);
+
+  const usePaddingX = rawMaxX >= paddingPx * 2 ? paddingPx : 0;
+  const usePaddingY = rawMaxY >= paddingPx * 2 ? paddingPx : 0;
+
+  return {
+    x: clamp(position.x, usePaddingX, rawMaxX - usePaddingX),
+    y: clamp(position.y, usePaddingY, rawMaxY - usePaddingY),
+  };
+}
+
 function computeInitialPosition(windowIndex: number): { x: number; y: number } {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
@@ -44,10 +71,18 @@ function computeInitialPosition(windowIndex: number): { x: number; y: number } {
   const centerX = (viewportWidth - windowWidth) / 2;
   const centerY = (viewportHeight - windowHeight) / 2;
   const stagger = windowIndex * 30;
-  return {
-    x: Math.max(0, Math.min(centerX + stagger, viewportWidth - windowWidth)),
-    y: Math.max(0, Math.min(centerY + stagger, viewportHeight - windowHeight)),
-  };
+
+  return clampPositionToViewport(
+    {
+      x: centerX + stagger,
+      y: centerY + stagger,
+    },
+    {
+      width: windowWidth,
+      height: windowHeight,
+    },
+    POPUP_VIEWPORT_PADDING_PX
+  );
 }
 
 export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWindowProps) {
@@ -78,8 +113,13 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
 
   if (!windowState) return null;
 
-  const position = windowState.position ?? computeInitialPosition(windowIndex);
   const size = windowState.size ?? { width: 800, height: 600 };
+  const rawPosition = windowState.position ?? computeInitialPosition(windowIndex);
+  const position = clampPositionToViewport(
+    rawPosition,
+    size,
+    POPUP_VIEWPORT_PADDING_PX
+  );
   const zIndex = windowState.zIndex ?? 1;
   const isMinimized = windowState.isMinimized ?? false;
 
@@ -141,12 +181,24 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
   };
 
   const handleDragStop: RndDragCallback = (_e, d) => {
-    dispatch(setWindowPosition({ id: windowId, position: { x: d.x, y: d.y } }));
+    const nextPosition = clampPositionToViewport(
+      { x: d.x, y: d.y },
+      size,
+      POPUP_VIEWPORT_PADDING_PX
+    );
+    dispatch(setWindowPosition({ id: windowId, position: nextPosition }));
   };
 
   const handleResizeStop: RndResizeCallback = (_e, _dir, ref, _delta, pos) => {
-    dispatch(setWindowSize({ id: windowId, size: { width: ref.offsetWidth, height: ref.offsetHeight } }));
-    dispatch(setWindowPosition({ id: windowId, position: { x: pos.x, y: pos.y } }));
+    const nextSize = { width: ref.offsetWidth, height: ref.offsetHeight };
+    const nextPosition = clampPositionToViewport(
+      { x: pos.x, y: pos.y },
+      nextSize,
+      POPUP_VIEWPORT_PADDING_PX
+    );
+
+    dispatch(setWindowSize({ id: windowId, size: nextSize }));
+    dispatch(setWindowPosition({ id: windowId, position: nextPosition }));
   };
 
   const handleMouseDown = () => {
