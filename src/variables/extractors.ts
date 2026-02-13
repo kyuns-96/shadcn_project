@@ -339,7 +339,7 @@ const extractWithInputDate = (
     const key = pathKeys[i];
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
-    const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
+    const arrayMatch = key.match(/^([^[]+)\[(\d+)\]$/);
     if (arrayMatch) {
       const arrayKey = arrayMatch[1];
       const arrayIndex = parseInt(arrayMatch[2], 10);
@@ -530,7 +530,7 @@ export const extractMetricValue = (
     }
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
-    const arrayMatch = key.match(/^([^\[]+)\[(\d+)\]$/);
+    const arrayMatch = key.match(/^([^[]+)\[(\d+)\]$/);
     if (arrayMatch) {
       const arrayKey = arrayMatch[1];
       const arrayIndex = parseInt(arrayMatch[2], 10);
