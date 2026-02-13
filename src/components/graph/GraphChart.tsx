@@ -66,6 +66,13 @@ export interface GraphChartProps {
   isLoading?: boolean;
 }
 
+const DEFAULT_CHART_MARGIN = {
+  top: 16,
+  right: 24,
+  bottom: 16,
+  left: 16,
+} as const;
+
 // ============================================
 // HISTOGRAM BINNING
 // ============================================
@@ -300,7 +307,7 @@ export function GraphChart({
   if (transformedData.type === 'scatter') {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart>
+        <ScatterChart margin={DEFAULT_CHART_MARGIN}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             type="number"
@@ -341,7 +348,7 @@ export function GraphChart({
   if (transformedData.type === 'histogram') {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={transformedData.bins}>
+        <BarChart data={transformedData.bins} margin={DEFAULT_CHART_MARGIN}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="label" />
           <YAxis />
@@ -356,7 +363,7 @@ export function GraphChart({
   if (transformedData.type === 'line') {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={transformedData.data}>
+        <LineChart data={transformedData.data} margin={DEFAULT_CHART_MARGIN}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
           <YAxis domain={yDomain as YAxisProps['domain']} />
@@ -380,7 +387,7 @@ export function GraphChart({
   if (transformedData.type === 'bar') {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={transformedData.data}>
+        <BarChart data={transformedData.data} margin={DEFAULT_CHART_MARGIN}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
           <YAxis domain={yDomain as YAxisProps['domain']} />
@@ -401,7 +408,7 @@ export function GraphChart({
   if (transformedData.type === 'area') {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={transformedData.data}>
+        <AreaChart data={transformedData.data} margin={DEFAULT_CHART_MARGIN}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
           <YAxis domain={yDomain as YAxisProps['domain']} />
