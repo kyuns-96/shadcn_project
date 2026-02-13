@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import { AxisConfigPanel } from './AxisConfigPanel';
-import type { AxisConfig } from '@/store/reducers/graphSlice';
 
 afterEach(() => {
   cleanup();
@@ -17,6 +16,15 @@ describe('AxisConfigPanel', () => {
     isQuickAddDisabled: false,
   };
 
+  function openPopover(axis: 'x' | 'y') {
+    const combobox = screen.getByRole('combobox', {
+      name: axis === 'x' ? /x-axis/i : /y-axis/i,
+    });
+    fireEvent.click(combobox);
+    const dialog = screen.getByRole('dialog');
+    return within(dialog);
+  }
+
   it('should render X-axis and Y-axis dropdowns', () => {
     render(<AxisConfigPanel {...defaultProps} />);
     
@@ -25,43 +33,38 @@ describe('AxisConfigPanel', () => {
   });
 
   it('should show DoE metadata in X-axis dropdown', () => {
-    const { container } = render(<AxisConfigPanel {...defaultProps} />);
-    
-    const xAxisTrigger = container.querySelector('[aria-label="X-Axis"]') as HTMLElement;
-    fireEvent.click(xAxisTrigger);
-    
-    expect(screen.getByText('label')).toBeInTheDocument();
-    expect(screen.getByText('PROJECT_NAME')).toBeInTheDocument();
-    expect(screen.getByText('BLOCK')).toBeInTheDocument();
+    render(<AxisConfigPanel {...defaultProps} />);
+
+    const popover = openPopover('x');
+    expect(popover.getByRole('option', { name: 'label' })).toBeInTheDocument();
+    expect(popover.getByRole('option', { name: 'PROJECT_NAME' })).toBeInTheDocument();
+    expect(popover.getByRole('option', { name: 'BLOCK' })).toBeInTheDocument();
   });
 
   it('should show metrics in X-axis dropdown', () => {
-    const { container } = render(<AxisConfigPanel {...defaultProps} />);
-    
-    const xAxisTrigger = container.querySelector('[aria-label="X-Axis"]') as HTMLElement;
-    fireEvent.click(xAxisTrigger);
-    
-    expect(screen.getByText(/Power.*Combinational Total/i)).toBeInTheDocument();
+    render(<AxisConfigPanel {...defaultProps} />);
+
+    const popover = openPopover('x');
+    expect(
+      popover.getByRole('option', { name: /Power.*Combinational Total/i })
+    ).toBeInTheDocument();
   });
 
   it('should show only metrics in Y-axis dropdown', () => {
-    const { container } = render(<AxisConfigPanel {...defaultProps} />);
-    
-    const yAxisTrigger = container.querySelector('[aria-label="Y-Axis"]') as HTMLElement;
-    fireEvent.click(yAxisTrigger);
-    
-    expect(screen.getByText(/Power.*Combinational Total/i)).toBeInTheDocument();
-    expect(screen.queryByText('label')).not.toBeInTheDocument();
+    render(<AxisConfigPanel {...defaultProps} />);
+
+    const popover = openPopover('y');
+    expect(
+      popover.getByRole('option', { name: /Power.*Combinational Total/i })
+    ).toBeInTheDocument();
+    expect(popover.queryByRole('option', { name: 'label' })).not.toBeInTheDocument();
   });
 
   it('should call onXAxisChange when X-axis selection changes', () => {
-    const { container } = render(<AxisConfigPanel {...defaultProps} />);
-    
-    const xAxisTrigger = container.querySelector('[aria-label="X-Axis"]') as HTMLElement;
-    fireEvent.click(xAxisTrigger);
-    
-    const projectNameOption = screen.getByText('PROJECT_NAME');
-    fireEvent.click(projectNameOption);
+    render(<AxisConfigPanel {...defaultProps} />);
+
+    const popover = openPopover('x');
+    fireEvent.click(popover.getByRole('option', { name: 'PROJECT_NAME' }));
     
     expect(defaultProps.onXAxisChange).toHaveBeenCalledWith({
       type: 'doeMetadata',
@@ -70,17 +73,14 @@ describe('AxisConfigPanel', () => {
   });
 
   it('should call onYAxisChange when Y-axis selection changes', () => {
-    const { container } = render(<AxisConfigPanel {...defaultProps} />);
-    
-    const yAxisTrigger = container.querySelector('[aria-label="Y-Axis"]') as HTMLElement;
-    fireEvent.click(yAxisTrigger);
-    
-    const metricOption = screen.getAllByText(/Power.*Combinational Total/i)[0];
-    fireEvent.click(metricOption);
+    render(<AxisConfigPanel {...defaultProps} />);
+
+    const popover = openPopover('y');
+    fireEvent.click(popover.getByRole('option', { name: /Power.*Combinational Total/i }));
     
     expect(defaultProps.onYAxisChange).toHaveBeenCalledWith({
       type: 'metric',
-      key: expect.stringContaining('Power(mW)!')
+      key: 'Power(mW)!combinational_Total'
     });
   });
 

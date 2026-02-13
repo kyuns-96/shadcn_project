@@ -20,7 +20,7 @@ describe('GraphFAB', () => {
   });
   
   it('shows badge with window count', () => {
-    const { store } = renderWithProviders(<GraphFAB />);
+    renderWithProviders(<GraphFAB />);
     fireEvent.click(screen.getByTestId('graph-fab'));
     const badge = screen.queryByText('1');
     expect(badge).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeDataDomain } from './computeDataDomain';
-import type { GraphWindow, ChartType } from '@/store/reducers/graphSlice';
+import type { GraphWindow } from '@/store/reducers/graphSlice';
 import type { ChartDataPoint } from '@/hooks/useGraphData';
 
 describe('computeDataDomain', () => {
