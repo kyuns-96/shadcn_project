@@ -11,8 +11,9 @@ export const fetchProjectList = createAsyncThunk<
   try {
     const data = (await fetchProjectListAPI()) as { project_list: ProjectList };
     return data.project_list;
-  } catch (error: any) {
-    return rejectWithValue(error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return rejectWithValue(message);
   }
 });
 

@@ -14,8 +14,9 @@ export const fetchBlockList = createAsyncThunk<
   try {
     const data = await fetchBlockListAPI(projectName);
     return Array.isArray(data) ? data : [];
-  } catch (error: any) {
-    return rejectWithValue(error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return rejectWithValue(message);
   }
 });
 
