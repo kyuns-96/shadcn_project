@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { encodeGraphWindows, decodeGraphWindows } from './graphUrlCodec';
 import type { GraphWindowConfig } from '@/store/reducers/graphSlice';
 
+function decodeRawPayload(encoded: string): unknown {
+  return JSON.parse(decodeURIComponent(atob(encoded)));
+}
+
 describe('graphUrlCodec', () => {
   const validWindow: GraphWindowConfig = {
     chartType: "line",
@@ -30,6 +34,29 @@ describe('graphUrlCodec', () => {
       expect(result.truncated).toBe(false);
       expect(result.truncatedCount).toBe(0);
       expect(result.originalCount).toBe(1);
+    });
+
+    it('emits v2 payload with per-series chart type (sr[].ct)', () => {
+      const result = encodeGraphWindows([
+        {
+          ...validWindow,
+          chartType: 'scatter',
+          series: [
+            { metricKey: 'QoR!Area', color: '#ff0000', enabled: true, chartType: 'bar' },
+            { metricKey: 'QoR!Timing', color: '#00ff00', enabled: false, chartType: 'line' },
+          ],
+        },
+      ]);
+
+      const payload = decodeRawPayload(result.encoded) as {
+        v: number;
+        w: Array<{ ct: string; sr: Array<{ mk: string; c: string; e: boolean; ct?: string }> }>;
+      };
+
+      expect(payload.v).toBe(2);
+      expect(payload.w[0].ct).toBe('scatter');
+      expect(payload.w[0].sr[0].ct).toBe('bar');
+      expect(payload.w[0].sr[1].ct).toBe('line');
     });
 
     it('strips # prefix from colors', () => {
@@ -190,6 +217,84 @@ describe('graphUrlCodec', () => {
       
       expect(decoded[0].series.length).toBeLessThan(3);
       expect(decoded[0].series.every(s => s.metricKey && s.color)).toBe(true);
+    });
+
+    it('decodes legacy v1 payload by falling back to window chartType', () => {
+      const v1Payload = {
+        v: 1,
+        w: [
+          {
+            ct: 'area',
+            xa: { t: 'd', k: 'PROJECT_NAME' },
+            ya: { t: 'm', k: 'QoR!Total_Power' },
+            sr: [
+              { mk: 'QoR!Area', c: 'ff0000', e: true },
+              { mk: 'QoR!Timing', c: '00ff00', e: false },
+            ],
+            xr: { n: null, x: null },
+            yr: { n: 0, x: 100 },
+          },
+        ],
+      };
+
+      const encoded = btoa(encodeURIComponent(JSON.stringify(v1Payload)));
+      const decoded = decodeGraphWindows(encoded);
+
+      expect(decoded).toHaveLength(1);
+      expect(decoded[0].chartType).toBe('area');
+      expect(decoded[0].series[0].chartType).toBe('area');
+      expect(decoded[0].series[1].chartType).toBe('area');
+    });
+
+    it('prefers sr[].ct over window ct during decode', () => {
+      const v2Payload = {
+        v: 2,
+        w: [
+          {
+            ct: 'line',
+            xa: { t: 'd', k: 'PROJECT_NAME' },
+            ya: { t: 'm', k: 'QoR!Total_Power' },
+            sr: [
+              { mk: 'QoR!Area', c: 'ff0000', e: true, ct: 'scatter' },
+              { mk: 'QoR!Timing', c: '00ff00', e: false, ct: 'bar' },
+            ],
+            xr: { n: null, x: null },
+            yr: { n: 0, x: 100 },
+          },
+        ],
+      };
+
+      const encoded = btoa(encodeURIComponent(JSON.stringify(v2Payload)));
+      const decoded = decodeGraphWindows(encoded);
+
+      expect(decoded).toHaveLength(1);
+      expect(decoded[0].series[0].chartType).toBe('scatter');
+      expect(decoded[0].series[1].chartType).toBe('bar');
+    });
+
+    it('falls back to line when series and window chartType are invalid', () => {
+      const malformedPayload = {
+        v: 2,
+        w: [
+          {
+            ct: 'not-a-chart-type',
+            xa: { t: 'd', k: 'PROJECT_NAME' },
+            ya: { t: 'm', k: 'QoR!Total_Power' },
+            sr: [
+              { mk: 'QoR!Area', c: 'ff0000', e: true, ct: 'also-invalid' },
+            ],
+            xr: { n: null, x: null },
+            yr: { n: 0, x: 100 },
+          },
+        ],
+      };
+
+      const encoded = btoa(encodeURIComponent(JSON.stringify(malformedPayload)));
+      const decoded = decodeGraphWindows(encoded);
+
+      expect(decoded).toHaveLength(1);
+      expect(decoded[0].series[0].chartType).toBe('line');
+      expect(decoded[0].chartType).toBe('line');
     });
   });
 

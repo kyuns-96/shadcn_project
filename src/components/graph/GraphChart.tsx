@@ -14,13 +14,12 @@ import {
 } from '@/store/reducers/graphSlice';
 import {
   ResponsiveContainer,
-  LineChart,
+  ComposedChart,
   Line,
   ScatterChart,
   Scatter,
   BarChart,
   Bar,
-  AreaChart,
   Area,
   XAxis,
   YAxis,
@@ -34,9 +33,10 @@ import { Loader2 } from 'lucide-react';
 // RECHARTS DATA TYPES
 // ============================================
 interface RechartsLineBarAreaData {
-  type: 'line' | 'bar' | 'area';
+  type: 'combo';
   data: Array<Record<string, number | string>>;
   seriesKeys: string[];
+  seriesTypes: Map<string, 'line' | 'bar' | 'area'>;
 }
 
 interface RechartsScatterData {
@@ -148,21 +148,32 @@ function computeHistogramBins(
 // ============================================
 function transformForRecharts(
   dataPoints: ChartDataPoint[],
-  chartType: ChartType,
   series: Series[],
   yRange: RangeConfig
 ): RechartsData {
   const enabledSeries = series.filter((s) => s.enabled);
 
+  const hasHistogramSeries = enabledSeries.some(
+    (s) => s.chartType === 'histogram'
+  );
+  const hasScatterSeries = enabledSeries.some((s) => s.chartType === 'scatter');
+  const mode: 'histogram' | 'scatter' | 'combo' = hasHistogramSeries
+    ? 'histogram'
+    : hasScatterSeries
+      ? 'scatter'
+      : 'combo';
+
   // ============ SCATTER ============
-  if (chartType === 'scatter') {
+  if (mode === 'scatter') {
     // Scatter requires numeric X and Y, grouped by series
     const seriesData = new Map<
       string,
       Array<{ x: number; y: number; label: string }>
     >();
 
-    enabledSeries.forEach((s) => {
+    const scatterSeries = enabledSeries.filter((s) => s.chartType === 'scatter');
+
+    scatterSeries.forEach((s) => {
       const seriesPoints = dataPoints
         .filter((pt) => pt.seriesId === s.id && typeof pt.x === 'number')
         .map((pt) => ({
@@ -177,7 +188,7 @@ function transformForRecharts(
   }
 
   // ============ HISTOGRAM ============
-  if (chartType === 'histogram') {
+  if (mode === 'histogram') {
     // Histogram bins Y values from first enabled series
     // NOTE: For histogram, the Y values are binned, and the bins become the X axis
     // The count (frequency) becomes the Y axis
@@ -188,7 +199,9 @@ function transformForRecharts(
       return { type: 'histogram', bins: [] };
     }
 
-    const firstSeriesId = enabledSeries[0]?.id;
+    const firstSeriesId = enabledSeries.find(
+      (s) => s.chartType === 'histogram'
+    )?.id;
     if (!firstSeriesId) {
       return { type: 'histogram', bins: [] };
     }
@@ -203,9 +216,17 @@ function transformForRecharts(
     return { type: 'histogram', bins };
   }
 
-  // ============ LINE / BAR / AREA ============
   // Aggregate by X value, each series becomes a column
   const xMap = new Map<string | number, Record<string, number | string>>();
+
+  const seriesTypes = new Map(
+    enabledSeries.map((s) => [
+      s.id,
+      s.chartType === 'line' || s.chartType === 'bar' || s.chartType === 'area'
+        ? s.chartType
+        : 'line',
+    ])
+  );
 
   dataPoints.forEach((pt) => {
     if (!enabledSeries.find((s) => s.id === pt.seriesId)) return;
@@ -228,9 +249,10 @@ function transformForRecharts(
   });
 
   return {
-    type: chartType as 'line' | 'bar' | 'area',
+    type: 'combo',
     data,
     seriesKeys: enabledSeries.map((s) => s.id),
+    seriesTypes,
   };
 }
 
@@ -238,7 +260,7 @@ function transformForRecharts(
 // MAIN COMPONENT
 // ============================================
 export function GraphChart({
-  chartType,
+  chartType: _chartType,
   dataPoints,
   series,
   xRange,
@@ -248,7 +270,6 @@ export function GraphChart({
   // Transform data for Recharts
   const transformedData = transformForRecharts(
     dataPoints,
-    chartType,
     series,
     yRange
   );
@@ -268,9 +289,7 @@ export function GraphChart({
     (transformedData.type === 'scatter' &&
       transformedData.seriesData.size === 0) ||
     (transformedData.type === 'histogram' && transformedData.bins.length === 0) ||
-    ((transformedData.type === 'line' ||
-      transformedData.type === 'bar' ||
-      transformedData.type === 'area') &&
+    (transformedData.type === 'combo' &&
       transformedData.data.length === 0)
   ) {
     return (
@@ -359,71 +378,52 @@ export function GraphChart({
     );
   }
 
-  // ============ RENDER LINE ============
-  if (transformedData.type === 'line') {
+  if (transformedData.type === 'combo') {
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={transformedData.data} margin={DEFAULT_CHART_MARGIN}>
+        <ComposedChart data={transformedData.data} margin={DEFAULT_CHART_MARGIN}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
           <YAxis domain={yDomain as YAxisProps['domain']} />
           <Tooltip />
-          {transformedData.seriesKeys.map((seriesId) => (
-            <Line
-              key={seriesId}
-              type="monotone"
-              dataKey={seriesId}
-              stroke={seriesColorMap.get(seriesId) ?? '#8884d8'}
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
-    );
-  }
+          {transformedData.seriesKeys.map((seriesId) => {
+            const seriesType = transformedData.seriesTypes.get(seriesId) ?? 'line';
 
-  // ============ RENDER BAR ============
-  if (transformedData.type === 'bar') {
-    return (
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={transformedData.data} margin={DEFAULT_CHART_MARGIN}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
-          <YAxis domain={yDomain as YAxisProps['domain']} />
-          <Tooltip />
-          {transformedData.seriesKeys.map((seriesId) => (
-            <Bar
-              key={seriesId}
-              dataKey={seriesId}
-              fill={seriesColorMap.get(seriesId) ?? '#8884d8'}
-            />
-          ))}
-        </BarChart>
-      </ResponsiveContainer>
-    );
-  }
+            if (seriesType === 'bar') {
+              return (
+                <Bar
+                  key={seriesId}
+                  dataKey={seriesId}
+                  fill={seriesColorMap.get(seriesId) ?? '#8884d8'}
+                />
+              );
+            }
 
-  // ============ RENDER AREA ============
-  if (transformedData.type === 'area') {
-    return (
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={transformedData.data} margin={DEFAULT_CHART_MARGIN}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="x" domain={xDomain as XAxisProps['domain']} />
-          <YAxis domain={yDomain as YAxisProps['domain']} />
-          <Tooltip />
-          {transformedData.seriesKeys.map((seriesId) => (
-            <Area
-              key={seriesId}
-              type="monotone"
-              dataKey={seriesId}
-              stroke={seriesColorMap.get(seriesId) ?? '#8884d8'}
-              fill={seriesColorMap.get(seriesId) ?? '#8884d8'}
-              fillOpacity={0.6}
-            />
-          ))}
-        </AreaChart>
+            if (seriesType === 'area') {
+              return (
+                <Area
+                  key={seriesId}
+                  type="monotone"
+                  dataKey={seriesId}
+                  stroke={seriesColorMap.get(seriesId) ?? '#8884d8'}
+                  fill={seriesColorMap.get(seriesId) ?? '#8884d8'}
+                  fillOpacity={0.6}
+                />
+              );
+            }
+
+            return (
+              <Line
+                key={seriesId}
+                type="monotone"
+                dataKey={seriesId}
+                stroke={seriesColorMap.get(seriesId) ?? '#8884d8'}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+              />
+            );
+          })}
+        </ComposedChart>
       </ResponsiveContainer>
     );
   }

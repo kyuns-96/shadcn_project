@@ -25,6 +25,7 @@ interface EncodedSeries {
   mk: string; // metricKey
   c: string; // color WITHOUT # (e.g., "ff0000")
   e: boolean; // enabled
+  ct?: ChartType;
 }
 
 interface EncodedAxis {
@@ -47,9 +48,17 @@ interface EncodedWindow {
 }
 
 interface EncodedPayload {
-  v: 1; // version
+  v: 1 | 2; // version
   w: EncodedWindow[]; // windows
 }
+
+const VALID_CHART_TYPES: ChartType[] = [
+  "line",
+  "bar",
+  "scatter",
+  "area",
+  "histogram",
+];
 
 export interface EncodeResult {
   encoded: string;
@@ -99,25 +108,39 @@ function compressConfigs(configs: GraphWindowConfig[]): EncodedWindow[] {
       mk: s.metricKey,
       c: s.color.replace(/^#/, ""), // Strip # prefix
       e: s.enabled,
+      ct: VALID_CHART_TYPES.includes(s.chartType ?? c.chartType)
+        ? (s.chartType ?? c.chartType)
+        : "line",
     })),
     xr: encodeRange(c.xRange),
     yr: encodeRange(c.yRange),
   }));
 }
 
-function expandConfigs(encoded: EncodedWindow[]): GraphWindowConfig[] {
-  const validChartTypes: ChartType[] = [
-    "line",
-    "bar",
-    "scatter",
-    "area",
-    "histogram",
-  ];
+function resolveChartType(value: unknown): ChartType | null {
+  if (typeof value === "string" && VALID_CHART_TYPES.includes(value as ChartType)) {
+    return value as ChartType;
+  }
 
+  return null;
+}
+
+function resolveSeriesChartType(seriesChartType: unknown, windowChartType: unknown): ChartType {
+  return (
+    resolveChartType(seriesChartType) ??
+    resolveChartType(windowChartType) ??
+    "line"
+  );
+}
+
+function resolveWindowChartType(windowChartType: unknown): ChartType {
+  return resolveChartType(windowChartType) ?? "line";
+}
+
+function expandConfigs(encoded: EncodedWindow[]): GraphWindowConfig[] {
   return encoded
     .filter((w) => {
       // Validate required fields
-      if (!validChartTypes.includes(w.ct)) return false;
       if (!w.xa || typeof w.xa.t !== "string" || !w.xa.k) return false;
       if (!w.ya || typeof w.ya.t !== "string" || !w.ya.k) return false;
       if (!Array.isArray(w.sr)) return false;
@@ -126,7 +149,7 @@ function expandConfigs(encoded: EncodedWindow[]): GraphWindowConfig[] {
       return true;
     })
     .map((w) => ({
-      chartType: w.ct,
+      chartType: resolveWindowChartType(w.ct),
       xAxis: decodeAxis(w.xa),
       yAxis: decodeAxis(w.ya),
       series: w.sr
@@ -140,6 +163,7 @@ function expandConfigs(encoded: EncodedWindow[]): GraphWindowConfig[] {
           metricKey: s.mk,
           color: s.c.startsWith("#") ? s.c : `#${s.c}`, // Ensure # prefix
           enabled: s.e ?? true,
+          chartType: resolveSeriesChartType(s.ct, w.ct),
         })),
       xRange: decodeRange(w.xr),
       yRange: decodeRange(w.yr),
@@ -180,7 +204,7 @@ export function encodeGraphWindows(
 
   while (windowsToEncode.length > 0) {
     try {
-      const json = JSON.stringify({ v: 1, w: windowsToEncode });
+      const json = JSON.stringify({ v: 2, w: windowsToEncode });
       const encoded = btoa(encodeURIComponent(json));
 
       // Check if within limit

@@ -18,7 +18,7 @@ describe('RangeControls', () => {
     xRange: { min: 'auto' as const, max: 'auto' as const },
     yRange: { min: 'auto' as const, max: 'auto' as const },
     xAxisType: 'metric' as const,
-    chartType: 'scatter' as const,
+    isHistogramMode: false,
     dataDomain: mockDataDomain,
     onXRangeChange: vi.fn(),
     onYRangeChange: vi.fn(),
@@ -42,7 +42,7 @@ describe('RangeControls', () => {
   });
 
   it('should hide X controls for histogram chart', () => {
-    render(<RangeControls {...defaultProps} chartType="histogram" />);
+    render(<RangeControls {...defaultProps} isHistogramMode />);
     
     expect(screen.queryByRole('spinbutton', { name: /x min/i })).not.toBeInTheDocument();
     expect(screen.getByRole('spinbutton', { name: /value min/i })).toBeInTheDocument();
@@ -126,7 +126,7 @@ describe('RangeControls', () => {
   });
 
   it('should render value-range-slider for histogram', () => {
-    render(<RangeControls {...defaultProps} chartType="histogram" />);
+    render(<RangeControls {...defaultProps} isHistogramMode />);
     
     expect(screen.queryByTestId('y-range-slider')).not.toBeInTheDocument();
     expect(screen.getByTestId('value-range-slider')).toBeInTheDocument();

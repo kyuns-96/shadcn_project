@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createSeededTestUrl } from './utils/graph-url-helper';
 
 test.describe('Drag and Drop Series', () => {
-  test('should add series when dragging from palette to drop zone', async ({ page }) => {
+  test('should add series via quick add control', async ({ page }) => {
     const seededUrl = createSeededTestUrl('qor-compare');
     await page.goto(seededUrl);
     
@@ -13,16 +13,13 @@ test.describe('Drag and Drop Series', () => {
     // Verify 1 default series exists
     await expect(page.locator('[data-testid^="series-item-"]')).toHaveCount(1);
     
-    // Drag first palette item to drop zone
-    const metricItem = page.locator('[data-testid^="series-palette-item-"]').first();
-    const dropZone = page.locator('[data-testid="chart-drop-zone"]');
-    await metricItem.dragTo(dropZone);
+    await page.getByRole('button', { name: 'Quick Add Series' }).click();
     
     // Verify series added (now 2 total)
     await expect(page.locator('[data-testid^="series-item-"]')).toHaveCount(2);
   });
 
-  test('should show series in chart legend after drop', async ({ page }) => {
+  test('should show series in active list after adding', async ({ page }) => {
     const seededUrl = createSeededTestUrl('qor-compare');
     await page.goto(seededUrl);
     
@@ -34,10 +31,7 @@ test.describe('Drag and Drop Series', () => {
     const initialSeriesItems = page.locator('[data-testid^="series-item-"]');
     await expect(initialSeriesItems).toHaveCount(1);
     
-    // Drag metric from palette
-    const metricItem = page.locator('[data-testid^="series-palette-item-"]').first();
-    const dropZone = page.locator('[data-testid="chart-drop-zone"]');
-    await metricItem.dragTo(dropZone);
+    await page.getByRole('button', { name: 'Quick Add Series' }).click();
     
     // Verify series appears in legend/series list
     const updatedSeriesItems = page.locator('[data-testid^="series-item-"]');
@@ -48,7 +42,7 @@ test.describe('Drag and Drop Series', () => {
     await expect(secondSeriesItem).toBeVisible();
   });
 
-  test('should update chart with new data point', async ({ page }) => {
+  test('should keep chart rendered after adding series', async ({ page }) => {
     const seededUrl = createSeededTestUrl('qor-compare');
     await page.goto(seededUrl);
     
@@ -56,14 +50,10 @@ test.describe('Drag and Drop Series', () => {
     await page.click('[data-testid="graph-fab"]');
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    // Get initial chart state (verify chart exists)
-    const chartContainer = page.locator('[data-testid="chart-drop-zone"]');
+    const chartContainer = page.locator('.recharts-wrapper').first();
     await expect(chartContainer).toBeVisible();
     
-    // Drag metric to add series
-    const metricItem = page.locator('[data-testid^="series-palette-item-"]').first();
-    const dropZone = page.locator('[data-testid="chart-drop-zone"]');
-    await metricItem.dragTo(dropZone);
+    await page.getByRole('button', { name: 'Quick Add Series' }).click();
     
     // Verify chart updates (2 series now visible)
     await expect(page.locator('[data-testid^="series-item-"]')).toHaveCount(2);

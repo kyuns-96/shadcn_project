@@ -56,6 +56,14 @@ export interface Series {
   metricKey: string;    // From METRIC_EXTRACTORS, "Group!Label" format
   color: string;        // Hex WITH # prefix (e.g., "#ff0000")
   enabled: boolean;     // Whether to render on chart
+  chartType: ChartType;
+}
+
+export interface SeriesConfig {
+  metricKey: string;
+  color: string;
+  enabled: boolean;
+  chartType?: ChartType;
 }
 
 // ============================================
@@ -85,7 +93,7 @@ export interface GraphWindowConfig {
   chartType: ChartType;
   xAxis: AxisConfig;
   yAxis: AxisConfig;
-  series: Array<{ metricKey: string; color: string; enabled: boolean }>; // NO id
+  series: SeriesConfig[]; // NO id
   xRange: RangeConfig;
   yRange: RangeConfig;
   // NOTE: NO id, position, size, isMinimized, zIndex - assigned by reducer/component
@@ -138,7 +146,7 @@ const graphSlice = createSlice({
         // DEFAULT SERIES: Include one series matching yAxis so charts show data immediately
         // This ensures Phase 2 can render actual charts without user configuration
         series: [
-          { metricKey: "Power(mW)!combinational_Total", color: "#2563eb", enabled: true }
+          { metricKey: "Power(mW)!combinational_Total", color: "#2563eb", enabled: true, chartType: "line" }
         ],
         xRange: { min: "auto", max: "auto" },
         yRange: { min: "auto", max: "auto" },
@@ -153,6 +161,7 @@ const graphSlice = createSlice({
         ...s,
         id: `s_${i}`,
         color: s.color.startsWith('#') ? s.color : `#${s.color}`,
+        chartType: s.chartType ?? "line",
       }));
       
       // Assign zIndex
@@ -199,7 +208,7 @@ const graphSlice = createSlice({
     // ============================================
     // addSeriesToWindow
     // ============================================
-    addSeriesToWindow: (state, action: PayloadAction<{ windowId: string; series: Omit<Series, 'id'> }>) => {
+    addSeriesToWindow: (state, action: PayloadAction<{ windowId: string; series: SeriesConfig }>) => {
       const { windowId, series } = action.payload;
       const window = state.windows.find(w => w.id === windowId);
       
@@ -214,6 +223,7 @@ const graphSlice = createSlice({
         ...series,
         id: `s_${nextId}`,
         color: series.color.startsWith('#') ? series.color : `#${series.color}`,
+        chartType: series.chartType ?? "line",
       };
       
       window.series.push(newSeries);
@@ -241,6 +251,15 @@ const graphSlice = createSlice({
       const series = window?.series.find(s => s.id === seriesId);
       if (series) {
         series.enabled = !series.enabled;
+      }
+    },
+
+    updateSeriesChartType: (state, action: PayloadAction<{ windowId: string; seriesId: string; chartType: ChartType }>) => {
+      const { windowId, seriesId, chartType } = action.payload;
+      const window = state.windows.find(w => w.id === windowId);
+      const series = window?.series.find(s => s.id === seriesId);
+      if (series) {
+        series.chartType = chartType;
       }
     },
 
@@ -357,6 +376,7 @@ const graphSlice = createSlice({
           ...s,
           id: `s_${i}`,
           color: s.color.startsWith('#') ? s.color : `#${s.color}`,
+          chartType: s.chartType ?? "line",
         }));
         
         const window: GraphWindow = {
@@ -396,6 +416,7 @@ export const {
   addSeriesToWindow,
   removeSeriesFromWindow,
   toggleSeriesEnabled,
+  updateSeriesChartType,
   setWindowPosition,
   setWindowSize,
   toggleMinimize,

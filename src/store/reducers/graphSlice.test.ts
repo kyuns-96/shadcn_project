@@ -6,6 +6,7 @@ import graphReducer, {
   addSeriesToWindow,
   removeSeriesFromWindow,
   toggleSeriesEnabled,
+  updateSeriesChartType,
   setWindowPosition,
   setWindowSize,
   toggleMinimize,
@@ -21,6 +22,7 @@ describe('graphSlice', () => {
       expect(state.windows).toHaveLength(1);
       expect(state.windows[0].id).toBe('gw_0');
       expect(state.windows[0].chartType).toBe('line');
+      expect(state.windows[0].series[0].chartType).toBe('line');
     });
 
     it('enforces max 10 windows', () => {
@@ -68,9 +70,10 @@ describe('graphSlice', () => {
       const windowId = state.windows[0].id;
       state = graphReducer(state, addSeriesToWindow({
         windowId,
-        series: { metricKey: 'test', color: '#ff0000', enabled: true }
+        series: { metricKey: 'test', color: '#ff0000', enabled: true, chartType: 'bar' }
       }));
       expect(state.windows[0].series.length).toBeGreaterThan(1);
+      expect(state.windows[0].series[1].chartType).toBe('bar');
     });
 
     it('enforces max 10 series', () => {
@@ -79,13 +82,13 @@ describe('graphSlice', () => {
       for (let i = 0; i < 10; i++) {
         state = graphReducer(state, addSeriesToWindow({
           windowId,
-          series: { metricKey: `m${i}`, color: '#ff0000', enabled: true }
+          series: { metricKey: `m${i}`, color: '#ff0000', enabled: true, chartType: 'line' }
         }));
       }
       expect(state.windows[0].series).toHaveLength(10);
       state = graphReducer(state, addSeriesToWindow({
         windowId,
-        series: { metricKey: 'm11', color: '#ff0000', enabled: true }
+        series: { metricKey: 'm11', color: '#ff0000', enabled: true, chartType: 'line' }
       }));
       expect(state.windows[0].series).toHaveLength(10);
     });
@@ -95,9 +98,35 @@ describe('graphSlice', () => {
       const windowId = state.windows[0].id;
       state = graphReducer(state, addSeriesToWindow({
         windowId,
-        series: { metricKey: 'test', color: 'ff0000', enabled: true }
+        series: { metricKey: 'test', color: 'ff0000', enabled: true, chartType: 'line' }
       }));
       expect(state.windows[0].series[0].color).toBe('#ff0000');
+    });
+  });
+
+  describe('updateSeriesChartType', () => {
+    it('updates only targeted series chartType', () => {
+      let state = graphReducer(undefined, addGraphWindow());
+      const windowId = state.windows[0].id;
+
+      state = graphReducer(state, addSeriesToWindow({
+        windowId,
+        series: { metricKey: 's1', color: '#ff0000', enabled: true, chartType: 'bar' },
+      }));
+
+      state = graphReducer(state, addSeriesToWindow({
+        windowId,
+        series: { metricKey: 's2', color: '#00ff00', enabled: true, chartType: 'scatter' },
+      }));
+
+      const targetSeriesId = state.windows[0].series[1].id;
+      const untouchedSeriesId = state.windows[0].series[2].id;
+
+      state = graphReducer(state, updateSeriesChartType({ windowId, seriesId: targetSeriesId, chartType: 'area' }));
+
+      expect(state.windows[0].series.find(s => s.id === targetSeriesId)?.chartType).toBe('area');
+      expect(state.windows[0].series.find(s => s.id === untouchedSeriesId)?.chartType).toBe('scatter');
+      expect(state.windows[0].series[0].chartType).toBe('line');
     });
   });
 
@@ -179,6 +208,17 @@ describe('graphSlice', () => {
       state = graphReducer(state, cloneWindow(id));
       expect(state.windows).toHaveLength(10);
     });
+
+    it('preserves per-series chartType when cloning', () => {
+      let state = graphReducer(undefined, addGraphWindow({
+        series: [{ metricKey: 'm1', color: '#ff0000', enabled: true, chartType: 'histogram' }],
+      }));
+      const id = state.windows[0].id;
+
+      state = graphReducer(state, cloneWindow(id));
+
+      expect(state.windows[1].series[0].chartType).toBe('histogram');
+    });
   });
 
   describe('setGraphWindows', () => {
@@ -215,6 +255,7 @@ describe('graphSlice', () => {
         metricKey: `m${i}`,
         color: '#ff0000',
         enabled: true,
+        chartType: 'line' as const,
       }));
       const configs = [{
         chartType: 'line' as const,
@@ -226,6 +267,25 @@ describe('graphSlice', () => {
       }];
       const state = graphReducer(undefined, setGraphWindows(configs));
       expect(state.windows[0].series).toHaveLength(10);
+    });
+
+    it('restores per-series chartType with line fallback', () => {
+      const configs = [{
+        chartType: 'bar' as const,
+        xAxis: { type: 'doeMetadata' as const, key: 'label' },
+        yAxis: { type: 'metric' as const, key: 'test' },
+        series: [
+          { metricKey: 's1', color: '#ff0000', enabled: true, chartType: 'scatter' as const },
+          { metricKey: 's2', color: '#00ff00', enabled: true },
+        ],
+        xRange: { min: 'auto' as const, max: 'auto' as const },
+        yRange: { min: 'auto' as const, max: 'auto' as const },
+      }];
+
+      const state = graphReducer(undefined, setGraphWindows(configs));
+
+      expect(state.windows[0].series[0].chartType).toBe('scatter');
+      expect(state.windows[0].series[1].chartType).toBe('line');
     });
   });
 });

@@ -433,7 +433,8 @@ export function useURLSync() {
         series: w.series.map(s => ({ 
           metricKey: s.metricKey, 
           color: s.color, 
-          enabled: s.enabled 
+          enabled: s.enabled,
+          chartType: s.chartType,
         })),
         xRange: w.xRange,
         yRange: w.yRange,

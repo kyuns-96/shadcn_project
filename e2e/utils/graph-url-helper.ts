@@ -51,18 +51,19 @@ export function encodeColumnsForNode(columns: ColumnMeta[]): string {
 // ========================================
 // Must match EXACTLY: src/hooks/useURLSync/graphUrlCodec.ts
 //
-// Payload shape: { v: 1, w: EncodedWindow[] }
-// EncodedWindow: { ct, xa:{t,k}, ya:{t,k}, sr:[{mk,c,e}], xr:{n,x}, yr:{n,x} }
+// Payload shape: { v: 2, w: EncodedWindow[] }
+// EncodedWindow: { ct, xa:{t,k}, ya:{t,k}, sr:[{mk,c,e,ct}], xr:{n,x}, yr:{n,x} }
 //
 // Key mappings:
 //   ct = chartType ('line' | 'scatter' | 'bar' | 'area' | 'histogram')
 //   xa = xAxis, ya = yAxis (EncodedAxis: { t: 'd'|'m', k: string })
 //     - t: 'd' = doeMetadata, 'm' = metric
 //     - k: key string
-//   sr = series array (EncodedSeries[]: { mk, c, e })
+//   sr = series array (EncodedSeries[]: { mk, c, e, ct })
 //     - mk = metricKey
 //     - c = color WITHOUT # prefix (e.g., "ff0000" not "#ff0000")
 //     - e = enabled
+//     - ct = per-series chartType
 //   xr = xRange, yr = yRange (EncodedRange: { n, x })
 //     - n = min (null = 'auto')
 //     - x = max (null = 'auto')
@@ -83,6 +84,7 @@ interface TestSeriesConfig {
   metricKey: string;
   color: string;  // WITH # prefix - we strip it during encoding
   enabled: boolean;
+  chartType?: ChartType;
 }
 
 interface TestRangeConfig {
@@ -101,7 +103,7 @@ export interface TestGraphWindowConfig {
 
 // Internal encoded types (matching graphUrlCodec.ts exactly)
 interface EncodedAxis { t: 'd' | 'm'; k: string; }
-interface EncodedSeries { mk: string; c: string; e: boolean; }
+interface EncodedSeries { mk: string; c: string; e: boolean; ct?: ChartType; }
 interface EncodedRange { n: number | null; x: number | null; }
 interface EncodedWindow {
   ct: ChartType;
@@ -111,7 +113,7 @@ interface EncodedWindow {
   xr: EncodedRange;
   yr: EncodedRange;
 }
-interface EncodedPayload { v: 1; w: EncodedWindow[]; }
+interface EncodedPayload { v: 2; w: EncodedWindow[]; }
 
 function encodeAxis(axis: TestAxisConfig): EncodedAxis {
   return {
@@ -140,12 +142,13 @@ export function encodeGraphWindowsForUrl(configs: TestGraphWindowConfig[]): stri
       mk: s.metricKey,
       c: s.color.replace(/^#/, ''),  // Strip # prefix (restored on decode)
       e: s.enabled,
+      ct: s.chartType ?? config.chartType,
     })),
     xr: encodeRange(config.xRange),
     yr: encodeRange(config.yRange),
   }));
 
-  const payload: EncodedPayload = { v: 1, w: windows };
+  const payload: EncodedPayload = { v: 2, w: windows };
   return nodeBase64Encode(encodeURIComponent(JSON.stringify(payload)));
 }
 

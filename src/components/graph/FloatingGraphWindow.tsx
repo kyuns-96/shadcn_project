@@ -16,6 +16,7 @@ import {
   addSeriesToWindow,
   removeSeriesFromWindow,
   toggleSeriesEnabled,
+  updateSeriesChartType,
   type GraphWindow,
 } from '@/store/reducers/graphSlice';
 import { selectAnyDatasetLoading } from '@/store/reducers/datasetReducer';
@@ -103,11 +104,15 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
   const dataPoints = useGraphData(windowState ?? dummyWindow);
 
   const [showRangeControls, setShowRangeControls] = useState(false);
-  const [chartTypeOpen, setChartTypeOpen] = useState(false);
+  const [openSeriesChartTypeSelector, setOpenSeriesChartTypeSelector] = useState<string | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
+  const isHistogramMode = useMemo(
+    () => (windowState ?? dummyWindow).series.some(series => series.enabled && series.chartType === 'histogram'),
+    [windowState]
+  );
 
   const dataDomain = useMemo(
-    () => computeDataDomain(dataPoints, windowState ?? dummyWindow, (windowState ?? dummyWindow).chartType),
+    () => computeDataDomain(dataPoints, windowState ?? dummyWindow),
     [dataPoints, windowState]
   );
 
@@ -163,9 +168,9 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
      const color = SERIES_COLORS[windowState.series.length % SERIES_COLORS.length];
      dispatch(addSeriesToWindow({ 
        windowId, 
-       series: { metricKey: windowState.yAxis.key, color, enabled: true } 
+       series: { metricKey: windowState.yAxis.key, color, enabled: true, chartType: 'line' } 
      }));
-   };
+    };
 
    const handleXRangeChange = (range: typeof windowState.xRange) => {
     dispatch(updateGraphWindow({ id: windowId, changes: { xRange: range } }));
@@ -175,9 +180,9 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
     dispatch(updateGraphWindow({ id: windowId, changes: { yRange: range } }));
   };
 
-  const handleChartTypeChange = (type: typeof windowState.chartType) => {
-    dispatch(updateGraphWindow({ id: windowId, changes: { chartType: type } }));
-    setChartTypeOpen(false);
+  const handleSeriesChartTypeChange = (seriesId: string, chartType: typeof windowState.chartType) => {
+    dispatch(updateSeriesChartType({ windowId, seriesId, chartType }));
+    setOpenSeriesChartTypeSelector(null);
   };
 
   const handleDragStop: RndDragCallback = (_e, d) => {
@@ -290,41 +295,6 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                   isQuickAddDisabled={windowState.series.length >= MAX_SERIES_PER_WINDOW}
                 />
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Chart Type:</span>
-                  <Popover open={chartTypeOpen} onOpenChange={setChartTypeOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-label="Chart Type"
-                        aria-expanded={chartTypeOpen}
-                        className="w-[200px] justify-between"
-                        data-testid="chart-type-select"
-                      >
-                        <span className="truncate">{windowState.chartType.charAt(0).toUpperCase() + windowState.chartType.slice(1)}</span>
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0" align="start">
-                      <Command>
-                        <CommandList>
-                          <CommandGroup heading="Chart Types">
-                            {(['line', 'scatter', 'bar', 'area', 'histogram'] as const).map((type) => (
-                              <CommandItem
-                                key={type}
-                                value={type}
-                                onSelect={() => handleChartTypeChange(type)}
-                              >
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -340,7 +310,7 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                     xRange={windowState.xRange}
                     yRange={windowState.yRange}
                     xAxisType={windowState.xAxis.type}
-                    chartType={windowState.chartType}
+                    isHistogramMode={isHistogramMode}
                     dataDomain={dataDomain}
                     onXRangeChange={handleXRangeChange}
                     onYRangeChange={handleYRangeChange}
@@ -373,6 +343,45 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
                           aria-hidden="true" 
                         />
                         <span className="text-sm flex-1 truncate">{formatMetricForDisplay(series.metricKey)}</span>
+                        <span className="text-xs text-muted-foreground min-w-16 text-right">
+                          {series.chartType.charAt(0).toUpperCase() + series.chartType.slice(1)}
+                        </span>
+                        <Popover
+                          open={openSeriesChartTypeSelector === series.id}
+                          onOpenChange={(open) => setOpenSeriesChartTypeSelector(open ? series.id : null)}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              role="combobox"
+                              aria-label={`Chart type for ${formatMetricForDisplay(series.metricKey)}`}
+                              aria-expanded={openSeriesChartTypeSelector === series.id}
+                              className="h-7 w-[130px] justify-between px-2"
+                              data-testid={`series-chart-type-select-${series.id}`}
+                            >
+                              <span className="truncate">{series.chartType.charAt(0).toUpperCase() + series.chartType.slice(1)}</span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[130px] p-0" align="end">
+                            <Command>
+                              <CommandList>
+                                <CommandGroup heading="Chart Types">
+                                  {(['line', 'scatter', 'bar', 'area', 'histogram'] as const).map((type) => (
+                                    <CommandItem
+                                      key={type}
+                                      value={type}
+                                      onSelect={() => handleSeriesChartTypeChange(series.id, type)}
+                                    >
+                                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <Button
                           variant="ghost"
                           size="icon"

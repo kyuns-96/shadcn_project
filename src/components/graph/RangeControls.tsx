@@ -3,14 +3,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import type { ChartType, RangeConfig } from '@/store/reducers/graphSlice';
+import type { RangeConfig } from '@/store/reducers/graphSlice';
 import type { DataDomain } from './utils/computeDataDomain';
 
 interface RangeControlsProps {
   xRange: RangeConfig;
   yRange: RangeConfig;
   xAxisType: 'doeMetadata' | 'metric';
-  chartType: ChartType;
+  isHistogramMode: boolean;
   dataDomain: DataDomain;
   onXRangeChange: (range: RangeConfig) => void;
   onYRangeChange: (range: RangeConfig) => void;
@@ -20,7 +20,7 @@ export function RangeControls({
   xRange,
   yRange,
   xAxisType,
-  chartType,
+  isHistogramMode,
   dataDomain,
   onXRangeChange,
   onYRangeChange,
@@ -85,8 +85,8 @@ export function RangeControls({
   const effectiveYMin = localYRange.min === 'auto' ? (dataDomain.y?.min ?? 0) : localYRange.min;
   const effectiveYMax = localYRange.max === 'auto' ? (dataDomain.y?.max ?? 100) : localYRange.max;
 
-  const showXControls = xAxisType === 'metric' && chartType !== 'histogram' && dataDomain.x !== null;
-  const yLabel = chartType === 'histogram' ? 'Value' : 'Y';
+  const showXControls = xAxisType === 'metric' && !isHistogramMode && dataDomain.x !== null;
+  const yLabel = isHistogramMode ? 'Value' : 'Y';
 
   return (
     <div className="p-4 space-y-4 border-t">
@@ -147,7 +147,7 @@ export function RangeControls({
           <Label htmlFor="y-min" className="w-16">{yLabel} Min</Label>
           <Input
             id="y-min"
-            aria-label={chartType === 'histogram' ? 'Value minimum' : 'Y minimum'}
+            aria-label={isHistogramMode ? 'Value minimum' : 'Y minimum'}
             type="number"
             value={localYRange.min === 'auto' ? '' : localYRange.min}
             placeholder={`auto (${dataDomain.y?.min.toFixed(1)})`}
@@ -162,7 +162,7 @@ export function RangeControls({
           <Label htmlFor="y-max" className="w-16">{yLabel} Max</Label>
           <Input
             id="y-max"
-            aria-label={chartType === 'histogram' ? 'Value maximum' : 'Y maximum'}
+            aria-label={isHistogramMode ? 'Value maximum' : 'Y maximum'}
             type="number"
             value={localYRange.max === 'auto' ? '' : localYRange.max}
             placeholder={`auto (${dataDomain.y?.max.toFixed(1)})`}
@@ -175,7 +175,7 @@ export function RangeControls({
             className={cn('w-32', isYInvalid && 'border-destructive')}
           />
         </div>
-        <div data-testid={chartType === 'histogram' ? 'value-range-slider' : 'y-range-slider'}>
+        <div data-testid={isHistogramMode ? 'value-range-slider' : 'y-range-slider'}>
           <Slider
             value={[effectiveYMin, effectiveYMax]}
             min={dataDomain.y?.min ?? 0}

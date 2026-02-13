@@ -65,7 +65,8 @@ describe('FloatingGraphWindow', () => {
     xAxis: { type: 'doeMetadata', key: 'label' },
     yAxis: { type: 'metric', key: 'Power(mW)!combinational_Total' },
     series: [
-      { id: 's_0', metricKey: 'Power(mW)!combinational_Total', color: '#ff0000', enabled: true },
+      { id: 's_0', metricKey: 'Power(mW)!combinational_Total', color: '#ff0000', enabled: true, chartType: 'line' },
+      { id: 's_1', metricKey: 'Power(mW)!clock_Total', color: '#00ff00', enabled: true, chartType: 'bar' },
     ],
     xRange: { min: 'auto', max: 'auto' },
     yRange: { min: 'auto', max: 'auto' },
@@ -76,7 +77,7 @@ describe('FloatingGraphWindow', () => {
     graph: {
       windows: [mockWindow],
       nextWindowId: 1,
-      nextSeriesIdByWindow: { gw_0: 1 },
+      nextSeriesIdByWindow: { gw_0: 2 },
       maxZIndex: 1,
     },
     matrix: {
@@ -234,5 +235,53 @@ describe('FloatingGraphWindow', () => {
     const rnd = screen.getByTestId('mock-rnd');
     const size = JSON.parse(rnd.getAttribute('data-size') || '{}');
     expect(size).toEqual({ width: 800, height: 600 });
+  });
+
+  it('does not render global chart type selector', () => {
+    renderWithProviders(<FloatingGraphWindow windowId="gw_0" windowIndex={0} />, {
+      preloadedState,
+    });
+
+    expect(screen.queryByTestId('chart-type-select')).not.toBeInTheDocument();
+  });
+
+  it('renders per-series chart type selectors', () => {
+    renderWithProviders(<FloatingGraphWindow windowId="gw_0" windowIndex={0} />, {
+      preloadedState,
+    });
+
+    expect(screen.getByTestId('series-chart-type-select-s_0')).toBeInTheDocument();
+    expect(screen.getByTestId('series-chart-type-select-s_1')).toBeInTheDocument();
+  });
+
+  it('updates only targeted series chart type from per-series selector', () => {
+    const { store } = renderWithProviders(
+      <FloatingGraphWindow windowId="gw_0" windowIndex={0} />,
+      { preloadedState }
+    );
+
+    fireEvent.click(screen.getByTestId('series-chart-type-select-s_0'));
+    fireEvent.click(screen.getByText('Area'));
+
+    const state = store.getState();
+    const updatedWindow = state.graph.windows[0];
+
+    expect(updatedWindow.series.find((series) => series.id === 's_0')?.chartType).toBe('area');
+    expect(updatedWindow.series.find((series) => series.id === 's_1')?.chartType).toBe('bar');
+  });
+
+  it('quick add creates a new series with line chart type', () => {
+    const { store } = renderWithProviders(
+      <FloatingGraphWindow windowId="gw_0" windowIndex={0} />,
+      { preloadedState }
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /quick add series/i }));
+
+    const state = store.getState();
+    const newSeries = state.graph.windows[0].series.find((series) => series.id === 's_2');
+
+    expect(newSeries).toBeDefined();
+    expect(newSeries?.chartType).toBe('line');
   });
 });

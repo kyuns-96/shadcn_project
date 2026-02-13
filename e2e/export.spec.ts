@@ -13,8 +13,7 @@ test.describe('PNG Export', () => {
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    // Wait for chart container to be visible
-    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
+    await expect(page.locator('.recharts-wrapper').first()).toBeVisible();
     
     // Wait for SVG to render (even if showing "No data")
     await page.locator('svg').first().waitFor({ state: 'visible', timeout: 10000 });
@@ -44,8 +43,7 @@ test.describe('PNG Export', () => {
     
     await expect(page.locator('[data-testid="floating-graph-window"]')).toBeVisible();
     
-    // Wait for chart container to be visible
-    await expect(page.locator('[data-testid="chart-drop-zone"]')).toBeVisible();
+    await expect(page.locator('.recharts-wrapper').first()).toBeVisible();
     
     // Wait for SVG to render (even if showing "No data")
     await page.locator('svg').first().waitFor({ state: 'visible', timeout: 10000 });
