@@ -34,8 +34,11 @@ import type { PowerDecimalMap } from "@/components/ag-grid-matrix-table/decimalD
  * DoE 그룹 헤더 렌더러 - 중앙정렬
  */
 function DoeGroupHeader(props: IHeaderParams) {
+  const headerGroupParams = props as unknown as {
+    columnGroup?: { displayName?: string };
+  };
   const displayText =
-    (props as any).columnGroup?.displayName || props.displayName;
+    headerGroupParams.columnGroup?.displayName || props.displayName;
   return (
     <div className="w-full h-full flex items-center justify-center !text-center">
       <span className="truncate">{displayText}</span>
@@ -74,7 +77,7 @@ export function buildPowerColumnDefs(args: {
       backgroundColor: "var(--ag-header-background-color)",
       borderRight: "1px solid var(--ag-border-color)",
       textAlign: "right",
-    } as any,
+    },
   };
 
   // DoE 그룹 컬럼들 (계층형: parent header + 4 sub-columns)
@@ -89,7 +92,7 @@ export function buildPowerColumnDefs(args: {
             headerName: columnName,
             width: POWER_TABLE_CONFIG.dataColumnWidth,
             editable: true,
-            cellStyle: { textAlign: textAlignOption } as any,
+            cellStyle: { textAlign: textAlignOption },
             headerComponent: ColumnHeaderWithPopup,
             headerComponentParams: {
               columnMetadata: {
@@ -121,7 +124,7 @@ export function buildPowerColumnDefs(args: {
             cellRenderer: (params: ICellRendererParams<PowerRowData>) => {
               if (params.value === "___LOADING___")
                 return <Spinner className="mx-auto" />;
-              return (params as any).valueFormatted ?? params.value;
+              return params.valueFormatted ?? params.value;
             },
           };
         }

@@ -11,13 +11,16 @@
  */
 
 import { useCallback } from "react";
+import type { AgGridReact } from "ag-grid-react";
 import type { CellClickedEvent, GridApi, IRowNode } from "ag-grid-community";
 import type { PowerRowData } from "./types";
 
 /**
  * 셀 선택 관련 훅
  */
-export function useSelectionHandlers(gridRef: React.RefObject<any>) {
+export function useSelectionHandlers(
+  gridRef: React.RefObject<AgGridReact<PowerRowData> | null>
+) {
   const selectSingleRow = useCallback(
     (rowId: string) => {
       const api = gridRef.current?.api as GridApi<PowerRowData> | undefined;

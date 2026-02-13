@@ -49,11 +49,31 @@ describe("Power table columns configuration", () => {
       data: { rowKey: "total" } as PowerRowData,
     } as ValueFormatterParams<PowerRowData, number>;
     expect(valueFormatter(paramsTotal)).toBe("123.45679");
-    
-    const paramsUnknown = {
+
+    const decimalsMissingTotal: Record<string, number> = { ...MOCK_DECIMALS };
+    delete decimalsMissingTotal.total;
+
+    const colDefsMissingTotal = buildPowerColumnDefs({
+      doeGroups: [mockDoeGroup],
+      textAlignOption: "right",
+      decimalPlaces: decimalsMissingTotal as unknown as PowerDecimalMap,
+    });
+
+    const doeGroupColMissingTotal = colDefsMissingTotal[1] as ColGroupDef<PowerRowData>;
+    const internalColMissingTotal = doeGroupColMissingTotal.children[0] as ColDef<PowerRowData>;
+
+    const valueFormatterMissingTotal = internalColMissingTotal.valueFormatter;
+    expect(valueFormatterMissingTotal).toBeDefined();
+
+    if (typeof valueFormatterMissingTotal !== "function") {
+      throw new Error("valueFormatter is not a function");
+    }
+
+    const paramsTotalMissing = {
       value: 123.456789,
-      data: { rowKey: "unknown" as unknown as any } as PowerRowData,
+      data: { rowKey: "total" } as PowerRowData,
     } as ValueFormatterParams<PowerRowData, number>;
-    expect(valueFormatter(paramsUnknown)).toBe("123.457");
+
+    expect(valueFormatterMissingTotal(paramsTotalMissing)).toBe("123.457");
   });
 });
