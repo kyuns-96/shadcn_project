@@ -1,4 +1,8 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {
+  createAsyncThunk,
+  createSlice,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import { fetchDataset as fetchDatasetAPI } from "@/api/fetchDataset";
 import type { RootState } from "@/store";
 import { fetchFunctionList } from "@/api/fetchFunctionList";
@@ -118,7 +122,44 @@ export const fetchDataset = createAsyncThunk<
 const datasetReducer = createSlice({
   name: "dataset",
   initialState: { data: {}, loading: {}, error: {} } as DatasetState,
-  reducers: {},
+  reducers: {
+    renameDatasetKey: (
+      state,
+      action: PayloadAction<{ from: string; to: string }>
+    ) => {
+      const { from, to } = action.payload;
+      if (from === to) {
+        return;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(state.data, from)) {
+        const sourceData = state.data[from] ?? ({} as DatasetRecord);
+        if (Object.prototype.hasOwnProperty.call(state.data, to)) {
+          state.data[to] = {
+            ...sourceData,
+            ...state.data[to],
+          };
+        } else {
+          state.data[to] = sourceData;
+        }
+        delete state.data[from];
+      }
+
+      if (Object.prototype.hasOwnProperty.call(state.loading, from)) {
+        if (!Object.prototype.hasOwnProperty.call(state.loading, to)) {
+          state.loading[to] = state.loading[from];
+        }
+        delete state.loading[from];
+      }
+
+      if (Object.prototype.hasOwnProperty.call(state.error, from)) {
+        if (!Object.prototype.hasOwnProperty.call(state.error, to)) {
+          state.error[to] = state.error[from];
+        }
+        delete state.error[from];
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchDataset.pending, (state, action) => {
@@ -139,6 +180,8 @@ const datasetReducer = createSlice({
       });
   },
 });
+
+export const { renameDatasetKey } = datasetReducer.actions;
 
 export const selectDatasetLoading = (doeName: string) => (state: RootState) =>
   state.dataset.loading[doeName] ?? false;

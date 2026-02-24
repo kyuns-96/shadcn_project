@@ -1,22 +1,3 @@
-/**
- * @file powerMatrixReducer.ts
- *
- * @purpose
- * Power Page 전용 매트릭스 상태 관리 리듀서입니다.
- * DoE 그룹 (4개 컬럼: Internal, Switching, Leakage, Total)과
- * 10개의 행 (Power 메트릭)을 관리합니다.
- *
- * @structure
- * 1. PowerMatrixState: DoE 그룹 + 행 헤더 상태
- * 2. addDoeGroup: 새 DoE 추가 (4개 컬럼 그룹)
- * 3. updatePowerCell: 개별 셀 값 업데이트
- * 4. updateDoeScenario: DoE 그룹의 시나리오 업데이트
- *
- * @dependencies
- * - @reduxjs/toolkit: Redux 툴킷
- * - @/variables/defaultPowerMatrixTemplate: Power 행 상수
- */
-
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import type { PowerRowKey } from "@/variables/defaultPowerMatrixTemplate";
 
@@ -223,6 +204,17 @@ const powerMatrixSlice = createSlice({
       }
     },
 
+    reorderDoeGroups: (state, action: PayloadAction<string[]>) => {
+      const idsInOrder = action.payload;
+      const orderMap = new Map(idsInOrder.map((id, index) => [id, index]));
+      const knownGroups = state.doeGroups
+        .filter((group) => orderMap.has(group.id))
+        .sort((a, b) => orderMap.get(a.id)! - orderMap.get(b.id)!);
+      const unknownGroups = state.doeGroups.filter((group) => !orderMap.has(group.id));
+
+      state.doeGroups = [...knownGroups, ...unknownGroups];
+    },
+
     /**
      * DoE 그룹을 삭제합니다.
      */
@@ -292,6 +284,7 @@ export const {
   updatePowerCell,
   updateDoeScenario,
   updateDoeGroupLabel,
+  reorderDoeGroups,
   removeDoeGroup,
   markDoeFetched,
   restoreDoeGroupsFromURL,

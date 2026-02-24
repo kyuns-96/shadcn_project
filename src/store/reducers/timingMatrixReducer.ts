@@ -138,6 +138,17 @@ const timingMatrixSlice = createSlice({
       }
     },
 
+    reorderTimingRows: (state, action: PayloadAction<string[]>) => {
+      const idsInOrder = action.payload;
+      const orderMap = new Map(idsInOrder.map((id, index) => [id, index]));
+      const knownRows = state.rows
+        .filter((row) => orderMap.has(row.id))
+        .sort((a, b) => orderMap.get(a.id)! - orderMap.get(b.id)!);
+      const unknownRows = state.rows.filter((row) => !orderMap.has(row.id));
+
+      state.rows = [...knownRows, ...unknownRows];
+    },
+
     /**
      * 여러 행을 설정합니다 (URL 복원용).
      * [WHY] _needsDataFetch가 true인 행은 LOADING 상태로 초기화하여 spinner가 표시되도록 함
@@ -182,6 +193,7 @@ export const {
   updateTimingCell,
   removeTimingRow,
   updateTimingRowLabel,
+  reorderTimingRows,
   setTimingRows,
   markTimingRowFetched,
   resetTimingMatrix,
