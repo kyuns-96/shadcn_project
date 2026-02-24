@@ -1,34 +1,10 @@
-/**
- * @file PowerColumnMetadataTable.tsx
- *
- * @purpose
- * Power 페이지 전용 DoE 그룹 메타데이터 테이블 컴포넌트입니다.
- * 현재 추가된 DoE 그룹들의 메타데이터를 테이블 형태로 표시하고,
- * Power Scenario 선택 및 DoE 삭제 기능을 제공합니다.
- *
- * @structure
- * 1. DoE 그룹 메타데이터 테이블 (Label, Project, Block, NetVer, Revision, EcoNum)
- * 2. Power Scenario 드롭다운 (각 DoE별 선택)
- * 3. DoE 삭제 버튼 (휴지통 아이콘)
- *
- * @dependencies
- * - @/components/ui/table: shadcn 테이블 컴포넌트
- * - @/components/shadcn-studio/combobox/FilterDropdownCombobox: 드롭다운
- * - @/store: Redux store 및 hooks
- * - @/store/reducers/powerMatrixReducer: DoE 그룹/셀 상태 관리
- * - @/variables/metricValueExtractor: 메트릭 값 추출
- * - @/variables/defaultPowerMatrixTemplate: Power 컬럼 상수
- * - lucide-react: 아이콘
- */
-
-"use client";
+ "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import { Trash2Icon, CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
-import {
+import { CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
+  import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -45,32 +21,24 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import FilterDropdownCombobox, {
-  type DropdownConfig,
-} from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import EnvDataDialog from "@/components/shadcn-studio/dialog/EnvDataDialog";
+import { type DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
   updatePowerCell,
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
 import { updateDoEMetadata } from "@/store/doeRegistry";
-import { removeDoEFromAll, resetAllDoEs } from "@/store/doeThunks";
+import { removeDoEFromAll, resetAllDoEs, reorderDoEsAll } from "@/store/doeThunks";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
   POWER_COLUMN_NAMES,
   getMetricKey,
 } from "@/variables/defaultPowerMatrixTemplate";
+import { DoeSortableContext } from "./DoeSortableContext";
+import { PowerColumnMetadataTableRow } from "./PowerColumnMetadataTableRow";
 
-/** 데이터가 없을 때 표시되는 기본값 */
-const EMPTY_VALUE_PLACEHOLDER = "-";
-
-/**
- * Power 페이지 전용 DoE 메타데이터 테이블 컴포넌트
- *
- * 현재 추가된 모든 DoE 그룹의 메타데이터를 표시하고,
- * 각 DoE의 Power Scenario를 선택하거나 삭제할 수 있습니다.
- */
+/** Power 페이지 전용 DoE 메타데이터 테이블 컴포넌트 */
 const PowerColumnMetadataTable = () => {
   const dispatch = useAppDispatch();
   const [isCopied, setIsCopied] = useState<boolean>(false);
@@ -113,10 +81,7 @@ const PowerColumnMetadataTable = () => {
     }
   }, [isDialogOpen, selectedDoeId, selectedDoeGroup, selectedScenario]);
 
-  /**
-   * Power Scenario 변경 핸들러
-   * 시나리오 변경 시 해당 DoE 그룹의 모든 셀 값을 다시 추출합니다.
-   */
+  /** Power Scenario 변경 핸들러 */
   const handleScenarioChange = useCallback(
     (doeId: string, doeLabel: string, newScenario: string) => {
       // 1. doeRegistry 메타데이터 업데이트 (모든 참조처에 자동 반영)
@@ -127,7 +92,6 @@ const PowerColumnMetadataTable = () => {
         })
       );
 
-      // 2. powerMatrix 상태도 업데이트 (역사적 호환성용)
       dispatch(updateDoeScenario({ doeId, scenario: newScenario }));
 
       // 3. 해당 DoE의 데이터셋 가져오기
@@ -135,16 +99,12 @@ const PowerColumnMetadataTable = () => {
         string,
         unknown
       >;
-
-      // 4. 각 행의 4개 컬럼 셀 값 다시 추출
       rowHeaders.forEach((rowHeader) => {
         POWER_COLUMN_NAMES.forEach((columnName) => {
           const metricKey = getMetricKey(rowHeader.rowKey, columnName);
           const columnId = `${doeId}_${columnName}`;
           const metricValue =
-            extractMetricValue(metricKey, datasetPayload, newScenario) ??
-            EMPTY_VALUE_PLACEHOLDER;
-
+            extractMetricValue(metricKey, datasetPayload, newScenario) ?? "-";
           dispatch(
             updatePowerCell({
               rowId: rowHeader.id,
@@ -157,20 +117,20 @@ const PowerColumnMetadataTable = () => {
     },
     [dispatch, dataset, rowHeaders]
   );
-
-  /**
-   * DoE 그룹 삭제 핸들러
-   */
+  /** DoE 그룹 삭제 핸들러 */
   const handleDeleteDoeGroup = useCallback(
     (doeId: string) => {
       dispatch(removeDoEFromAll(doeId));
     },
     [dispatch]
   );
-
-  /**
-   * 각 DoE의 Power Scenario 드롭다운 설정 생성
-   */
+  const handleDragEnd = useCallback(
+    (activeId: string, overId: string) => {
+      dispatch(reorderDoEsAll(activeId, overId));
+    },
+    [dispatch]
+  );
+  /** 각 DoE의 Power Scenario 드롭다운 설정 생성 */
   const getScenarioDropdownConfig = useCallback(
     (doeGroup: (typeof enrichedDoeGroups)[0]): DropdownConfig => {
       const availableScenarios = doeGroup.AVAILABLE_SCENARIOS || [];
@@ -187,10 +147,7 @@ const PowerColumnMetadataTable = () => {
     },
     [handleScenarioChange]
   );
-
-  /**
-   * 테이블 데이터를 TSV 형식으로 복사 (엑셀용)
-   */
+  /** 테이블 데이터를 TSV 형식으로 복사 (엑셀용) */
   const handleCopyTable = useCallback(async () => {
     // 헤더 행
     const headers = [
@@ -203,8 +160,6 @@ const PowerColumnMetadataTable = () => {
       "Power Scenario",
     ];
     const headerLine = headers.join("\t");
-
-    // 데이터 행들
     const dataLines = enrichedDoeGroups.map((doeGroup) =>
       [
         doeGroup.label,
@@ -216,8 +171,6 @@ const PowerColumnMetadataTable = () => {
         doeGroup.POWER_SCENARIO || "-",
       ].join("\t")
     );
-
-    // 전체 텍스트 (헤더 + 데이터)
     const tsvText = [headerLine, ...dataLines].join("\n");
 
     try {
@@ -228,7 +181,6 @@ const PowerColumnMetadataTable = () => {
       console.error("Failed to copy table data:", error);
     }
   }, [enrichedDoeGroups]);
-
   // DoE가 없으면 안내 메시지 표시
   const isEmpty = enrichedDoeGroups.length === 0;
 
@@ -302,6 +254,7 @@ const PowerColumnMetadataTable = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]"></TableHead>
                 <TableHead className="w-[100px]">DoE Name</TableHead>
                 <TableHead className="w-[80px]">PROJECT</TableHead>
                 <TableHead className="w-[95px]">BLOCK</TableHead>
@@ -313,56 +266,20 @@ const PowerColumnMetadataTable = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {enrichedDoeGroups.map((doeGroup) => (
-                <TableRow key={doeGroup.id}>
-                  <TableCell
-                    className="font-medium w-[100px] cursor-pointer hover:underline"
-                    onClick={() => handleDoeNameClick(doeGroup.id)}
-                  >
-                    {doeGroup.label}
-                  </TableCell>
-                  <TableCell className="w-[80px]">
-                    {doeGroup.PROJECT_NAME || "-"}
-                  </TableCell>
-                  <TableCell className="w-[95px]">
-                    {doeGroup.BLOCK || "-"}
-                  </TableCell>
-                  <TableCell className="w-[120px]">
-                    {doeGroup.NET_VER || "-"}
-                  </TableCell>
-                  <TableCell className="w-[170px] truncate">
-                    {doeGroup.REVISION || "-"}
-                  </TableCell>
-                  <TableCell className="w-[105px]">
-                    {doeGroup.ECO_NUM || "-"}
-                  </TableCell>
-                  <TableCell>
-                    {(doeGroup.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
-                      <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
-                        <FilterDropdownCombobox
-                          dropdownConfigs={[
-                            getScenarioDropdownConfig(doeGroup),
-                          ]}
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        No scenarios
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteDoeGroup(doeGroup.id)}
-                    >
-                      <Trash2Icon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              <DoeSortableContext
+                items={enrichedDoeGroups.map((d) => d.id)}
+                onDragEnd={handleDragEnd}
+              >
+                {enrichedDoeGroups.map((doeGroup) => (
+                  <PowerColumnMetadataTableRow
+                    key={doeGroup.id}
+                    doeGroup={doeGroup}
+                    getScenarioDropdownConfig={getScenarioDropdownConfig}
+                    handleDeleteDoeGroup={handleDeleteDoeGroup}
+                    handleDoeNameClick={handleDoeNameClick}
+                  />
+                ))}
+              </DoeSortableContext>
             </TableBody>
           </Table>
         </div>

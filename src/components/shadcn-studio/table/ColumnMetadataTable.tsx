@@ -5,29 +5,16 @@
  * 현재 추가된 컬럼들의 메타데이터를 테이블 형태로 표시하고,
  * Power Scenario 선택 및 컬럼 삭제 기능을 제공합니다.
  *
- * @structure
- * 1. 컬럼 메타데이터 테이블 (Label, Project, Block, NetVer, Revision, EcoNum)
- * 2. Power Scenario 드롭다운 (각 컬럼별 선택)
- * 3. 컬럼 삭제 버튼 (휴지통 아이콘)
- *
- * @dependencies
- * - @/components/ui/table: shadcn 테이블 컴포넌트
- * - @/components/shadcn-studio/combobox/FilterDropdownCombobox: 드롭다운
- * - @/store: Redux store 및 hooks
- * - @/store/matrixSlice: 컬럼/셀 상태 관리
- * - @/store/reducers/selectedReducer: Power Scenario 선택 상태
- * - @/variables/metricValueExtractor: 메트릭 값 추출
  * - lucide-react: 아이콘
  */
 
 "use client";
 
 import { useCallback, useState } from "react";
-import { Trash2Icon, CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
+import { CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -44,27 +31,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import FilterDropdownCombobox, {
-  type DropdownConfig,
-} from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
+import { type DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { updateCell } from "@/store/matrixSlice";
 import { updateDoEMetadata } from "@/store/doeRegistry";
-import { removeDoEFromAll, resetAllDoEs } from "@/store/doeThunks";
+import { removeDoEFromAll, resetAllDoEs, reorderDoEsAll } from "@/store/doeThunks";
 import {
   setColumnPowerScenario,
   clearColumnPowerScenario,
 } from "@/store/reducers/selectedReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
-
+import { DoeSortableContext } from "./DoeSortableContext";
+import { ColumnMetadataTableRow } from "./ColumnMetadataTableRow";
 /** 데이터가 없을 때 표시되는 기본값 */
 const EMPTY_VALUE_PLACEHOLDER = "-";
 
 /**
  * 컬럼 메타데이터 테이블 컴포넌트
- *
- * 현재 추가된 모든 컬럼의 메타데이터를 표시하고,
- * 각 컬럼의 Power Scenario를 선택하거나 컬럼을 삭제할 수 있습니다.
  */
 const ColumnMetadataTable = () => {
   const dispatch = useAppDispatch();
@@ -86,10 +69,7 @@ const ColumnMetadataTable = () => {
     accessorKey: doeId,
   }));
 
-  /**
-   * Power Scenario 변경 핸들러
-   * 시나리오 변경 시 해당 컬럼의 모든 셀 값을 다시 추출합니다.
-   */
+  /** Power Scenario 변경 핸들러 */
   const handleScenarioChange = useCallback(
     (columnId: string, columnLabel: string, newScenario: string) => {
       // 1. doeRegistry 메타데이터 업데이트 (모든 참조처에 자동 반영)
@@ -128,9 +108,7 @@ const ColumnMetadataTable = () => {
     [dispatch, dataset, rowHeaders]
   );
 
-  /**
-   * 컬럼 삭제 핸들러
-   */
+  /** 컬럼 삭제 핸들러 */
   const handleDeleteColumn = useCallback(
     (columnId: string) => {
       dispatch(removeDoEFromAll(columnId));
@@ -139,9 +117,14 @@ const ColumnMetadataTable = () => {
     [dispatch]
   );
 
-  /**
-   * 각 컬럼의 Power Scenario 드롭다운 설정 생성
-   */
+  const handleDragEnd = useCallback(
+    (activeId: string, overId: string) => {
+      dispatch(reorderDoEsAll(activeId, overId));
+    },
+    [dispatch]
+  );
+
+  /** 각 컬럼의 Power Scenario 드롭다운 설정 생성 */
   const getScenarioDropdownConfig = useCallback(
     (column: (typeof enrichedColumnHeaders)[0]): DropdownConfig => {
       const availableScenarios = column.AVAILABLE_SCENARIOS || [];
@@ -160,9 +143,7 @@ const ColumnMetadataTable = () => {
     [columnPowerScenarios, handleScenarioChange]
   );
 
-  /**
-   * 테이블 데이터를 TSV 형식으로 복사 (엑셀용)
-   */
+  /** 테이블 데이터를 TSV 형식으로 복사 (엑셀용) */
   const handleCopyTable = useCallback(async () => {
     // 헤더 행
     const headers = [
@@ -266,6 +247,7 @@ const ColumnMetadataTable = () => {
            <Table>
              <TableHeader>
                <TableRow>
+                 <TableHead className="w-[40px]"></TableHead>
                  <TableHead className="w-[65px]">Label</TableHead>
                  <TableHead className="w-[80px]">PROJECT</TableHead>
                  <TableHead className="w-[95px]">BLOCK</TableHead>
@@ -277,51 +259,19 @@ const ColumnMetadataTable = () => {
                </TableRow>
              </TableHeader>
              <TableBody>
-               {enrichedColumnHeaders.map((column) => (
-                 <TableRow key={column.id}>
-                   <TableCell className="font-medium w-[65px]">
-                     {column.label}
-                   </TableCell>
-                   <TableCell className="w-[80px]">
-                     {column.PROJECT_NAME || "-"}
-                   </TableCell>
-                   <TableCell className="w-[95px]">
-                     {column.BLOCK || "-"}
-                   </TableCell>
-                   <TableCell className="w-[120px]">
-                     {column.NET_VER || "-"}
-                   </TableCell>
-                   <TableCell className="w-[170px] truncate">
-                     {column.REVISION || "-"}
-                   </TableCell>
-                   <TableCell className="w-[105px]">
-                     {column.ECO_NUM || "-"}
-                   </TableCell>
-                   <TableCell>
-                     {(column.AVAILABLE_SCENARIOS?.length ?? 0) > 0 ? (
-                       <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
-                         <FilterDropdownCombobox
-                           dropdownConfigs={[getScenarioDropdownConfig(column)]}
-                         />
-                       </div>
-                     ) : (
-                       <span className="text-muted-foreground text-sm">
-                         No scenarios
-                       </span>
-                     )}
-                   </TableCell>
-                   <TableCell className="text-center">
-                     <Button
-                       variant="ghost"
-                       size="icon"
-                       className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                       onClick={() => handleDeleteColumn(column.id)}
-                     >
-                       <Trash2Icon className="h-4 w-4" />
-                     </Button>
-                   </TableCell>
-                 </TableRow>
-               ))}
+               <DoeSortableContext
+                 items={enrichedColumnHeaders.map((c) => c.id)}
+                 onDragEnd={handleDragEnd}
+               >
+                 {enrichedColumnHeaders.map((column) => (
+                   <ColumnMetadataTableRow
+                     key={column.id}
+                     column={column}
+                     getScenarioDropdownConfig={getScenarioDropdownConfig}
+                     handleDeleteColumn={handleDeleteColumn}
+                   />
+                 ))}
+               </DoeSortableContext>
              </TableBody>
            </Table>
          </div>

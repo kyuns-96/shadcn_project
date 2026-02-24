@@ -6,27 +6,16 @@
  * 현재 추가된 DoE 그룹들의 메타데이터를 테이블 형태로 표시하고,
  * Timing Scenario 선택 및 DoE 삭제 기능을 제공합니다.
  *
- * @structure
- * 1. DoE 그룹 메타데이터 테이블 (Label, Project, Block, NetVer, Revision, EcoNum)
- * 2. Timing Scenario 드롭다운 (각 DoE별 선택)
- * 3. DoE 삭제 버튼 (휴지통 아이콘)
- *
- * @dependencies
- * - @/components/ui/table: shadcn 테이블 컴포넌트
- * - @/components/shadcn-studio/combobox/FilterDropdownCombobox: 드롭다운
- * - @/store: Redux store 및 hooks
- * - @/store/doeRegistry: updateDoEMetadata, removeDoE
  * - lucide-react: 아이콘
  */
 
 "use client";
 
 import { useCallback, useState } from "react";
-import { Trash2Icon, CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
-import {
+import { CopyIcon, CheckIcon, RotateCcw } from "lucide-react";
+  import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -43,12 +32,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import FilterDropdownCombobox, {
-  type DropdownConfig,
-} from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
+import { type DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { updateDoEMetadata } from "@/store/doeRegistry";
-import { removeDoEFromAll, resetAllDoEs } from "@/store/doeThunks";
+import { removeDoEFromAll, resetAllDoEs, reorderDoEsAll } from "@/store/doeThunks";
 import { updateTimingCell } from "@/store/reducers/timingMatrixReducer";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
@@ -58,12 +45,10 @@ import {
   getTimingMetricKey,
   EMPTY_VALUE_PLACEHOLDER,
 } from "@/variables/defaultTimingMatrixTemplate";
-
+import { DoeSortableContext } from "./shadcn-studio/table/DoeSortableContext";
+import { TimingColumnMetadataTableRow } from "./TimingColumnMetadataTableRow";
 /**
  * Timing 페이지 전용 DoE 메타데이터 테이블 컴포넌트
- *
- * 현재 추가된 모든 DoE의 메타데이터를 표시하고,
- * 각 DoE의 Timing Scenario를 선택하거나 삭제할 수 있습니다.
  */
 const TimingColumnMetadataTable = () => {
   const dispatch = useAppDispatch();
@@ -81,10 +66,7 @@ const TimingColumnMetadataTable = () => {
     label: row.label,
   }));
 
-  /**
-   * Timing Scenario 변경 핸들러
-   * 시나리오 변경 시 해당 DoE 행의 모든 셀 값을 다시 추출합니다.
-   */
+  /** Timing Scenario 변경 핸들러 */
   const handleScenarioChange = useCallback(
     (doeId: string, doeLabel: string, newScenario: string) => {
       // 1. doeRegistry 메타데이터 업데이트
@@ -123,9 +105,7 @@ const TimingColumnMetadataTable = () => {
     [dispatch, dataset]
   );
 
-  /**
-   * DoE 행 삭제 핸들러
-   */
+  /** DoE 행 삭제 핸들러 */
   const handleDeleteDoe = useCallback(
     (doeId: string) => {
       dispatch(removeDoEFromAll(doeId));
@@ -133,9 +113,14 @@ const TimingColumnMetadataTable = () => {
     [dispatch]
   );
 
-  /**
-   * 각 DoE의 Timing Scenario 드롭다운 설정 생성
-   */
+  const handleDragEnd = useCallback(
+    (activeId: string, overId: string) => {
+      dispatch(reorderDoEsAll(activeId, overId));
+    },
+    [dispatch]
+  );
+
+  /** 각 DoE의 Timing Scenario 드롭다운 설정 생성 */
   const getScenarioDropdownConfig = useCallback(
     (doeEntry: (typeof timingDoeEntries)[0]): DropdownConfig => {
       const availableScenarios = doeEntry.AVAILABLE_TIMING_SCENARIOS || [];
@@ -153,9 +138,7 @@ const TimingColumnMetadataTable = () => {
     [handleScenarioChange]
   );
 
-  /**
-   * 테이블 데이터를 TSV 형식으로 복사 (엑셀용)
-   */
+  /** 테이블 데이터를 TSV 형식으로 복사 (엑셀용) */
   const handleCopyTable = useCallback(async () => {
     // 헤더 행
     const headers = [
@@ -258,6 +241,7 @@ const TimingColumnMetadataTable = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]"></TableHead>
                 <TableHead className="w-[100px]">DoE Name</TableHead>
                 <TableHead className="w-[80px]">PROJECT</TableHead>
                 <TableHead className="w-[95px]">BLOCK</TableHead>
@@ -269,51 +253,19 @@ const TimingColumnMetadataTable = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {timingDoeEntries.map((doeEntry) => (
-                <TableRow key={doeEntry.id}>
-                  <TableCell className="font-medium w-[100px]">
-                    {doeEntry.label}
-                  </TableCell>
-                  <TableCell className="w-[80px]">
-                    {doeEntry.PROJECT_NAME || "-"}
-                  </TableCell>
-                  <TableCell className="w-[95px]">
-                    {doeEntry.BLOCK || "-"}
-                  </TableCell>
-                  <TableCell className="w-[120px]">
-                    {doeEntry.NET_VER || "-"}
-                  </TableCell>
-                  <TableCell className="w-[170px] truncate">
-                    {doeEntry.REVISION || "-"}
-                  </TableCell>
-                  <TableCell className="w-[105px]">
-                    {doeEntry.ECO_NUM || "-"}
-                  </TableCell>
-                  <TableCell>
-                    {(doeEntry.AVAILABLE_TIMING_SCENARIOS?.length ?? 0) > 0 ? (
-                      <div className="w-[250px] [&_div]:w-full [&_button]:w-full">
-                        <FilterDropdownCombobox
-                          dropdownConfigs={[getScenarioDropdownConfig(doeEntry)]}
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        No scenarios
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteDoe(doeEntry.id)}
-                    >
-                      <Trash2Icon className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              <DoeSortableContext
+                items={timingDoeEntries.map((d) => d.id)}
+                onDragEnd={handleDragEnd}
+              >
+                {timingDoeEntries.map((doeEntry) => (
+                  <TimingColumnMetadataTableRow
+                    key={doeEntry.id}
+                    doeEntry={doeEntry}
+                    getScenarioDropdownConfig={getScenarioDropdownConfig}
+                    handleDeleteDoe={handleDeleteDoe}
+                  />
+                ))}
+              </DoeSortableContext>
             </TableBody>
           </Table>
         </div>
