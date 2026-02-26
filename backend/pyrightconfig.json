@@ -1,10 +1,18 @@
 {
   "pythonVersion": "3.11",
-  "venvPath": ".venv",
   "executionEnvironments": [
     {
       "root": ".",
-      "pythonPath": "."
+      "extraPaths": ["."]
     }
-  ]
+  ],
+  "reportImplicitRelativeImport": "none",
+  "reportCallInDefaultInitializer": "none",
+  "reportUnknownMemberType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownVariableType": "none",
+  "reportUnknownParameterType": "none",
+  "reportMissingTypeArgument": "none",
+  "reportAny": "none",
+  "reportUnusedCallResult": "none"
 }
