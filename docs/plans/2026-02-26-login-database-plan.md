@@ -1,4 +1,4 @@
-# Login + Database Implementation Plan (Revision 2)
+# Login + Database Implementation Plan (Revision 3)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -9,6 +9,12 @@
 **Tech Stack:** FastAPI, SQLAlchemy 2.0 (async), PostgreSQL, bcrypt, python-jose (JWT), Pydantic v2, Alembic, React 19, Redux Toolkit, shadcn/ui
 
 **Auth transport decision:** Bearer token in localStorage. Rationale: This is an internal tool SPA where httpOnly cookies add CORS/CSRF complexity for marginal benefit. CSP `script-src 'self'` header will be set to mitigate XSS.
+
+**Test database:** PostgreSQL (same as production). Tests run against a separate `subutai_test` database using the same Docker PostgreSQL container. This avoids SQLite/JSONB/UUID incompatibility. Tests reset schema between runs using `DROP/CREATE` via Alembic.
+
+**401 handling:** A shared `fetchWithAuth` utility wraps all authenticated fetch calls and dispatches `logout` on 401 responses, ensuring consistent auth state across all API calls.
+
+**DoE save/load UI:** A minimal "Saved Setups" dialog is included in this plan — a button in the sidebar to open a list of saved setups, with save-current and load/delete actions. This completes the core goal.
 
 ---
 
@@ -419,10 +425,19 @@ git commit -m "feat(backend): add JWT and password hashing auth utilities"
 - Create: `backend/tests/conftest.py`
 - Create: `backend/tests/test_auth.py`
 
-**Step 1: Write test conftest (SQLite test DB override)**
+**Step 1: Write test conftest (PostgreSQL test DB)**
+
+Use a dedicated `subutai_test` PostgreSQL database — same types as production (JSONB, UUID), no SQLite incompatibility.
+
+Add `SUBUTAI_TEST_DATABASE_URL` to `backend/.env.example`:
+```
+SUBUTAI_TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/subutai_test
+```
 
 `backend/tests/conftest.py`:
 ```python
+import os
+
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -431,7 +446,10 @@ from app.database import get_db
 from app.main import app
 from app.models import Base
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+TEST_DATABASE_URL = os.getenv(
+    "SUBUTAI_TEST_DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/subutai_test",
+)
 
 engine = create_async_engine(TEST_DATABASE_URL)
 TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -440,6 +458,7 @@ TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=F
 @pytest.fixture(autouse=True)
 async def setup_db():
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with engine.begin() as conn:
@@ -459,6 +478,12 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+```
+
+Remove `aiosqlite` from dev dependencies (no longer needed). The `subutai_test` database must exist before running tests:
+```bash
+docker compose up -d
+docker exec -it <container> psql -U postgres -c "CREATE DATABASE subutai_test;"
 ```
 
 **Step 2: Write the failing auth tests**
@@ -1010,6 +1035,90 @@ git commit -m "feat(api): add frontend auth and DoE setup API functions"
 
 ---
 
+## Task 8b: Shared fetchWithAuth Utility + 401 Interceptor
+
+**Files:**
+- Create: `src/api/fetchWithAuth.ts`
+- Modify: `src/api/doeSetups.ts` (use fetchWithAuth)
+
+**Step 1: Write the shared fetch utility**
+
+`src/api/fetchWithAuth.ts`:
+```typescript
+import { store } from "@/store";
+import { logout } from "@/store/reducers/authReducer";
+
+/**
+ * Authenticated fetch wrapper. Automatically attaches Bearer token and
+ * dispatches logout on 401 so all API callers handle auth expiry uniformly.
+ */
+export async function fetchWithAuth(
+  url: string,
+  options: RequestInit = {},
+): Promise<Response> {
+  const token = store.getState().auth.token;
+  const resp = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  if (resp.status === 401) {
+    store.dispatch(logout());
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  return resp;
+}
+```
+
+**Step 2: Update doeSetups.ts to use fetchWithAuth**
+
+Replace all `fetch(` calls in `src/api/doeSetups.ts` with `fetchWithAuth(` and remove the manual `authHeaders` helper (token is injected automatically):
+
+```typescript
+import { fetchWithAuth } from "./fetchWithAuth";
+
+export async function listDoeSetups(): Promise<DoESetupResponse[]> {
+  const resp = await fetchWithAuth("/api/v1/doe-setups");
+  if (!resp.ok) throw new Error("Failed to fetch setups");
+  return resp.json();
+}
+
+export async function createDoeSetup(
+  name: string,
+  config: Record<string, unknown>,
+): Promise<DoESetupResponse> {
+  const resp = await fetchWithAuth("/api/v1/doe-setups", {
+    method: "POST",
+    body: JSON.stringify({ name, config }),
+  });
+  if (!resp.ok) throw new Error("Failed to save setup");
+  return resp.json();
+}
+
+export async function deleteDoeSetup(setupId: string): Promise<void> {
+  const resp = await fetchWithAuth(`/api/v1/doe-setups/${setupId}`, {
+    method: "DELETE",
+  });
+  if (!resp.ok) throw new Error("Failed to delete setup");
+}
+```
+
+Note: `src/api/auth.ts` (login/register/me) does NOT use fetchWithAuth — those calls are pre-auth and handle their own errors.
+
+**Step 3: Commit**
+
+```bash
+git add src/api/fetchWithAuth.ts src/api/doeSetups.ts
+git commit -m "feat(api): add fetchWithAuth interceptor with 401 → logout handling"
+```
+
+---
+
 ## Task 9: Auth Redux Slice
 
 **Files:**
@@ -1549,6 +1658,220 @@ git commit -m "chore: add docker-compose for PostgreSQL and backend env example"
 
 ---
 
+## Task 14b: DoE Save/Load UI (Minimal)
+
+**Files:**
+- Create: `src/components/SavedSetupsDialog.tsx`
+- Modify: `src/components/SidebarUserMenu.tsx` (add "Saved Setups" button)
+- Create: `src/store/reducers/savedSetupsReducer.ts`
+- Modify: `src/store.ts` (add savedSetups reducer)
+
+This completes the core goal: users can save and load their DoE configurations.
+
+**Step 1: Create savedSetups Redux slice**
+
+`src/store/reducers/savedSetupsReducer.ts`:
+```typescript
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
+import {
+  createDoeSetup,
+  deleteDoeSetup,
+  listDoeSetups,
+  type DoESetupResponse,
+} from "@/api/doeSetups";
+
+interface SavedSetupsState {
+  setups: DoESetupResponse[];
+  status: "idle" | "loading" | "failed";
+  error: string | null;
+}
+
+const initialState: SavedSetupsState = {
+  setups: [],
+  status: "idle",
+  error: null,
+};
+
+export const fetchSavedSetups = createAsyncThunk(
+  "savedSetups/fetch",
+  async () => listDoeSetups(),
+);
+
+export const saveCurrentSetup = createAsyncThunk(
+  "savedSetups/save",
+  async ({ name, config }: { name: string; config: Record<string, unknown> }) =>
+    createDoeSetup(name, config),
+);
+
+export const removeSetup = createAsyncThunk(
+  "savedSetups/remove",
+  async (setupId: string) => {
+    await deleteDoeSetup(setupId);
+    return setupId;
+  },
+);
+
+const savedSetupsSlice = createSlice({
+  name: "savedSetups",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchSavedSetups.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchSavedSetups.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.setups = action.payload;
+      })
+      .addCase(fetchSavedSetups.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message ?? "Failed to load setups";
+      })
+      .addCase(saveCurrentSetup.fulfilled, (state, action) => {
+        state.setups.unshift(action.payload);
+      })
+      .addCase(removeSetup.fulfilled, (state, action) => {
+        state.setups = state.setups.filter((s) => s.id !== action.payload);
+      });
+  },
+});
+
+export default savedSetupsSlice.reducer;
+```
+
+**Step 2: Add to store.ts**
+
+```typescript
+import savedSetupsReducer from "@/store/reducers/savedSetupsReducer";
+// add to combineReducers:
+savedSetups: savedSetupsReducer,
+// export thunks:
+export { fetchSavedSetups, saveCurrentSetup, removeSetup } from "@/store/reducers/savedSetupsReducer";
+```
+
+**Step 3: Create SavedSetupsDialog**
+
+`src/components/SavedSetupsDialog.tsx`:
+```tsx
+import { useState } from "react";
+
+import { Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  useAppDispatch,
+  useAppSelector,
+  fetchSavedSetups,
+  saveCurrentSetup,
+  removeSetup,
+  setDoEs,
+} from "@/store";
+import type { DoERegistryState } from "@/store/doeRegistry";
+
+export function SavedSetupsDialog() {
+  const dispatch = useAppDispatch();
+  const { setups, status } = useAppSelector((state) => state.savedSetups);
+  const doeRegistry = useAppSelector((state) => state.doeRegistry);
+  const [open, setOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+
+  const handleOpen = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (isOpen) dispatch(fetchSavedSetups());
+  };
+
+  const handleSave = () => {
+    if (!saveName.trim()) return;
+    dispatch(saveCurrentSetup({ name: saveName.trim(), config: doeRegistry as unknown as Record<string, unknown> }));
+    setSaveName("");
+  };
+
+  const handleLoad = (config: Record<string, unknown>) => {
+    dispatch(setDoEs((config as unknown as DoERegistryState).allIds.map(
+      (id) => (config as unknown as DoERegistryState).byId[id]
+    )));
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground">
+          Saved Setups
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Saved DoE Setups</DialogTitle>
+        </DialogHeader>
+
+        {/* Save current */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Setup name..."
+            value={saveName}
+            onChange={(e) => setSaveName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
+          />
+          <Button onClick={handleSave} disabled={!saveName.trim()}>
+            Save
+          </Button>
+        </div>
+
+        {/* List */}
+        {status === "loading" && <p className="text-sm text-muted-foreground">Loading...</p>}
+        {setups.length === 0 && status !== "loading" && (
+          <p className="text-sm text-muted-foreground">No saved setups yet.</p>
+        )}
+        <ul className="space-y-1 max-h-64 overflow-y-auto">
+          {setups.map((setup) => (
+            <li key={setup.id} className="flex items-center justify-between rounded px-2 py-1 hover:bg-muted">
+              <button
+                className="flex-1 text-left text-sm"
+                onClick={() => handleLoad(setup.config)}
+              >
+                {setup.name}
+              </button>
+              <button
+                onClick={() => dispatch(removeSetup(setup.id))}
+                className="text-muted-foreground hover:text-destructive"
+                aria-label={`Delete ${setup.name}`}
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+**Step 4: Add to SidebarUserMenu**
+
+In `src/components/SidebarUserMenu.tsx`, import and add `<SavedSetupsDialog />` between the username display and the logout button.
+
+**Step 5: Commit**
+
+```bash
+git add src/store/reducers/savedSetupsReducer.ts src/store.ts src/components/SavedSetupsDialog.tsx src/components/SidebarUserMenu.tsx
+git commit -m "feat(ui): add DoE save/load UI with savedSetups Redux slice and dialog"
+```
+
+---
+
 ## Task 15: End-to-End Smoke Test
 
 **Step 1: Start the stack**
@@ -1569,11 +1892,15 @@ npm run dev
 1. Open `http://localhost:5173` — should see login page (no sidebar)
 2. Click "Register" — create an account (username, email, password)
 3. After registration, should auto-login and redirect to dashboard
-4. Sidebar footer shows username avatar + logout button
-5. Click logout — returns to login page
-6. Login with the same credentials — dashboard loads
-7. Refresh page — session should restore (token persisted in localStorage)
-8. Open a second browser/incognito — register a different user — verify they see 0 DoE setups (isolation)
+4. Sidebar footer shows username avatar + "Saved Setups" button + logout button
+5. Add a DoE entry in QOR Compare page
+6. Click "Saved Setups" → enter a name → click "Save" — setup appears in the list
+7. Clear all DoEs, then load the saved setup — DoEs restore
+8. Delete the saved setup from the dialog
+9. Click logout — returns to login page
+10. Login with the same credentials — dashboard loads
+11. Refresh page — session should restore (token persisted in localStorage)
+12. Open second browser/incognito — register different user — verify "Saved Setups" shows 0 entries (isolation)
 
 **Step 3: Run all backend tests**
 
