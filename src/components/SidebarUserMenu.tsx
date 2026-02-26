@@ -19,8 +19,11 @@ export function SidebarUserMenu() {
       <SidebarMenu>
         <SidebarMenuItem>
           <div className="flex items-center gap-2 px-2 py-1.5">
-            <div className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium">
-              {user.username[0].toUpperCase()}
+            <div
+              aria-hidden="true"
+              className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-medium"
+            >
+              {(user.username[0] ?? "?").toUpperCase()}
             </div>
             <span className="truncate text-sm font-medium">{user.username}</span>
           </div>
