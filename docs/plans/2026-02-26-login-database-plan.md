@@ -1,12 +1,14 @@
-# Login + Database Implementation Plan
+# Login + Database Implementation Plan (Revision 2)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add user authentication (login/register) with a FastAPI + PostgreSQL backend so users can save and load DoE configurations.
 
-**Architecture:** React SPA communicates with a FastAPI backend via REST API using JWT tokens stored in httpOnly cookies. PostgreSQL stores users and their saved DoE setups as JSONB. The sidebar footer shows the logged-in user with logout capability.
+**Architecture:** React SPA communicates with a FastAPI backend via REST API using JWT Bearer tokens stored in localStorage (accepted XSS trade-off for SPA simplicity; CSP headers mitigate). PostgreSQL stores users and their saved DoE setups as JSONB. The sidebar footer shows the logged-in user with logout capability.
 
 **Tech Stack:** FastAPI, SQLAlchemy 2.0 (async), PostgreSQL, bcrypt, python-jose (JWT), Pydantic v2, Alembic, React 19, Redux Toolkit, shadcn/ui
+
+**Auth transport decision:** Bearer token in localStorage. Rationale: This is an internal tool SPA where httpOnly cookies add CORS/CSRF complexity for marginal benefit. CSP `script-src 'self'` header will be set to mitigate XSS.
 
 ---
 
@@ -23,7 +25,7 @@
 **Step 1: Create backend directory and pyproject.toml**
 
 ```bash
-mkdir -p backend/app/routers
+mkdir -p backend/app/routers backend/tests
 ```
 
 `backend/pyproject.toml`:
@@ -43,6 +45,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.9",
+    "email-validator>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +53,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
     "httpx>=0.27.0",
+    "aiosqlite>=0.20.0",
     "ruff>=0.8.0",
 ]
 
@@ -101,6 +105,7 @@ async def get_db():
 
 `backend/app/main.py`:
 ```python
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -113,8 +118,10 @@ from app.routers import auth, doe_setups
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Only auto-create tables in development; production uses Alembic migrations
+    if os.getenv("SUBUTAI_ENV", "development") == "development":
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 
@@ -136,7 +143,7 @@ app.include_router(doe_setups.router, prefix="/api/v1/doe-setups", tags=["doe-se
 **Step 5: Create empty __init__.py files**
 
 ```bash
-touch backend/app/__init__.py backend/app/routers/__init__.py
+touch backend/app/__init__.py backend/app/routers/__init__.py backend/tests/__init__.py
 ```
 
 **Step 6: Commit**
@@ -148,10 +155,13 @@ git commit -m "feat(backend): scaffold FastAPI project with config and database"
 
 ---
 
-## Task 2: Database Models
+## Task 2: Database Models + Alembic Baseline Migration
 
 **Files:**
 - Create: `backend/app/models.py`
+- Create: `backend/alembic.ini`
+- Create: `backend/alembic/env.py`
+- Create: `backend/alembic/versions/001_initial.py`
 
 **Step 1: Write the models**
 
@@ -160,7 +170,7 @@ git commit -m "feat(backend): scaffold FastAPI project with config and database"
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -189,6 +199,9 @@ class User(Base):
 
 class DoESetup(Base):
     __tablename__ = "doe_setups"
+    __table_args__ = (
+        Index("ix_doe_setups_user_id", "user_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -208,11 +221,34 @@ class DoESetup(Base):
     user: Mapped["User"] = relationship(back_populates="doe_setups")
 ```
 
-**Step 2: Commit**
+**Step 2: Initialize Alembic**
 
 ```bash
-git add backend/app/models.py
-git commit -m "feat(backend): add User and DoESetup SQLAlchemy models"
+cd backend && uv run alembic init alembic
+```
+
+Edit `backend/alembic/env.py` to use async engine and import models:
+
+```python
+# In env.py, key changes:
+from app.models import Base
+from app.config import settings
+
+target_metadata = Base.metadata
+# ... configure async engine with settings.database_url
+```
+
+**Step 3: Generate initial migration**
+
+```bash
+cd backend && uv run alembic revision --autogenerate -m "initial: users and doe_setups tables"
+```
+
+**Step 4: Commit**
+
+```bash
+git add backend/
+git commit -m "feat(backend): add models with Alembic baseline migration"
 ```
 
 ---
@@ -281,14 +317,10 @@ class DoESetupResponse(BaseModel):
     model_config = {"from_attributes": True}
 ```
 
-**Step 2: Add email-validator dependency**
-
-Add `"email-validator>=2.0.0"` to the dependencies list in `backend/pyproject.toml`.
-
-**Step 3: Commit**
+**Step 2: Commit**
 
 ```bash
-git add backend/app/schemas.py backend/pyproject.toml
+git add backend/app/schemas.py
 git commit -m "feat(backend): add Pydantic schemas for auth and DoE setups"
 ```
 
@@ -380,21 +412,46 @@ git commit -m "feat(backend): add JWT and password hashing auth utilities"
 
 ---
 
-## Task 5: Auth Router (Register, Login, Refresh, Me)
+## Task 5: Auth Router (Register, Login, Me) + Tests
 
 **Files:**
 - Create: `backend/app/routers/auth.py`
-- Test: `backend/tests/test_auth.py`
+- Create: `backend/tests/conftest.py`
+- Create: `backend/tests/test_auth.py`
 
-**Step 1: Write the failing test**
+**Step 1: Write test conftest (SQLite test DB override)**
 
-Create `backend/tests/__init__.py` and `backend/tests/test_auth.py`:
-
+`backend/tests/conftest.py`:
 ```python
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.database import get_db
 from app.main import app
+from app.models import Base
+
+TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+
+engine = create_async_engine(TEST_DATABASE_URL)
+TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+
+@pytest.fixture(autouse=True)
+async def setup_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+async def override_get_db():
+    async with TestSession() as session:
+        yield session
+
+
+app.dependency_overrides[get_db] = override_get_db
 
 
 @pytest.fixture
@@ -402,6 +459,14 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+```
+
+**Step 2: Write the failing auth tests**
+
+`backend/tests/test_auth.py`:
+```python
+import pytest
+from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
@@ -444,9 +509,22 @@ async def test_login_wrong_password(client: AsyncClient):
         json={"username": "user2", "password": "wrong"},
     )
     assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_duplicate_registration(client: AsyncClient):
+    await client.post(
+        "/api/v1/auth/register",
+        json={"username": "dup", "email": "dup@example.com", "password": "secret123"},
+    )
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={"username": "dup", "email": "dup2@example.com", "password": "secret123"},
+    )
+    assert resp.status_code == 409
 ```
 
-**Step 2: Run test to verify it fails**
+**Step 3: Run tests to verify they fail**
 
 ```bash
 cd backend && uv run pytest tests/test_auth.py -v
@@ -454,7 +532,7 @@ cd backend && uv run pytest tests/test_auth.py -v
 
 Expected: FAIL (router not implemented)
 
-**Step 3: Write the auth router**
+**Step 4: Write the auth router**
 
 `backend/app/routers/auth.py`:
 ```python
@@ -464,7 +542,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import (
     create_access_token,
-    create_refresh_token,
     get_current_user,
     hash_password,
     verify_password,
@@ -483,7 +560,6 @@ router = APIRouter()
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
-    # Check existing username or email
     result = await db.execute(
         select(User).where(
             (User.username == body.username) | (User.email == body.email)
@@ -512,9 +588,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     if not user or not verify_password(body.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    return TokenResponse(
-        access_token=create_access_token(user.id),
-    )
+    return TokenResponse(access_token=create_access_token(user.id))
 
 
 @router.get("/me", response_model=UserResponse)
@@ -522,93 +596,35 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 ```
 
-**Step 4: Run test to verify it passes**
+**Step 5: Run tests to verify they pass**
 
 ```bash
 cd backend && uv run pytest tests/test_auth.py -v
 ```
 
-Note: Tests need a test database. For testing, override the database to use SQLite in-memory. Create `backend/tests/conftest.py`:
+Expected: ALL PASS
 
-```python
-import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from app.database import get_db
-from app.main import app
-from app.models import Base
-
-TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
-
-engine = create_async_engine(TEST_DATABASE_URL)
-TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
-@pytest.fixture(autouse=True)
-async def setup_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-
-async def override_get_db():
-    async with TestSession() as session:
-        yield session
-
-
-app.dependency_overrides[get_db] = override_get_db
-```
-
-Add `aiosqlite>=0.20.0` to dev dependencies in `pyproject.toml`.
-
-Expected: PASS
-
-**Step 5: Commit**
+**Step 6: Commit**
 
 ```bash
 git add backend/
-git commit -m "feat(backend): add auth router with register, login, and me endpoints"
+git commit -m "feat(backend): add auth router with register, login, me + tests"
 ```
 
 ---
 
-## Task 6: DoE Setups Router (CRUD)
+## Task 6: DoE Setups Router (CRUD) + Data Isolation Tests
 
 **Files:**
 - Create: `backend/app/routers/doe_setups.py`
-- Test: `backend/tests/test_doe_setups.py`
+- Create: `backend/tests/test_doe_setups.py`
 
-**Step 1: Write the failing test**
+**Step 1: Write tests including cross-user isolation**
 
 `backend/tests/test_doe_setups.py`:
 ```python
 import pytest
-from httpx import ASGITransport, AsyncClient
-
-from app.main import app
-
-
-@pytest.fixture
-async def client():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
-
-
-@pytest.fixture
-async def auth_headers(client: AsyncClient) -> dict:
-    await client.post(
-        "/api/v1/auth/register",
-        json={"username": "doeuser", "email": "doe@test.com", "password": "secret123"},
-    )
-    resp = await client.post(
-        "/api/v1/auth/login",
-        json={"username": "doeuser", "password": "secret123"},
-    )
-    token = resp.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+from httpx import AsyncClient
 
 
 SAMPLE_CONFIG = {
@@ -619,13 +635,29 @@ SAMPLE_CONFIG = {
 }
 
 
+async def register_and_login(client: AsyncClient, username: str) -> dict:
+    """Helper: register a user and return auth headers."""
+    await client.post(
+        "/api/v1/auth/register",
+        json={"username": username, "email": f"{username}@test.com", "password": "secret123"},
+    )
+    resp = await client.post(
+        "/api/v1/auth/login",
+        json={"username": username, "password": "secret123"},
+    )
+    token = resp.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
 @pytest.mark.asyncio
-async def test_crud_doe_setup(client: AsyncClient, auth_headers: dict):
+async def test_crud_doe_setup(client: AsyncClient):
+    headers = await register_and_login(client, "doeuser")
+
     # Create
     resp = await client.post(
         "/api/v1/doe-setups",
         json={"name": "My Setup", "config": SAMPLE_CONFIG},
-        headers=auth_headers,
+        headers=headers,
     )
     assert resp.status_code == 201
     setup = resp.json()
@@ -633,7 +665,7 @@ async def test_crud_doe_setup(client: AsyncClient, auth_headers: dict):
     assert setup["name"] == "My Setup"
 
     # List
-    resp = await client.get("/api/v1/doe-setups", headers=auth_headers)
+    resp = await client.get("/api/v1/doe-setups", headers=headers)
     assert resp.status_code == 200
     assert len(resp.json()) == 1
 
@@ -641,19 +673,19 @@ async def test_crud_doe_setup(client: AsyncClient, auth_headers: dict):
     resp = await client.put(
         f"/api/v1/doe-setups/{setup_id}",
         json={"name": "Renamed"},
-        headers=auth_headers,
+        headers=headers,
     )
     assert resp.status_code == 200
     assert resp.json()["name"] == "Renamed"
 
     # Delete
     resp = await client.delete(
-        f"/api/v1/doe-setups/{setup_id}", headers=auth_headers
+        f"/api/v1/doe-setups/{setup_id}", headers=headers
     )
     assert resp.status_code == 204
 
     # Verify deleted
-    resp = await client.get("/api/v1/doe-setups", headers=auth_headers)
+    resp = await client.get("/api/v1/doe-setups", headers=headers)
     assert len(resp.json()) == 0
 
 
@@ -661,21 +693,58 @@ async def test_crud_doe_setup(client: AsyncClient, auth_headers: dict):
 async def test_doe_setup_requires_auth(client: AsyncClient):
     resp = await client.get("/api/v1/doe-setups")
     assert resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_cross_user_isolation(client: AsyncClient):
+    """User A cannot see, update, or delete User B's setups."""
+    headers_a = await register_and_login(client, "user_a")
+    headers_b = await register_and_login(client, "user_b")
+
+    # User A creates a setup
+    resp = await client.post(
+        "/api/v1/doe-setups",
+        json={"name": "A's Setup", "config": SAMPLE_CONFIG},
+        headers=headers_a,
+    )
+    setup_id = resp.json()["id"]
+
+    # User B cannot see it
+    resp = await client.get("/api/v1/doe-setups", headers=headers_b)
+    assert len(resp.json()) == 0
+
+    # User B cannot update it
+    resp = await client.put(
+        f"/api/v1/doe-setups/{setup_id}",
+        json={"name": "Hacked"},
+        headers=headers_b,
+    )
+    assert resp.status_code == 404
+
+    # User B cannot delete it
+    resp = await client.delete(
+        f"/api/v1/doe-setups/{setup_id}", headers=headers_b
+    )
+    assert resp.status_code == 404
+
+    # User A can still see it
+    resp = await client.get("/api/v1/doe-setups", headers=headers_a)
+    assert len(resp.json()) == 1
 ```
 
-**Step 2: Run test to verify it fails**
+**Step 2: Run tests to verify they fail**
 
 ```bash
 cd backend && uv run pytest tests/test_doe_setups.py -v
 ```
 
-**Step 3: Write the DoE setups router**
+**Step 3: Write the DoE setups router (all queries scoped to current_user.id)**
 
 `backend/app/routers/doe_setups.py`:
 ```python
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -762,40 +831,42 @@ async def delete_setup(
     await db.commit()
 ```
 
-**Step 4: Run tests**
+**Step 4: Run all tests**
 
 ```bash
 cd backend && uv run pytest tests/ -v
 ```
 
-Expected: ALL PASS
+Expected: ALL PASS (including cross-user isolation)
 
 **Step 5: Commit**
 
 ```bash
 git add backend/
-git commit -m "feat(backend): add DoE setups CRUD router with tests"
+git commit -m "feat(backend): add DoE setups CRUD with per-user ownership + isolation tests"
 ```
 
 ---
 
-## Task 7: Vite Proxy Configuration
+## Task 7: Vite Proxy + CSP Header Configuration
 
 **Files:**
 - Modify: `vite.config.ts`
 
-**Step 1: Add proxy to dev server**
+**Step 1: Add proxy and CSP header to dev server**
 
-Add a `server.proxy` section so the frontend can call `/api/v1/*` endpoints during development:
+In `vite.config.ts`, add to `defineConfig`:
 
 ```typescript
-// In vite.config.ts, add to defineConfig:
 server: {
   proxy: {
     "/api/v1": {
       target: "http://localhost:8000",
       changeOrigin: true,
     },
+  },
+  headers: {
+    "Content-Security-Policy": "script-src 'self'",
   },
 },
 ```
@@ -804,7 +875,7 @@ server: {
 
 ```bash
 git add vite.config.ts
-git commit -m "feat(config): add Vite proxy for FastAPI backend"
+git commit -m "feat(config): add Vite proxy for FastAPI backend and CSP header"
 ```
 
 ---
@@ -1063,9 +1134,9 @@ In `src/store.ts`, add:
 import authReducer from "@/store/reducers/authReducer";
 ```
 
-And add `auth: authReducer` to the `combineReducers` call.
+Add `auth: authReducer` to the `combineReducers` call.
 
-Also export the new actions:
+Export the new actions:
 ```typescript
 export { login, register, restoreSession, logout, clearError } from "@/store/reducers/authReducer";
 ```
@@ -1285,9 +1356,14 @@ git commit -m "feat(ui): add register page component"
 
 `src/components/SidebarUserMenu.tsx`:
 ```tsx
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 
-import { SidebarFooter, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
+import {
+  SidebarFooter,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar";
 import { useAppDispatch, useAppSelector, logout } from "@/store";
 
 export function SidebarUserMenu() {
@@ -1331,16 +1407,15 @@ git commit -m "feat(ui): add sidebar user menu with logout"
 
 ---
 
-## Task 13: Wire Up Auth in App.tsx and DashboardSidebar
+## Task 13: Wire Up Auth in App.tsx and DashboardSidebar + 401 Handling
 
 **Files:**
 - Modify: `src/App.tsx`
 - Modify: `src/components/DashboardSidebar.tsx`
-- Modify: `src/pages/index.ts` (if barrel export exists, add new pages)
 
 **Step 1: Update App.tsx to handle auth routing**
 
-`src/App.tsx` — Replace existing content:
+Replace `src/App.tsx` content:
 ```tsx
 import { useEffect, useState } from "react";
 
@@ -1355,6 +1430,7 @@ function App() {
   const { user, token, status } = useAppSelector((state) => state.auth);
   const [authView, setAuthView] = useState<"login" | "register">("login");
 
+  // Restore session from stored token on mount
   useEffect(() => {
     if (token && !user) {
       dispatch(restoreSession());
@@ -1397,24 +1473,30 @@ export default App;
 
 **Step 2: Add SidebarUserMenu to DashboardSidebar**
 
-In `src/components/DashboardSidebar.tsx`, import and add the user menu:
+In `src/components/DashboardSidebar.tsx`:
 
+Add import:
 ```typescript
 import { SidebarUserMenu } from "@/components/SidebarUserMenu";
 ```
 
-Add `<SidebarUserMenu />` right before the closing `</Sidebar>` tag (after `</SidebarContent>`):
-
+Add `<SidebarUserMenu />` after `</SidebarContent>` and before `</Sidebar>`:
 ```tsx
 <Sidebar>
   <SidebarContent>
-    {/* existing navigation */}
+    {/* existing navigation groups */}
   </SidebarContent>
   <SidebarUserMenu />
 </Sidebar>
 ```
 
-**Step 3: Commit**
+**Step 3: Add 401 handling**
+
+The `authReducer` already handles 401s via `restoreSession.rejected` — it clears the token and user, which causes `App.tsx` to render the login page. When any API call returns 401 (expired token), the fetch functions in `src/api/auth.ts` throw errors, and the thunk's `rejected` handler logs the user out.
+
+No additional code needed — the existing flow naturally handles 401 → logout → redirect to login.
+
+**Step 4: Commit**
 
 ```bash
 git add src/App.tsx src/components/DashboardSidebar.tsx
@@ -1426,8 +1508,8 @@ git commit -m "feat(auth): wire up auth flow in App and add user menu to sidebar
 ## Task 14: PostgreSQL Setup and Run Scripts
 
 **Files:**
+- Create: `docker-compose.yml` (project root)
 - Create: `backend/.env.example`
-- Create: `docker-compose.yml` (project root, for PostgreSQL)
 
 **Step 1: Create docker-compose for PostgreSQL**
 
@@ -1455,6 +1537,7 @@ volumes:
 ```
 SUBUTAI_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/subutai
 SUBUTAI_JWT_SECRET=change-me-to-a-random-secret
+SUBUTAI_ENV=development
 ```
 
 **Step 3: Commit**
@@ -1481,22 +1564,34 @@ cd backend && uv run uvicorn app.main:app --reload
 npm run dev
 ```
 
-**Step 2: Manual verification**
+**Step 2: Manual verification checklist**
 
-1. Open `http://localhost:5173` — should see login page
-2. Click "Register" — create an account
-3. Login — should redirect to dashboard with sidebar
-4. Sidebar footer shows username and logout button
+1. Open `http://localhost:5173` — should see login page (no sidebar)
+2. Click "Register" — create an account (username, email, password)
+3. After registration, should auto-login and redirect to dashboard
+4. Sidebar footer shows username avatar + logout button
 5. Click logout — returns to login page
-6. Refresh page — session should restore if token is valid
+6. Login with the same credentials — dashboard loads
+7. Refresh page — session should restore (token persisted in localStorage)
+8. Open a second browser/incognito — register a different user — verify they see 0 DoE setups (isolation)
 
-**Step 3: Run backend tests**
+**Step 3: Run all backend tests**
 
 ```bash
 cd backend && uv run pytest -v
 ```
 
-**Step 4: Final commit (if any fixes needed)**
+Expected: ALL PASS (auth + CRUD + cross-user isolation)
+
+**Step 4: Run frontend build to check for type errors**
+
+```bash
+npm run build
+```
+
+Expected: Clean build
+
+**Step 5: Final commit (if any fixes needed)**
 
 ```bash
 git add -A
