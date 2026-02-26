@@ -61,6 +61,7 @@ const authSlice = createSlice({
     },
     clearError(state) {
       state.error = null;
+      state.status = "idle";
     },
   },
   extraReducers: (builder) => {
