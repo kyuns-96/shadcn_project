@@ -39,11 +39,13 @@ import fcCheckToolReducer from "@/store/reducers/fcCheckToolReducer";
 import powerMatrixReducer from "@/store/reducers/powerMatrixReducer";
 import timingMatrixReducer from "@/store/reducers/timingMatrixReducer";
 import graphReducer from "@/store/reducers/graphSlice";
+import authReducer from "@/store/reducers/authReducer";
 
 // Type 및 Action exports
 export type { SelectedState } from "@/store/reducers/selectedReducer";
 export type { PageType } from "@/store/reducers/pageReducer";
 export { setCurrentPage } from "@/store/reducers/pageReducer";
+export { login, register, restoreSession, logout, clearError } from "@/store/reducers/authReducer";
 
 /** 모든 리듀서를 결합한 루트 리듀서 */
 const rootReducer = combineReducers({
@@ -62,6 +64,7 @@ const rootReducer = combineReducers({
   page: pageReducer,
   fcCheckTool: fcCheckToolReducer,
   graph: graphReducer,
+  auth: authReducer,
 });
 
 /** 설정된 Redux store */
