@@ -14,6 +14,7 @@ export function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin: () => void 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (status === "loading") return;
     dispatch(clearError());
     dispatch(register({ username, email, password }));
   };
@@ -63,11 +64,9 @@ export function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin: () => void 
               autoComplete="new-password"
             />
           </div>
-          {error && (
-            <p className="text-sm text-destructive" role="alert">
-              {error}
-            </p>
-          )}
+          <p className="text-sm text-destructive" role="alert" aria-live="assertive">
+            {error ?? ""}
+          </p>
           <Button type="submit" className="w-full" disabled={status === "loading"}>
             {status === "loading" ? "Creating account..." : "Create account"}
           </Button>
