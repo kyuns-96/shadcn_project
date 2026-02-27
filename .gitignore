@@ -25,6 +25,7 @@ dist-ssr
 
 .sisyphus
 *AGENTS.md
+docs/plans/HANDOFF.md
 
 # Python
 __pycache__/
