@@ -8,8 +8,22 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:43173',
     trace: 'on-first-retry',
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: 'http://localhost:43173',
+          localStorage: [
+            {
+              name: 'token',
+              value: 'e2e-token',
+            },
+          ],
+        },
+      ],
+    },
   },
   projects: [
     {
@@ -18,8 +32,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'VITE_MSW_ENABLED=true npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
+    command: 'VITE_MSW_ENABLED=true npm run dev -- --port 43173 --strictPort',
+    url: 'http://localhost:43173',
+    reuseExistingServer: false,
   },
 });

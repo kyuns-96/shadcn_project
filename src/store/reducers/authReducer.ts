@@ -76,6 +76,8 @@ const authSlice = createSlice({
       state.status = "idle";
       state.token = action.payload.token;
       state.user = action.payload.user;
+      // Stored in localStorage for SPA convenience. Accepted XSS tradeoff
+      // for internal tool — keep CSP strict to compensate.
       localStorage.setItem("token", action.payload.token);
     };
     const handleRejected = (

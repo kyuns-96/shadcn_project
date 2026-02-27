@@ -25,3 +25,10 @@ dist-ssr
 
 .sisyphus
 *AGENTS.md
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+backend/.env

@@ -16,7 +16,96 @@ import {
   mockFormalityData,
 } from './data/fixtures';
 
+type SavedSetupRecord = {
+  id: string;
+  name: string;
+  config: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+const mockAuthUser = {
+  id: '11111111-1111-1111-1111-111111111111',
+  username: 'e2e-user',
+  email: 'e2e@example.com',
+  created_at: '2026-01-01T00:00:00.000Z',
+};
+
+let mockSavedSetups: SavedSetupRecord[] = [];
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function randomId(): string {
+  return `setup-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export const handlers = [
+  http.post('/api/v1/auth/login', async () => {
+    return HttpResponse.json(
+      {
+        access_token: 'e2e-token',
+        token_type: 'bearer',
+      },
+      { status: 200 },
+    );
+  }),
+
+  http.post('/api/v1/auth/register', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as {
+      username?: string;
+      email?: string;
+    };
+
+    return HttpResponse.json(
+      {
+        ...mockAuthUser,
+        username: body.username ?? mockAuthUser.username,
+        email: body.email ?? mockAuthUser.email,
+      },
+      { status: 201 },
+    );
+  }),
+
+  http.get('/api/v1/auth/me', ({ request }) => {
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return HttpResponse.json({ detail: 'Not authenticated' }, { status: 401 });
+    }
+
+    return HttpResponse.json(mockAuthUser, { status: 200 });
+  }),
+
+  http.get('/api/v1/doe-setups', () => {
+    return HttpResponse.json(mockSavedSetups, { status: 200 });
+  }),
+
+  http.post('/api/v1/doe-setups', async ({ request }) => {
+    const body = (await request.json().catch(() => ({}))) as {
+      name?: string;
+      config?: Record<string, unknown>;
+    };
+
+    const timestamp = nowIso();
+    const nextSetup: SavedSetupRecord = {
+      id: randomId(),
+      name: body.name ?? 'Untitled setup',
+      config: body.config ?? {},
+      created_at: timestamp,
+      updated_at: timestamp,
+    };
+
+    mockSavedSetups = [nextSetup, ...mockSavedSetups];
+    return HttpResponse.json(nextSetup, { status: 201 });
+  }),
+
+  http.delete('/api/v1/doe-setups/:setupId', ({ params }) => {
+    const setupId = String(params.setupId ?? '');
+    mockSavedSetups = mockSavedSetups.filter((setup) => setup.id !== setupId);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
   http.get('/api/get_project', () => {
     return HttpResponse.json(mockProjectList);
   }),

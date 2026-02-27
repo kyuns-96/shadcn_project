@@ -47,9 +47,11 @@ export function LoginPage({ onSwitchToRegister }: { onSwitchToRegister: () => vo
               autoComplete="current-password"
             />
           </div>
-          <p className="text-sm text-destructive" role="alert" aria-live="assertive">
-            {error ?? ""}
-          </p>
+          {error && (
+            <p className="text-sm text-destructive" role="alert" aria-live="assertive">
+              {error}
+            </p>
+          )}
           <Button type="submit" className="w-full" disabled={status === "loading"}>
             {status === "loading" ? "Signing in..." : "Sign in"}
           </Button>

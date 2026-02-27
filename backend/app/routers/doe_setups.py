@@ -16,13 +16,13 @@ router = APIRouter()
 async def list_setups(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> list[DoESetup]:
     result = await db.execute(
         select(DoESetup)
         .where(DoESetup.user_id == current_user.id)
         .order_by(DoESetup.updated_at.desc())
     )
-    return result.scalars().all()
+    return list(result.scalars().all())
 
 
 @router.post("", response_model=DoESetupResponse, status_code=201)
@@ -30,7 +30,7 @@ async def create_setup(
     body: DoESetupCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> DoESetup:
     setup = DoESetup(
         user_id=current_user.id,
         name=body.name,
@@ -48,7 +48,7 @@ async def update_setup(
     body: DoESetupUpdate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> DoESetup:
     result = await db.execute(
         select(DoESetup).where(
             DoESetup.id == setup_id, DoESetup.user_id == current_user.id
@@ -73,7 +73,7 @@ async def delete_setup(
     setup_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> None:
     result = await db.execute(
         select(DoESetup).where(
             DoESetup.id == setup_id, DoESetup.user_id == current_user.id

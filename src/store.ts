@@ -40,12 +40,20 @@ import powerMatrixReducer from "@/store/reducers/powerMatrixReducer";
 import timingMatrixReducer from "@/store/reducers/timingMatrixReducer";
 import graphReducer from "@/store/reducers/graphSlice";
 import authReducer from "@/store/reducers/authReducer";
+import { setDoEs } from "@/store/doeRegistry";
+import savedSetupsReducer from "@/store/reducers/savedSetupsReducer";
 
 // Type 및 Action exports
 export type { SelectedState } from "@/store/reducers/selectedReducer";
 export type { PageType } from "@/store/reducers/pageReducer";
 export { setCurrentPage } from "@/store/reducers/pageReducer";
 export { login, register, restoreSession, logout, clearError } from "@/store/reducers/authReducer";
+export { setDoEs };
+export {
+  fetchSavedSetups,
+  saveCurrentSetup,
+  removeSetup,
+} from "@/store/reducers/savedSetupsReducer";
 
 /** 모든 리듀서를 결합한 루트 리듀서 */
 const rootReducer = combineReducers({
@@ -65,6 +73,7 @@ const rootReducer = combineReducers({
   fcCheckTool: fcCheckToolReducer,
   graph: graphReducer,
   auth: authReducer,
+  savedSetups: savedSetupsReducer,
 });
 
 /** 설정된 Redux store */

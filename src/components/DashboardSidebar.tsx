@@ -35,6 +35,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { SidebarUserMenu } from "@/components/SidebarUserMenu";
 import { ModeToggle } from "./mode-toggle";
 
 import {
@@ -117,6 +118,7 @@ const DashboardSidebar = () => {
           <SidebarContent>
             <SidebarGroup>
               <button
+                type="button"
                 onClick={() => handlePageChange("landing")}
                 className="px-2.5 py-5 flex items-center justify-start w-full cursor-pointer hover:opacity-80 transition-opacity"
                 title="Subutai Playground - 홈으로 이동"
@@ -127,6 +129,7 @@ const DashboardSidebar = () => {
                   viewBox="0 0 300 70"
                   className="max-w-xs"
                 >
+                  <title>Subutai Playground</title>
                   <text
                     x="10"
                     y="50%"
@@ -163,6 +166,7 @@ const DashboardSidebar = () => {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
+          <SidebarUserMenu />
         </Sidebar>
         <div className="flex flex-1 flex-col">
           <header className="bg-card sticky top-0 z-50 flex h-13.75 items-center justify-between gap-6 border-b px-4 py-2 sm:px-6">

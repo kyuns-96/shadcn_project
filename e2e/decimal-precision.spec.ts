@@ -187,7 +187,7 @@ test.describe('Per-Group Decimal Precision - Context Menu', () => {
 
   test.describe('Power Table', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('http://localhost:5173');
+      await page.goto('/');
       await page.waitForLoadState('networkidle');
 
       // Navigate to Power page via sidebar button
@@ -289,7 +289,7 @@ test.describe('Per-Group Decimal Precision - Context Menu', () => {
 
   test.describe('Timing Table', () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto('http://localhost:5173');
+      await page.goto('/');
       await page.waitForLoadState('networkidle');
 
       // Navigate to Timing page via sidebar button

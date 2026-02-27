@@ -6,6 +6,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
+import { SavedSetupsDialog } from "@/components/SavedSetupsDialog";
 import { useAppDispatch, useAppSelector, logout } from "@/store";
 
 export function SidebarUserMenu() {
@@ -27,6 +28,9 @@ export function SidebarUserMenu() {
             </div>
             <span className="truncate text-sm font-medium">{user.username}</span>
           </div>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SavedSetupsDialog />
         </SidebarMenuItem>
         <SidebarMenuItem>
           <SidebarMenuButton
