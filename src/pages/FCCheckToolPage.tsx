@@ -192,6 +192,10 @@ const FCCheckToolPage = () => {
       blockList,
       netverList,
       filteredRevisionList,
+      handleProjectChange,
+      handleBlockChange,
+      handleNetverChange,
+      handleRevisionChange,
     ]
   );
 
@@ -200,7 +204,7 @@ const FCCheckToolPage = () => {
     selectedProject && selectedBlock && selectedNetver && selectedRevision;
 
   // Handle OK button click
-  const handleOkClick = async () => {
+  const handleOkClick = useCallback(async () => {
     if (!isFormComplete) return;
 
     setIsLoading(true);
@@ -224,7 +228,7 @@ const FCCheckToolPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isFormComplete, dispatch, selectedProject, selectedBlock, selectedNetver, selectedRevision]);
 
   const accordionItems = useMemo(
     () => [

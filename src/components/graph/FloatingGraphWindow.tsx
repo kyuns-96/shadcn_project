@@ -39,6 +39,16 @@ interface FloatingGraphWindowProps {
 
 const POPUP_VIEWPORT_PADDING_PX = 16;
 
+const DEFAULT_DUMMY_WINDOW: GraphWindow = {
+  id: '',
+  chartType: 'line',
+  xAxis: { type: 'doeMetadata', key: 'label' },
+  yAxis: { type: 'metric', key: 'Power(mW)!combinational_Total' },
+  series: [],
+  xRange: { min: 'auto', max: 'auto' },
+  yRange: { min: 'auto', max: 'auto' },
+};
+
 function clamp(value: number, min: number, max: number): number {
   if (min > max) return min;
   return Math.min(max, Math.max(min, value));
@@ -91,28 +101,18 @@ export function FloatingGraphWindow({ windowId, windowIndex }: FloatingGraphWind
   const windowState = useAppSelector(selectGraphWindowById(windowId));
   const isLoading = useAppSelector(selectAnyDatasetLoading);
   
-  const dummyWindow: GraphWindow = {
-    id: '',
-    chartType: 'line',
-    xAxis: { type: 'doeMetadata', key: 'label' },
-    yAxis: { type: 'metric', key: 'Power(mW)!combinational_Total' },
-    series: [],
-    xRange: { min: 'auto', max: 'auto' },
-    yRange: { min: 'auto', max: 'auto' },
-  };
-  
-  const dataPoints = useGraphData(windowState ?? dummyWindow);
+  const dataPoints = useGraphData(windowState ?? DEFAULT_DUMMY_WINDOW);
 
   const [showRangeControls, setShowRangeControls] = useState(false);
   const [openSeriesChartTypeSelector, setOpenSeriesChartTypeSelector] = useState<string | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const isHistogramMode = useMemo(
-    () => (windowState ?? dummyWindow).series.some(series => series.enabled && series.chartType === 'histogram'),
+    () => (windowState ?? DEFAULT_DUMMY_WINDOW).series.some(series => series.enabled && series.chartType === 'histogram'),
     [windowState]
   );
 
   const dataDomain = useMemo(
-    () => computeDataDomain(dataPoints, windowState ?? dummyWindow),
+    () => computeDataDomain(dataPoints, windowState ?? DEFAULT_DUMMY_WINDOW),
     [dataPoints, windowState]
   );
 

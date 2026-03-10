@@ -178,5 +178,5 @@ export function useRestoreColumnData() {
     };
 
     fetchAllColumns();
-  }, [dispatch, columnHeaders, rowHeaders, doeRegistry, revisionMode, dataset]);
+  }, [dispatch, columnHeaders, rowHeaders, doeRegistry, revisionMode, dataset, currentPage]);
 }

@@ -202,5 +202,5 @@ export function useRestoreDoeGroupData() {
     };
 
      fetchAllGroups();
-   }, [dispatch, doeGroups, rowHeaders, doeRegistry, dataset]);
+    }, [dispatch, doeGroups, rowHeaders, doeRegistry, dataset, currentPage]);
 }

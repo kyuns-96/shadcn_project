@@ -176,5 +176,5 @@ export function useRestoreTimingRowData() {
     };
 
      fetchAllRows();
-   }, [dispatch, timingRows, doeRegistry, dataset]);
+    }, [dispatch, timingRows, doeRegistry, dataset, currentPage]);
 }

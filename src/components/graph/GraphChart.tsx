@@ -260,7 +260,6 @@ function transformForRecharts(
 // MAIN COMPONENT
 // ============================================
 export function GraphChart({
-  chartType: _chartType,
   dataPoints,
   series,
   xRange,
