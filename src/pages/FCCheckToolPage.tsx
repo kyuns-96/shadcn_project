@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef, useLayoutEffect } from "react";
 import { Copy, Check } from "lucide-react";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
 import type { RootState } from "@/store";
+import DOMPurify from "dompurify";
 
 import { useFetchProjectList } from "@/hooks/useFetchProjectList";
 import useFetchBlockList from "@/hooks/useFetchBlockList";
@@ -327,7 +328,7 @@ const FCCheckToolPage = () => {
                     [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
                     [&_hr]:border-border [&_hr]:my-4"
                   ref={htmlContainerRef}
-                  dangerouslySetInnerHTML={{ __html: htmlContent }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(htmlContent) }}
                 />
               </>
             ) : (
