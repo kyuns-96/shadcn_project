@@ -17,6 +17,7 @@
  * - @/hooks/useURLSync: URL 동기화 훅
  */
 
+import { lazy, Suspense } from "react";
 import {
   CheckCircle2Icon,
   GitCompareArrowsIcon,
@@ -38,6 +39,7 @@ import {
 import { SidebarUserMenu } from "@/components/SidebarUserMenu";
 import { ModeToggle } from "./mode-toggle";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { Spinner } from "@/components/ui/spinner";
 
 import {
   useAppDispatch,
@@ -45,13 +47,11 @@ import {
   setCurrentPage,
   type PageType,
 } from "@/store";
-import {
-  FCCheckToolPage,
-  QORComparePage,
-  TimingPage,
-  PowerPage,
-  LandingPage,
-} from "@/pages";
+import LandingPage from "@/pages/LandingPage";
+const FCCheckToolPage = lazy(() => import("@/pages/FCCheckToolPage"));
+const QORComparePage = lazy(() => import("@/pages/QORComparePage"));
+const TimingPage = lazy(() => import("@/pages/TimingPage"));
+const PowerPage = lazy(() => import("@/pages/PowerPage"));
 import { useURLSync } from "@/hooks/useURLSync";
 
 /** 네비게이션 페이지 정의 */
@@ -177,7 +177,17 @@ const DashboardSidebar = () => {
             </div>
           </header>
           <main className="size-full flex-1 px-4 py-6 sm:px-6">
-            <ErrorBoundary>{renderCurrentPage()}</ErrorBoundary>
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center h-full">
+                    <Spinner />
+                  </div>
+                }
+              >
+                {renderCurrentPage()}
+              </Suspense>
+            </ErrorBoundary>
           </main>
         </div>
       </SidebarProvider>
