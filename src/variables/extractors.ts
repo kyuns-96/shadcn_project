@@ -312,9 +312,6 @@ const extractWithInputDate = (
 
   // 2. 모든 input_date 키를 찾기 (가장 최근 날짜 선택)
   if (typeof current !== "object" || current === null) {
-    console.log(
-      `[extractWithInputDate] ${metricKey}: current is null at basePath "${basePath}"`
-    );
     return undefined;
   }
 
@@ -512,22 +509,11 @@ export const extractMetricValue = (
   // 일반 경로 처리 (시나리오 플레이스홀더 없음)
   const path = basePath;
 
-  if (metricKey === "Physical Info!ECO Runtime") {
-    console.log(`[extractMetricValue] 일반 경로 처리 시작`);
-    console.log(`  basePath:`, basePath);
-    console.log(`  path:`, path);
-    console.log(`  dataset:`, dataset);
-  }
-
   const pathKeys = path.split(".");
   let current: unknown = dataset;
 
   for (let i = 0; i < pathKeys.length; i++) {
     const key = pathKeys[i];
-
-    if (metricKey === "Physical Info!ECO Runtime") {
-      console.log(`  [step ${i}] key:`, key, "current:", current);
-    }
 
     // 배열 인덱스 처리 (예: "DATA[0]" -> "DATA" + index 0)
     const arrayMatch = key.match(/^([^[]+)\[(\d+)\]$/);
@@ -564,13 +550,6 @@ export const extractMetricValue = (
 
   // 변환 적용
   const transformedResult = applyTransform(metricKey, rawResult);
-
-  // ECO Runtime 디버깅
-  if (metricKey === "Physical Info!ECO Runtime") {
-    console.log(`[extractMetricValue] 일반 경로 처리 완료`);
-    console.log(`  rawResult:`, rawResult);
-    console.log(`  transformedResult:`, transformedResult);
-  }
 
   return transformedResult;
 };

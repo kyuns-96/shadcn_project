@@ -130,19 +130,9 @@ export function buildColumnDefs(args: {
 
       const strategy = getMetricFormatStrategy(metricKey);
 
-      const isEcoRuntime = metricKey === "Physical Info!ECO Runtime";
-      if (isEcoRuntime) {
-        console.log(`[valueFormatter] ECO Runtime 입력:`, value);
-        console.log(`  strategy:`, strategy);
-      }
-
       // string-only: 문자열 그대로 반환 (숫자 처리 스킵)
       if (strategy === "string-only") {
-        const result = String(value);
-        if (isEcoRuntime) {
-          console.log(`  string-only 적용, 결과:`, result);
-        }
-        return result;
+        return String(value);
       }
 
       // skip-decimal: 문자열로 반환하되, 숫자인 경우 정수로 변환
@@ -155,29 +145,17 @@ export function buildColumnDefs(args: {
           return num.toFixed(decimals);
         }
 
-        const result = isNaN(num) ? String(value) : String(Math.floor(num));
-        if (isEcoRuntime) {
-          console.log(`  skip-decimal 적용, parseFloat:`, num, "결과:", result);
-        }
-        return result;
+        return isNaN(num) ? String(value) : String(Math.floor(num));
       }
 
       // number: 일반 숫자 포맷팅 (decimal 적용)
       const num = parseFloat(String(value));
       if (!isNaN(num)) {
         const decimals = decimalPlaces[rowGroup || ""] ?? 2;
-        const result = num.toFixed(decimals);
-        if (isEcoRuntime) {
-          console.log(`  number 적용, parseFloat:`, num, "결과:", result);
-        }
-        return result;
+        return num.toFixed(decimals);
       }
 
-      const result = String(value);
-      if (isEcoRuntime) {
-        console.log(`  기본값, 결과:`, result);
-      }
-      return result;
+      return String(value);
     },
     cellRenderer: (params: ICellRendererParams<RowData>) => {
       if (params.value === "___LOADING___")
