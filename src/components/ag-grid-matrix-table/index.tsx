@@ -30,6 +30,7 @@ import {
   type GridApi,
   type CellContextMenuEvent,
 } from "ag-grid-community";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { useAppSelector, useAppDispatch } from "@/store";
 import { Toolbar } from "./Toolbar";
 import { DecimalContextMenu } from "./DecimalContextMenu";
@@ -142,7 +143,7 @@ export default function AgGridMatrixTable() {
       // Helper function to format power values with unit conversion
       const formatValue = (value: unknown, rowGroup: string): string => {
         if (value === null || value === undefined || value === "") return "";
-        if (value === "___LOADING___") return "";
+        if (value === LOADING_PLACEHOLDER) return "";
 
         // Only apply unit conversion to Power-related row groups
         const isPowerRow = rowGroup.toLowerCase().includes("power");
@@ -159,7 +160,6 @@ export default function AgGridMatrixTable() {
       };
 
       const headers = [
-
         "Group",
         "Row Header",
         ...dataColumnOrder.map((colId) => {
@@ -302,8 +302,8 @@ export default function AgGridMatrixTable() {
         const value = row.data[key];
         if (value === null || value === undefined || value === "") {
           transformedData[key] = "";
-        } else if (value === "___LOADING___") {
-          transformedData[key] = "___LOADING___";
+        } else if (value === LOADING_PLACEHOLDER) {
+          transformedData[key] = LOADING_PLACEHOLDER;
         } else {
           const num = parseFloat(String(value));
           if (!isNaN(num) && isPowerRow) {

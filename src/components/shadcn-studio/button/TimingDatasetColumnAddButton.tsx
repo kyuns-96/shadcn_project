@@ -21,6 +21,7 @@
 
 import { ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
   addTimingRow,
@@ -91,9 +92,6 @@ const TimingDatasetColumnAddButton = () => {
     (id) => doeRegistry.byId[id].label === trimmedDoeName
   );
   const isDisabled = !trimmedDoeName || isDuplicate;
-
-  /** 데이터 로딩 중 표시되는 placeholder 값 */
-  const LOADING_PLACEHOLDER = "___LOADING___";
 
   /**
    * 새 DoE 행을 추가하고 시나리오 정보를 로드합니다.

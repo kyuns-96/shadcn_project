@@ -22,6 +22,7 @@ import type {
   ICellRendererParams,
   IHeaderParams,
 } from "ag-grid-community";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { Spinner } from "@/components/ui/spinner";
 import type { PowerRowData, DoeColumnGroup, PowerUnit } from "./types";
 import type { TextAlignOption } from "./constants";
@@ -122,7 +123,7 @@ export function buildPowerColumnDefs(args: {
               return num.toFixed(decimals);
             },
             cellRenderer: (params: ICellRendererParams<PowerRowData>) => {
-              if (params.value === "___LOADING___")
+              if (params.value === LOADING_PLACEHOLDER)
                 return <Spinner className="mx-auto" />;
               return params.valueFormatted ?? params.value;
             },

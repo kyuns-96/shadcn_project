@@ -22,6 +22,7 @@
 
 import { ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { useAppDispatch, useAppSelector } from "@/store";
 import {
   addDoeGroup,
@@ -42,9 +43,6 @@ import {
 
 /** DoE ID 생성을 위한 접두사 */
 const DOE_ID_PREFIX = "doe";
-
-/** 데이터 로딩 중 표시되는 placeholder 값 */
-const LOADING_PLACEHOLDER = "___LOADING___";
 
 /** 데이터가 없을 때 표시되는 기본값 */
 const EMPTY_VALUE_PLACEHOLDER = "-";

@@ -16,6 +16,7 @@ import type {
   ColGroupDef,
   ICellRendererParams,
 } from "ag-grid-community";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import {
   TIMING_COLUMN_GROUPS,
   TIMING_METRICS,
@@ -24,7 +25,6 @@ import {
 import type { TimingRowData } from "./types";
 import {
   type TextAlignOption,
-  LOADING_CELL_VALUE,
   EMPTY_CELL_VALUE,
 } from "./constants";
 import { Spinner } from "@/components/ui/spinner";
@@ -50,7 +50,7 @@ export const formatTimingValue = (
   }
 
   // 로딩 중인 값 처리
-  if (value === LOADING_CELL_VALUE) {
+  if (value === LOADING_PLACEHOLDER) {
     return EMPTY_CELL_VALUE;
   }
 
@@ -130,7 +130,7 @@ export const buildTimingColumnDefs = (
             return formatTimingValue(params.value, decimalPlaces, columnGroup, isNVP);
           },
           cellRenderer: (params: ICellRendererParams<TimingRowData>) => {
-            if (params.value === LOADING_CELL_VALUE) {
+            if (params.value === LOADING_PLACEHOLDER) {
               return <Spinner className="mx-auto" />;
             }
             return params.valueFormatted ?? params.value;

@@ -90,9 +90,6 @@ export interface PowerMatrixRowDefinition {
   data: Record<string, string>;
 }
 
-/** 데이터 로딩 중 표시되는 플레이스홀더 */
-export const LOADING_PLACEHOLDER = "___LOADING___";
-
 // ============================================================
 // Helper functions
 // ============================================================

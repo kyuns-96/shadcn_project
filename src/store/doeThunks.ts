@@ -1,3 +1,4 @@
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import type { AppDispatch, RootState } from "@/store";
 import { removeColumn, updateColumnLabel, setColumnHeaders, addColumn, resetMatrix } from "@/store/matrixSlice";
 import { removeDoE, updateDoELabel, addDoE, setDoEs, resetDoERegistry } from "@/store/doeRegistry";
@@ -57,7 +58,7 @@ export const addDoEToAll =
       NET_VER,
       REVISION,
       ECO_NUM,
-      defaultValue = "___LOADING___",
+      defaultValue = LOADING_PLACEHOLDER,
       _needsDataFetch = true,
     } = payload;
 

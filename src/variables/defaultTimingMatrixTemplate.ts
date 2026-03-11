@@ -46,9 +46,6 @@ export const TIMING_METRICS = ["WNS", "TNS", "NVP"] as const;
 export type TimingColumnGroup = (typeof TIMING_COLUMN_GROUPS)[number];
 export type TimingMetric = (typeof TIMING_METRICS)[number];
 
-/** 데이터 로딩 중 표시되는 플레이스홀더 */
-export const LOADING_PLACEHOLDER = "___LOADING___";
-
 /** 빈 값 플레이스홀더 */
 export const EMPTY_VALUE_PLACEHOLDER = "-";
 

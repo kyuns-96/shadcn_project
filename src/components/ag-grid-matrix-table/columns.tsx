@@ -2,6 +2,7 @@ import type { ColDef, GridApi, ICellRendererParams } from "ag-grid-community";
 import ColumnHeaderWithPopup, {
   type ColumnMetadata,
 } from "@/components/ColumnHeaderWithPopup";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { Spinner } from "@/components/ui/spinner";
 import type { RowData, PowerUnit } from "./types";
 import type { TextAlignOption } from "./constants";
@@ -158,7 +159,7 @@ export function buildColumnDefs(args: {
       return String(value);
     },
     cellRenderer: (params: ICellRendererParams<RowData>) => {
-      if (params.value === "___LOADING___")
+      if (params.value === LOADING_PLACEHOLDER)
         return <Spinner className="mx-auto" />;
       return params.valueFormatted ?? params.value;
     },

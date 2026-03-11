@@ -17,11 +17,11 @@
  */
 
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import {
   TIMING_COLUMN_GROUPS,
   TIMING_METRICS,
   generateTimingColumnKey,
-  LOADING_PLACEHOLDER,
 } from "@/variables/defaultTimingMatrixTemplate";
 
 /** Timing 행 타입 (DoE 1개 = 1개 행) */

@@ -15,6 +15,7 @@
 
 import { useEffect, useRef } from "react";
 import { useDispatch, useSelector, shallowEqual } from "react-redux";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import type { RootState, AppDispatch } from "@/store";
 import { setCurrentPage, type PageType } from "@/store/reducers/pageReducer";
 import { restoreColumnsFromURL, addColumn } from "@/store/matrixSlice";
@@ -189,7 +190,7 @@ export function useURLSync() {
               addDoeGroup({
                 id: col.id,
                 label: col.label,
-                defaultValue: "___LOADING___",
+                defaultValue: LOADING_PLACEHOLDER,
                 _needsDataFetch: true,
               })
             );
@@ -286,7 +287,7 @@ export function useURLSync() {
               addColumn({
                 id: row.id,
                 label: row.label,
-                defaultValue: "___LOADING___",
+                defaultValue: LOADING_PLACEHOLDER,
                 _needsDataFetch: true,
                 meta: {
                   PROJECT_NAME: row.PROJECT_NAME,
@@ -305,7 +306,7 @@ export function useURLSync() {
               addDoeGroup({
                 id: row.id,
                 label: row.label,
-                defaultValue: "___LOADING___",
+                defaultValue: LOADING_PLACEHOLDER,
                 _needsDataFetch: true,
               })
             );
@@ -354,7 +355,7 @@ export function useURLSync() {
               addColumn({
                 id: doe.id,
                 label: doe.label,
-                defaultValue: "___LOADING___",
+                defaultValue: LOADING_PLACEHOLDER,
                 _needsDataFetch: true,
                 meta: {
                   PROJECT_NAME: doe.PROJECT_NAME,

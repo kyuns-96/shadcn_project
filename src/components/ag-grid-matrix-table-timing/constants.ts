@@ -9,6 +9,7 @@
  * - lucide-react: 아이콘
  */
 
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import {
   TIMING_COLUMN_GROUPS,
   TIMING_METRICS,
@@ -74,4 +75,4 @@ export const TIMING_DATASET_PATH = {
 // ============================================================
 
 export const EMPTY_CELL_VALUE = "-";
-export const LOADING_CELL_VALUE = "___LOADING___";
+export { LOADING_PLACEHOLDER };
