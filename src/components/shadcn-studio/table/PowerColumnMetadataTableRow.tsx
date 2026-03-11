@@ -11,8 +11,8 @@ import { renameDoEAll } from "@/store/doeThunks";
 import { type DoEEntry } from "@/store/doeRegistry";
 
 interface PowerColumnMetadataTableRowProps {
-  doeGroup: DoEEntry;
-  getScenarioDropdownConfig: (doeGroup: DoEEntry) => DropdownConfig;
+  doeGroup: DoEEntry & { accessorKey: string };
+  getScenarioDropdownConfig: (doeGroup: DoEEntry & { accessorKey: string }) => DropdownConfig;
   handleDeleteDoeGroup: (id: string) => void;
   handleDoeNameClick: (id: string) => void;
 }

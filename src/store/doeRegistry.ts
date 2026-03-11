@@ -310,5 +310,7 @@ export const selectEnrichedDoeGroups = createSelector(
   (registry) =>
     registry.allIds.map((doeId) => ({
       ...registry.byId[doeId],
+      id: doeId,
+      accessorKey: doeId,
     }))
 );

@@ -34,7 +34,7 @@ import {
 import { type DropdownConfig } from "@/components/shadcn-studio/combobox/FilterDropdownCombobox";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { updateCell } from "@/store/matrixSlice";
-import { updateDoEMetadata } from "@/store/doeRegistry";
+import { updateDoEMetadata, selectEnrichedDoeGroups } from "@/store/doeRegistry";
 import { removeDoEFromAll, resetAllDoEs, reorderDoEsAll } from "@/store/doeThunks";
 import {
   setColumnPowerScenario,
@@ -55,7 +55,6 @@ const ColumnMetadataTable = () => {
 
   // Redux에서 컬럼 및 행 헤더, Power Scenario 선택 상태, 데이터셋 조회
   const { rowHeaders } = useAppSelector((state) => state.matrix);
-  const doeRegistry = useAppSelector((state) => state.doeRegistry);
   const columnPowerScenarios = useAppSelector(
     (state) => state.selected.columnPowerScenarios
   );
@@ -63,11 +62,7 @@ const ColumnMetadataTable = () => {
 
   // [WHY] doeRegistry의 모든 DoE를 columnHeaders로 사용
   // 이렇게 하면 PowerPage에서 추가한 DoE도 QoRComparePage의 ColumnMetadataTable에 표시됨
-  const enrichedColumnHeaders = doeRegistry.allIds.map((doeId) => ({
-    ...doeRegistry.byId[doeId],
-    id: doeId,
-    accessorKey: doeId,
-  }));
+  const enrichedColumnHeaders = useAppSelector(selectEnrichedDoeGroups);
 
   /** Power Scenario 변경 핸들러 */
   const handleScenarioChange = useCallback(
