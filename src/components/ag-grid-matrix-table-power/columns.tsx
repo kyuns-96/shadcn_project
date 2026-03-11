@@ -35,11 +35,8 @@ import type { PowerDecimalMap } from "@/components/ag-grid-matrix-table/decimalD
  * DoE 그룹 헤더 렌더러 - 중앙정렬
  */
 function DoeGroupHeader(props: IHeaderParams) {
-  const headerGroupParams = props as unknown as {
-    columnGroup?: { displayName?: string };
-  };
-  const displayText =
-    headerGroupParams.columnGroup?.displayName || props.displayName;
+  const headerGroupParams = props as { columnGroup?: { displayName?: string } };
+  const displayText = headerGroupParams.columnGroup?.displayName || props.displayName;
   return (
     <div className="w-full h-full flex items-center justify-center !text-center">
       <span className="truncate">{displayText}</span>
