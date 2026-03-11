@@ -18,12 +18,14 @@ async function enableMocking() {
   });
 }
 
-enableMocking().then(() => {
-  createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-      <Provider store={store}>
-        <App />
-      </Provider>
-    </StrictMode>
-  );
-});
+enableMocking()
+  .then(() => {
+    createRoot(document.getElementById("root")!).render(
+      <StrictMode>
+        <Provider store={store}>
+          <App />
+        </Provider>
+      </StrictMode>
+    );
+  })
+  .catch((error) => console.error("MSW initialization failed:", error));
