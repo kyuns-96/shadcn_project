@@ -1,5 +1,3 @@
-/* eslint-disable react-dom/no-dangerously-set-innerhtml */
-
 import { useState, useMemo, useCallback, useRef, useLayoutEffect } from "react";
 import { Copy, Check } from "lucide-react";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
