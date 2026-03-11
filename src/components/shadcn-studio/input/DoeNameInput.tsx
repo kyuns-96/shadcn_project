@@ -38,11 +38,10 @@ const DoeNameInput = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isUserInput = useRef(false);
 
-  const state = useAppSelector((state) => state);
-  const columnHeaders = state.matrix.columnHeaders;
-  const doeGroups = state.powerMatrix.doeGroups;
-  const doeRegistry = state.doeRegistry;
-  const doeName = state.selected.doeName;
+  const columnHeaders = useAppSelector((state) => state.matrix.columnHeaders);
+  const doeGroups = useAppSelector((state) => state.powerMatrix.doeGroups);
+  const doeRegistry = useAppSelector((state) => state.doeRegistry);
+  const doeName = useAppSelector((state) => state.selected.doeName);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     isUserInput.current = true;
