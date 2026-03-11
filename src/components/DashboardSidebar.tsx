@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sidebar";
 import { SidebarUserMenu } from "@/components/SidebarUserMenu";
 import { ModeToggle } from "./mode-toggle";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 import {
   useAppDispatch,
@@ -176,7 +177,7 @@ const DashboardSidebar = () => {
             </div>
           </header>
           <main className="size-full flex-1 px-4 py-6 sm:px-6">
-            {renderCurrentPage()}
+            <ErrorBoundary>{renderCurrentPage()}</ErrorBoundary>
           </main>
         </div>
       </SidebarProvider>
