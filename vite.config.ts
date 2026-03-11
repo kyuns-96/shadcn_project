@@ -11,6 +11,23 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-ag-grid": ["ag-grid-community", "ag-grid-react"],
+          "vendor-recharts": ["recharts"],
+          "vendor-dnd": [
+            "@dnd-kit/core",
+            "@dnd-kit/sortable",
+            "@dnd-kit/utilities",
+            "@dnd-kit/modifiers",
+          ],
+          "vendor-redux": ["@reduxjs/toolkit", "react-redux"],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       "/api/v1": {

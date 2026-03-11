@@ -30,6 +30,7 @@ import {
   type GridApi,
   type CellContextMenuEvent,
 } from "ag-grid-community";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { useAppSelector } from "@/store";
 import { PowerToolbar } from "./Toolbar";
 import {
@@ -167,7 +168,7 @@ export default function AgGridPowerTable() {
         rowKey: PowerRowKey | string
       ): string => {
         if (value === null || value === undefined || value === "") return "";
-        if (value === "___LOADING___") return "";
+        if (value === LOADING_PLACEHOLDER) return "";
         const num = parseFloat(String(value));
         if (isNaN(num)) return String(value);
 
@@ -300,8 +301,8 @@ export default function AgGridPowerTable() {
         const value = row.data[key];
         if (value === null || value === undefined || value === "") {
           convertedData[key] = "";
-        } else if (value === "___LOADING___") {
-          convertedData[key] = "___LOADING___";
+        } else if (value === LOADING_PLACEHOLDER) {
+          convertedData[key] = LOADING_PLACEHOLDER;
         } else {
           const num = parseFloat(String(value));
           if (!isNaN(num)) {

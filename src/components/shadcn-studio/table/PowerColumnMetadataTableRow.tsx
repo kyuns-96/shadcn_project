@@ -8,12 +8,11 @@ import { Trash2Icon, GripVerticalIcon, PencilIcon } from "lucide-react";
 import { useSortableDoERow } from "./DoeSortableContext";
 import { useAppDispatch } from "@/store";
 import { renameDoEAll } from "@/store/doeThunks";
+import { type DoEEntry } from "@/store/doeRegistry";
 
 interface PowerColumnMetadataTableRowProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  doeGroup: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getScenarioDropdownConfig: (doeGroup: any) => DropdownConfig;
+  doeGroup: DoEEntry & { accessorKey: string };
+  getScenarioDropdownConfig: (doeGroup: DoEEntry & { accessorKey: string }) => DropdownConfig;
   handleDeleteDoeGroup: (id: string) => void;
   handleDoeNameClick: (id: string) => void;
 }

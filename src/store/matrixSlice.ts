@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { arrayMove } from "@dnd-kit/sortable";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 
 export interface ColumnHeader {
   id: string;
@@ -64,7 +65,7 @@ const matrixSlice = createSlice({
       state.rowHeaders.forEach((row) => {
         columnIds.forEach((colId) => {
           if (!(colId in row.data)) {
-            row.data[colId] = "___LOADING___";
+            row.data[colId] = LOADING_PLACEHOLDER;
           }
         });
       });
@@ -159,7 +160,7 @@ const matrixSlice = createSlice({
         data ||
         state.columnHeaders.reduce((acc, col) => {
           // [WHY] Use loading placeholder for columns awaiting data fetch from URL restoration
-          acc[col.id] = col._needsDataFetch ? "___LOADING___" : "";
+          acc[col.id] = col._needsDataFetch ? LOADING_PLACEHOLDER : "";
           return acc;
         }, {} as Record<string, unknown>);
 
@@ -168,7 +169,7 @@ const matrixSlice = createSlice({
       if (data) {
         state.columnHeaders.forEach((col) => {
           if (!(col.id in rowData)) {
-            rowData[col.id] = col._needsDataFetch ? "___LOADING___" : "";
+            rowData[col.id] = col._needsDataFetch ? LOADING_PLACEHOLDER : "";
           }
         });
       }

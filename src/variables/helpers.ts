@@ -55,11 +55,6 @@ export const applyTransform = (metricKey: string, value: unknown): unknown => {
   // 1. 메트릭별 변환 함수 확인
   if (METRIC_TRANSFORMERS[metricKey]) {
     const transformed = METRIC_TRANSFORMERS[metricKey](value);
-    if (metricKey === "Physical Info!ECO Runtime") {
-      console.log(`[applyTransform] METRIC_TRANSFORMERS 적용:`);
-      console.log(`  input:`, value);
-      console.log(`  output:`, transformed);
-    }
     return transformed;
   }
 
@@ -67,19 +62,10 @@ export const applyTransform = (metricKey: string, value: unknown): unknown => {
   const groupName = metricKey.split("!")[0];
   if (groupName && GROUP_TRANSFORMERS[groupName]) {
     const transformed = GROUP_TRANSFORMERS[groupName](value);
-    if (metricKey === "Physical Info!ECO Runtime") {
-      console.log(`[applyTransform] GROUP_TRANSFORMERS 적용:`);
-      console.log(`  input:`, value);
-      console.log(`  output:`, transformed);
-    }
     return transformed;
   }
 
   // 변환 없이 원본 반환
-  if (metricKey === "Physical Info!ECO Runtime") {
-    console.log(`[applyTransform] 변환 없음:`);
-    console.log(`  value:`, value);
-  }
   return value;
 };
 

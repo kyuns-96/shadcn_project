@@ -28,7 +28,7 @@ import {
   updatePowerCell,
   updateDoeScenario,
 } from "@/store/reducers/powerMatrixReducer";
-import { updateDoEMetadata } from "@/store/doeRegistry";
+import { updateDoEMetadata, selectEnrichedDoeGroups } from "@/store/doeRegistry";
 import { removeDoEFromAll, resetAllDoEs, reorderDoEsAll } from "@/store/doeThunks";
 import { extractMetricValue } from "@/variables/metricValueExtractor";
 import {
@@ -47,12 +47,8 @@ const PowerColumnMetadataTable = () => {
 
   const { rowHeaders } = useAppSelector((state) => state.powerMatrix);
   const doeRegistry = useAppSelector((state) => state.doeRegistry);
+  const enrichedDoeGroups = useAppSelector(selectEnrichedDoeGroups);
   const dataset = useAppSelector((state) => state.dataset.data);
-
-  const enrichedDoeGroups = doeRegistry.allIds.map((doeId) => ({
-    ...doeRegistry.byId[doeId],
-    id: doeId,
-  }));
 
   const selectedDoeGroup = selectedDoeId
     ? doeRegistry.byId[selectedDoeId]

@@ -25,6 +25,7 @@
 
 import { ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { addColumn, updateCell } from "@/store/matrixSlice";
 import { addDoE, updateDoEMetadata } from "@/store/doeRegistry";
@@ -38,9 +39,6 @@ import { fetchDataset } from "@/store/reducers/datasetReducer";
 
 /** 새 컬럼 ID 생성을 위한 접두사 */
 const COLUMN_ID_PREFIX = "col";
-
-/** 데이터 로딩 중 표시되는 placeholder 값 */
-const LOADING_PLACEHOLDER = "___LOADING___";
 
 /** 데이터가 없을 때 표시되는 기본값 */
 const EMPTY_VALUE_PLACEHOLDER = "-";
@@ -203,6 +201,8 @@ const DatasetColumnAddButton = () => {
           );
         });
       }
+    }).catch((error) => {
+      console.error("Failed to fetch dataset:", error);
     });
   };
 

@@ -14,6 +14,8 @@
  * - 없음 (순수 유틸리티 함수)
  */
 
+import { getNestedValue } from "@/lib/getNestedValue";
+
 /** 데이터셋 타입 정의 */
 type DatasetRecord = Record<string, unknown>;
 
@@ -22,33 +24,6 @@ const TIMING_SUMMARY_PATH = {
   ROOT: "get_timing_summary",
   DATA: "timing_summary_data",
 } as const;
-
-/**
- * 객체를 안전하게 탐색하는 헬퍼 함수
- *
- * @param obj - 탐색할 객체
- * @param path - 점(.) 구분자로 된 경로 배열
- * @returns 해당 경로의 값 또는 undefined
- */
-const getNestedValue = (
-  obj: unknown,
-  path: string[]
-): Record<string, unknown> | undefined => {
-  let current = obj;
-
-  for (const key of path) {
-    if (typeof current !== "object" || current === null) {
-      return undefined;
-    }
-    current = (current as Record<string, unknown>)[key];
-  }
-
-  if (typeof current === "object" && current !== null) {
-    return current as Record<string, unknown>;
-  }
-
-  return undefined;
-};
 
 /**
  * 데이터셋에서 사용 가능한 Timing Scenario 목록을 추출합니다.

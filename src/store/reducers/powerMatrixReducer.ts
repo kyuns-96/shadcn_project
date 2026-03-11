@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import type { PowerRowKey } from "@/variables/defaultPowerMatrixTemplate";
 
 /** DoE 그룹 헤더 타입 */
@@ -112,7 +113,7 @@ const powerMatrixSlice = createSlice({
         state.doeGroups.reduce((acc, doeGroup) => {
           columnNames.forEach((colName) => {
             const columnId = `${doeGroup.id}_${colName}`;
-            acc[columnId] = doeGroup._needsDataFetch ? "___LOADING___" : "";
+            acc[columnId] = doeGroup._needsDataFetch ? LOADING_PLACEHOLDER : "";
           });
           return acc;
         }, {} as Record<string, unknown>);
@@ -124,7 +125,7 @@ const powerMatrixSlice = createSlice({
             const columnId = `${doeGroup.id}_${colName}`;
             if (!(columnId in rowData)) {
               rowData[columnId] = doeGroup._needsDataFetch
-                ? "___LOADING___"
+                ? LOADING_PLACEHOLDER
                 : "";
             }
           });
@@ -263,7 +264,7 @@ const powerMatrixSlice = createSlice({
           columnNames.forEach((colName) => {
             const columnId = `${doeGroup.id}_${colName}`;
             if (!(columnId in row.data)) {
-              row.data[columnId] = "___LOADING___";
+              row.data[columnId] = LOADING_PLACEHOLDER;
             }
           });
         });

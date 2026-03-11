@@ -14,6 +14,10 @@ export default defineConfig({
       "e2e/**",
       "**/*.spec.ts",
     ],
+    coverage: {
+      reporter: ["text-summary"],
+      enabled: false,
+    },
   },
   resolve: {
     alias: {

@@ -114,11 +114,11 @@ export default function useFilterDropdownConfigs(): DropdownConfig[] {
   const { projectList, blockList, netverList, revisionList, econumList } =
     useSelector(
       (state: RootState) => ({
-        projectList: state.projectList,
-        blockList: state.blockList,
-        netverList: state.netverList,
-        revisionList: state.revisionList,
-        econumList: state.econumList,
+        projectList: state.projectList.items,
+        blockList: state.blockList.items,
+        netverList: state.netverList.items,
+        revisionList: state.revisionList.items,
+        econumList: state.econumList.items,
       }),
       shallowEqual
     );
@@ -160,7 +160,7 @@ export default function useFilterDropdownConfigs(): DropdownConfig[] {
     if (selectedRevision && !filteredRevisionList.includes(selectedRevision)) {
       dispatch(setSelectedRevisionOnly(null));
     }
-  }, [revisionMode, filteredRevisionList, selectedRevision, dispatch, currentPage, revisionList, isRestoringColumns]);
+  }, [filteredRevisionList, selectedRevision, dispatch, currentPage, revisionList, isRestoringColumns]);
 
   // 드롭다운 설정 배열 생성
   const filterDropdownConfigs = useMemo<DropdownConfig[]>(() => {

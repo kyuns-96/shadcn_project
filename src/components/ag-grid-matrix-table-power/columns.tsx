@@ -22,6 +22,7 @@ import type {
   ICellRendererParams,
   IHeaderParams,
 } from "ag-grid-community";
+import { LOADING_PLACEHOLDER } from "@/lib/constants";
 import { Spinner } from "@/components/ui/spinner";
 import type { PowerRowData, DoeColumnGroup, PowerUnit } from "./types";
 import type { TextAlignOption } from "./constants";
@@ -34,11 +35,8 @@ import type { PowerDecimalMap } from "@/components/ag-grid-matrix-table/decimalD
  * DoE 그룹 헤더 렌더러 - 중앙정렬
  */
 function DoeGroupHeader(props: IHeaderParams) {
-  const headerGroupParams = props as unknown as {
-    columnGroup?: { displayName?: string };
-  };
-  const displayText =
-    headerGroupParams.columnGroup?.displayName || props.displayName;
+  const headerGroupParams = props as { columnGroup?: { displayName?: string } };
+  const displayText = headerGroupParams.columnGroup?.displayName || props.displayName;
   return (
     <div className="w-full h-full flex items-center justify-center !text-center">
       <span className="truncate">{displayText}</span>
@@ -122,7 +120,7 @@ export function buildPowerColumnDefs(args: {
               return num.toFixed(decimals);
             },
             cellRenderer: (params: ICellRendererParams<PowerRowData>) => {
-              if (params.value === "___LOADING___")
+              if (params.value === LOADING_PLACEHOLDER)
                 return <Spinner className="mx-auto" />;
               return params.valueFormatted ?? params.value;
             },

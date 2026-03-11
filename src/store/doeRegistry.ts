@@ -16,7 +16,7 @@
  * - @reduxjs/toolkit: Redux 툴킷
  */
 
-import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, createSelector, type PayloadAction } from "@reduxjs/toolkit";
 
 /**
  * DoE 항목의 이름과 메타데이터를 저장합니다.
@@ -296,3 +296,21 @@ export const selectAllDoELabels = (state: {
   const { byId, allIds } = state.doeRegistry;
   return allIds.map((id) => byId[id].label);
 };
+
+const selectDoeRegistryState = (state: { doeRegistry: DoERegistryState }) =>
+  state.doeRegistry;
+
+export const selectAllDoEIds = createSelector(
+  selectDoeRegistryState,
+  (registry) => registry.allIds
+);
+
+export const selectEnrichedDoeGroups = createSelector(
+  selectDoeRegistryState,
+  (registry) =>
+    registry.allIds.map((doeId) => ({
+      ...registry.byId[doeId],
+      id: doeId,
+      accessorKey: doeId,
+    }))
+);
