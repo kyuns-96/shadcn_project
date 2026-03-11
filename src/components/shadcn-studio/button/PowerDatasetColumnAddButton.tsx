@@ -253,6 +253,8 @@ const PowerDatasetColumnAddButton = () => {
           }
         });
       }
+    }).catch((error) => {
+      console.error("Failed to fetch dataset:", error);
     });
   };
 

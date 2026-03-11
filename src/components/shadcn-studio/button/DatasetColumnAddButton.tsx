@@ -203,6 +203,8 @@ const DatasetColumnAddButton = () => {
           );
         });
       }
+    }).catch((error) => {
+      console.error("Failed to fetch dataset:", error);
     });
   };
 
