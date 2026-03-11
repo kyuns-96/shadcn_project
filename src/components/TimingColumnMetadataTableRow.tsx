@@ -8,12 +8,11 @@ import { Trash2Icon, GripVerticalIcon, PencilIcon } from "lucide-react";
 import { useSortableDoERow } from "./shadcn-studio/table/DoeSortableContext";
 import { useAppDispatch } from "@/store";
 import { renameDoEAll } from "@/store/doeThunks";
+import { type DoEEntry } from "@/store/doeRegistry";
 
 interface TimingColumnMetadataTableRowProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  doeEntry: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getScenarioDropdownConfig: (doeEntry: any) => DropdownConfig;
+  doeEntry: DoEEntry;
+  getScenarioDropdownConfig: (doeEntry: DoEEntry) => DropdownConfig;
   handleDeleteDoe: (id: string) => void;
 }
 
