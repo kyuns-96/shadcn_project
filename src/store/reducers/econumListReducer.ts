@@ -1,10 +1,21 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import { fetchEconumList as fetchEconumListAPI } from "@/api/fetchEconumList";
 
-type EconumList = string[];
+export interface EconumListState {
+  items: string[];
+  status: "idle" | "loading" | "failed";
+  error: string | null;
+}
+
+const initialState: EconumListState = {
+  items: [],
+  status: "idle",
+  error: null,
+};
 
 export const fetchEconumList = createAsyncThunk<
-  EconumList,
+  string[],
   {
     projectName: string | null | undefined;
     blockName: string | null | undefined;
@@ -36,17 +47,25 @@ export const fetchEconumList = createAsyncThunk<
   }
 );
 
-const econumListReducer = (
-  state: EconumList = [],
-  action: { type: string; payload?: EconumList }
-) => {
-  switch (action.type) {
-    case "econumList/set":
-    case "econumList/fetch/fulfilled":
-      return action.payload || state;
-    default:
-      return state;
-  }
-};
+const econumListSlice = createSlice({
+  name: "econumList",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchEconumList.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchEconumList.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.items = action.payload;
+      })
+      .addCase(fetchEconumList.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload ?? "Unknown error";
+      });
+  },
+});
 
-export default econumListReducer;
+export default econumListSlice.reducer;

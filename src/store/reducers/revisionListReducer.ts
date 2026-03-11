@@ -1,10 +1,21 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import { fetchRevisionList as fetchRevisionListAPI } from "@/api/fetchRevisionList";
 
-type RevisionList = string[];
+export interface RevisionListState {
+  items: string[];
+  status: "idle" | "loading" | "failed";
+  error: string | null;
+}
+
+const initialState: RevisionListState = {
+  items: [],
+  status: "idle",
+  error: null,
+};
 
 export const fetchRevisionList = createAsyncThunk<
-  RevisionList,
+  string[],
   {
     projectName: string | null | undefined;
     blockName: string | null | undefined;
@@ -27,17 +38,25 @@ export const fetchRevisionList = createAsyncThunk<
   }
 );
 
-const revisionListReducer = (
-  state: RevisionList = [],
-  action: { type: string; payload?: RevisionList }
-) => {
-  switch (action.type) {
-    case "revisionList/set":
-    case "revisionList/fetch/fulfilled":
-      return action.payload || state;
-    default:
-      return state;
-  }
-};
+const revisionListSlice = createSlice({
+  name: "revisionList",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchRevisionList.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchRevisionList.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.items = action.payload;
+      })
+      .addCase(fetchRevisionList.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload ?? "Unknown error";
+      });
+  },
+});
 
-export default revisionListReducer;
+export default revisionListSlice.reducer;

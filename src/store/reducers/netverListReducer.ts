@@ -1,10 +1,21 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import { fetchNetverList as fetchNetverListAPI } from "@/api/fetchNetverList";
 
-type NetverList = string[];
+export interface NetverListState {
+  items: string[];
+  status: "idle" | "loading" | "failed";
+  error: string | null;
+}
+
+const initialState: NetverListState = {
+  items: [],
+  status: "idle",
+  error: null,
+};
 
 export const fetchNetverList = createAsyncThunk<
-  NetverList,
+  string[],
   { projectName: string | null | undefined; blockName: string | null | undefined },
   { rejectValue: string }
 >("netverList/fetch", async ({ projectName, blockName }, { rejectWithValue }) => {
@@ -20,17 +31,25 @@ export const fetchNetverList = createAsyncThunk<
   }
 });
 
-const netverListReducer = (
-  state: NetverList = [],
-  action: { type: string; payload?: NetverList }
-) => {
-  switch (action.type) {
-    case "netverList/set":
-    case "netverList/fetch/fulfilled":
-      return action.payload || state;
-    default:
-      return state;
-  }
-};
+const netverListSlice = createSlice({
+  name: "netverList",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchNetverList.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchNetverList.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.items = action.payload;
+      })
+      .addCase(fetchNetverList.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload ?? "Unknown error";
+      });
+  },
+});
 
-export default netverListReducer;
+export default netverListSlice.reducer;

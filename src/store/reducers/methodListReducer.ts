@@ -1,10 +1,21 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import { fetchMethodList as fetchMethodListAPI } from "@/api/fetchMethodList";
 
-type MethodList = string[];
+export interface MethodListState {
+  items: string[];
+  status: "idle" | "loading" | "failed";
+  error: string | null;
+}
+
+const initialState: MethodListState = {
+  items: [],
+  status: "idle",
+  error: null,
+};
 
 export const fetchMethodList = createAsyncThunk<
-  MethodList,
+  string[],
   void,
   { rejectValue: string }
 >("methodList/fetch", async (_, { rejectWithValue }) => {
@@ -17,17 +28,25 @@ export const fetchMethodList = createAsyncThunk<
   }
 });
 
-const methodListReducer = (
-  state: MethodList = [],
-  action: { type: string; payload?: MethodList }
-) => {
-  switch (action.type) {
-    case "methodList/set":
-    case "methodList/fetch/fulfilled":
-      return action.payload || state;
-    default:
-      return state;
-  }
-};
+const methodListSlice = createSlice({
+  name: "methodList",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchMethodList.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchMethodList.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.items = action.payload;
+      })
+      .addCase(fetchMethodList.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload ?? "Unknown error";
+      });
+  },
+});
 
-export default methodListReducer;
+export default methodListSlice.reducer;

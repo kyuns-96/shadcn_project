@@ -1,3 +1,5 @@
+/* eslint-disable react-dom/no-dangerously-set-innerhtml */
+
 import { useState, useMemo, useCallback, useRef, useLayoutEffect } from "react";
 import { Copy, Check } from "lucide-react";
 import { useSelector, shallowEqual, useDispatch } from "react-redux";
@@ -107,10 +109,10 @@ const FCCheckToolPage = () => {
   // Get lists from Redux store
   const { projectList, blockList, netverList, revisionList } = useSelector(
     (state: RootState) => ({
-      projectList: state.projectList,
-      blockList: state.blockList,
-      netverList: state.netverList,
-      revisionList: state.revisionList,
+      projectList: state.projectList.items,
+      blockList: state.blockList.items,
+      netverList: state.netverList.items,
+      revisionList: state.revisionList.items,
     }),
     shallowEqual
   );
@@ -240,9 +242,9 @@ const FCCheckToolPage = () => {
           <div className="flex flex-col gap-4">
             <div className="overflow-x-auto">
               <div className="flex gap-2 min-w-fit items-end">
-                {dropdownConfigs.map((config, index) => (
+                {dropdownConfigs.map((config) => (
                   <FilterDropdownCombobox
-                    key={index}
+                    key={config.placeholder}
                     dropdownConfigs={[config]}
                   />
                 ))}

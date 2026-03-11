@@ -1,10 +1,21 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+
 import { fetchBlockList as fetchBlockListAPI } from "@/api/fetchBlockList";
 
-type BlockList = string[];
+export interface BlockListState {
+  items: string[];
+  status: "idle" | "loading" | "failed";
+  error: string | null;
+}
+
+const initialState: BlockListState = {
+  items: [],
+  status: "idle",
+  error: null,
+};
 
 export const fetchBlockList = createAsyncThunk<
-  BlockList,
+  string[],
   string | null | undefined,
   { rejectValue: string }
 >("blockList/fetch", async (projectName, { rejectWithValue }) => {
@@ -20,17 +31,25 @@ export const fetchBlockList = createAsyncThunk<
   }
 });
 
-const blockListReducer = (
-  state: BlockList = [],
-  action: { type: string; payload?: BlockList }
-) => {
-  switch (action.type) {
-    case "blockList/set":
-    case "blockList/fetch/fulfilled":
-      return action.payload || state;
-    default:
-      return state;
-  }
-};
+const blockListSlice = createSlice({
+  name: "blockList",
+  initialState,
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchBlockList.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(fetchBlockList.fulfilled, (state, action) => {
+        state.status = "idle";
+        state.items = action.payload;
+      })
+      .addCase(fetchBlockList.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload ?? "Unknown error";
+      });
+  },
+});
 
-export default blockListReducer;
+export default blockListSlice.reducer;
